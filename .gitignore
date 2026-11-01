@@ -1,0 +1,22 @@
+# 秘密のファイル
+.env
+.env.*
+!.env.example
+*.tfvars
+*.tfstate
+*.tfstate.*
+.terraform/
+*.pem
+*.key
+*.sql.gz
+*.dump
+
+# OS・エディタ
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# 言語・ツールの生成物は、技術を決めたらここに足す
