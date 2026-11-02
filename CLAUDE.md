@@ -91,6 +91,7 @@ gh pr checks <番号>                                        # ④ 実行 ID（r
 | 04 | [画面設計書](docs/04_screen-design.md) | 画面一覧、画面遷移、画面の方針 |
 | 05 | [DB 設計書](docs/05_db-design.md) | 表と列の定義、同期と削除の扱い |
 | 06 | [API 設計書](docs/06_api-design.md) | API の一覧、同期の仕組み、エラーの形式 |
+| 07 | [ログ設計書](docs/07_logging-design.md) | ログの形式、重大度、出さない情報 |
 
 デプロイの設計書は、必要になったら追加する。
 
