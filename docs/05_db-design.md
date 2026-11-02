@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 05 |
-| 版数 | 0.2 |
+| 版数 | 0.3 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md) |
@@ -67,7 +67,6 @@ erDiagram
 | `reminder_hours` | integer | 既定10、空はオフ | 記録忘れの n 時間 |
 | `notifications` | jsonb | | 通知の種類ごとのオンとオフ |
 | `anomaly_method` | text | 既定 `statistical` | 判定方式（BR-20） |
-| `anomaly_thresholds` | jsonb | | 利用者のしきい値 |
 
 ### households（おうち）
 
@@ -95,6 +94,7 @@ erDiagram
 | `conditions` | text | | 持病 |
 | `icon_path` | text | | アイコンの場所 |
 | `status` | text | 既定 `active` | `active` または `farewell`（お別れ） |
+| `anomaly_thresholds` | jsonb | | 猫ごとのしきい値（BR-20） |
 
 ### record_types（記録項目）
 
@@ -192,3 +192,4 @@ erDiagram
 |---|---|---|
 | 0.1 | 2026-11-02 | 初版 |
 | 0.2 | 2026-11-02 | 未送信の表にユーザーの ID を追加 |
+| 0.3 | 2026-11-02 | しきい値を猫の表へ移動 |
