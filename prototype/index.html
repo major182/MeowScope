@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeowScope プロトタイプ</title>
+<!--
+  認識合わせ用のプロトタイプ。仕様の正は docs/ の設計書（CLAUDE.md 2章）。
+  データは架空で、再読み込みすると元に戻る。
+  DevTools のデバイス表示で確認する：幅 900px 未満はスマートフォン、以上は Windows の配置。
+-->
+<style>
+:root { --main:#c2662d; --soft:#fbeee3; --line:#e4dcd4; --text:#33291f; --sub:#7d7064; --bg:#fffaf5; --danger:#c0392b; }
+* { box-sizing:border-box; }
+body { margin:0; font-family:"Segoe UI","Yu Gothic UI",Meiryo,sans-serif; color:var(--text); background:var(--bg); }
+button,input,select,textarea { font:inherit; color:inherit; }
+button { cursor:pointer; }
+#app { min-height:100vh; display:flex; flex-direction:column; }
+main { flex:1; padding:12px 14px 80px; width:100%; }
+.nav { position:fixed; bottom:0; left:0; right:0; display:flex; background:#fff; border-top:1px solid var(--line); z-index:5; }
+.nav button { flex:1; padding:12px 2px; border:0; background:none; color:var(--sub); font-size:13px; }
+.nav button.on { color:var(--main); font-weight:700; }
+.top { display:flex; align-items:center; gap:8px; margin-bottom:12px; min-height:36px; }
+.top h1 { font-size:18px; margin:0; flex:1; }
+.back { border:0; background:none; font-size:20px; padding:4px 8px 4px 0; }
+.link { border:0; background:none; color:var(--main); padding:6px 0; text-decoration:underline; display:block; }
+.grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
+.tile { padding:14px 2px; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:13px; }
+.tile b { display:block; font-size:22px; font-weight:400; }
+.row { display:flex; align-items:center; gap:8px; width:100%; padding:11px; border:1px solid var(--line); border-radius:8px; background:#fff; margin-bottom:6px; text-align:left; }
+.row .grow { flex:1; }
+.sub { color:var(--sub); font-size:12px; }
+.btn { display:block; width:100%; padding:11px; border:1px solid var(--line); border-radius:8px; background:#fff; margin:8px 0; }
+.btn.pri { background:var(--main); border-color:var(--main); color:#fff; font-weight:600; }
+.btn.dan { color:var(--danger); border-color:var(--danger); }
+label.f { display:block; font-size:13px; margin:10px 0 4px; color:var(--sub); }
+input.i,select.i,textarea.i { width:100%; padding:10px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+.seg { display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+.seg button { flex:1; padding:9px 6px; border:0; background:#fff; }
+.seg button.on { background:var(--soft); color:var(--main); font-weight:700; }
+.ic { display:inline-flex; width:26px; height:26px; flex:none; align-items:center; justify-content:center; border-radius:50%; background:var(--soft); font-size:14px; }
+.who { display:inline-flex; align-items:center; gap:4px; }
+.sync { border:1px solid var(--line); background:#fff; border-radius:16px; padding:3px 9px; font-size:12px; }
+.cal { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); border-left:1px solid var(--line); border-top:1px solid var(--line); background:#fff; }
+.cal div.h { text-align:center; font-size:12px; padding:4px 0; color:var(--sub); border-right:1px solid var(--line); border-bottom:1px solid var(--line); }
+.cal button { height:68px; border:0; border-right:1px solid var(--line); border-bottom:1px solid var(--line); background:#fff; padding:2px; text-align:left; font-size:11px; overflow:hidden; display:flex; flex-direction:column; justify-content:flex-start; align-items:flex-start; }
+.cal button.out { color:#c9c0b6; background:#faf7f3; }
+.cal button.sel { background:var(--soft); }
+.cal i { font-style:normal; font-size:10px; letter-spacing:-1px; display:block; line-height:1.25; word-break:break-all; }
+.bars { display:flex; align-items:flex-end; gap:6px; height:110px; border-bottom:1px solid var(--line); }
+.bars span { flex:1; background:var(--main); opacity:.75; border-radius:3px 3px 0 0; }
+.card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px; margin-bottom:12px; }
+.photo { height:120px; background:var(--soft); border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--sub); margin:6px 0; }
+.toast { position:fixed; left:50%; bottom:72px; transform:translateX(-50%); background:#3a2f26; color:#fff; padding:9px 12px; border-radius:8px; display:flex; gap:12px; align-items:center; z-index:9; white-space:nowrap; font-size:14px; }
+.toast button { background:none; border:0; color:#ffc892; text-decoration:underline; }
+.dlg { position:fixed; inset:0; background:rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; padding:18px; z-index:10; }
+.dlg > div { background:#fff; border-radius:12px; padding:16px; width:100%; max-width:360px; }
+.dlg h2 { font-size:16px; margin:0 0 6px; }
+.two { display:flex; gap:8px; } .two .btn { margin-bottom:0; }
+.widget { max-width:300px; background:#2e2a26; padding:10px; border-radius:16px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.widget button { padding:14px; border:0; border-radius:10px; background:#fff; }
+.note { font-size:12px; color:var(--sub); background:var(--soft); padding:8px; border-radius:8px; margin:8px 0; }
+#split { display:block; }
+#detail { display:none; }
+@media (min-width:900px) {
+  #app { flex-direction:row; }
+  .nav { position:sticky; top:0; align-self:flex-start; height:100vh; width:170px; flex-direction:column; border-top:0; border-right:1px solid var(--line); padding-top:12px; order:-1; }
+  .nav button { flex:none; padding:13px 18px; text-align:left; font-size:15px; }
+  main { padding:18px 24px; max-width:1040px; }
+  .cal button { height:88px; font-size:12px; } .cal i { font-size:12px; }
+  .toast { bottom:24px; }
+  #split.on { display:grid; grid-template-columns:1fr 300px; gap:18px; }
+  #split.on #detail { display:block; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ---- 架空のデータ（再読み込みで元に戻る） ----
+const types = [["ご飯","🍚"],["水","💧"],["薬","💊"],["おしっこ","🟡"],["うんち","💩"],["吐いた","🤮"],["体重","⚖️"]].map(([n,e])=>({n,e}));
+const state = {
+  login:false, house:"みけ家", cats:[{n:"ミケ",age:"3歳",s:"通常"},{n:"タマ",age:"5歳",s:"通常"},{n:"ソラ",age:"12歳",s:"お別れ"}],
+  members:["はる","あき"], extra:["ブラッシング"], buttons:["ご飯","薬","水","おしっこ"],
+  week:0, reminder:10, calCat:"全員", statCat:"ミケ", span:"週", y:2026, m:10, sel:2, unsent:2, method:"stat", records:[]
+};
+const now = new Date(2026,10,2);
+function seed(){ const pick=["ご飯","ご飯","水","おしっこ","うんち"];
+  for(let d=-34;d<=0;d++){ const dt=new Date(2026,10,2+d);
+    ["ミケ","タマ"].forEach((c,ci)=>pick.forEach((t,i)=>{ if((d+i+ci)%4===0&&t!=="ご飯")return;
+      add({cat:c,type:t,d:new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),7+i*3,10+ci*20),by:ci?"あき":"はる",level:"普通",memo:i===1&&d%6===0?"少し残した":""}); }));
+    add({cat:"ミケ",type:"体重",d:new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),21),by:"はる",num:(4.1+Math.sin(d/5)*.12).toFixed(1)});
+    if(d%9===0) add({cat:"ミケ",type:"吐いた",d:new Date(dt.getFullYear(),dt.getMonth(),dt.getDate(),12),by:"はる",level:"少し",memo:"毛玉のよう"});
+  } }
+let uid=1; function add(r){ r.id=uid++; state.records.push(r); return r; } seed();
+
+// ---- 画面の共通部品 ----
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const emoji=t=>(types.find(x=>x.n===t)||{e:"⭐"}).e;
+const cat=n=>`<span class="who"><span class="ic">🐱</span>${esc(n)}</span>`;
+const person=n=>`<span class="who"><span class="ic">🧑</span>${esc(n)}</span>`;
+const hm=d=>`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+const same=(d,y,m,x)=>d.getFullYear()===y&&d.getMonth()===m&&d.getDate()===x;
+const dayRecs=(y,m,x,c)=>state.records.filter(r=>same(r.d,y,m,x)&&(!c||c==="全員"||r.cat===c)).sort((a,b)=>a.d-b.d);
+const activeCats=()=>state.cats.filter(c=>c.s==="通常");
+const head=(t,back,right="")=>`<div class="top">${back?`<button class="back" data-go="${back}">‹</button>`:""}<h1>${t}</h1>${right}</div>`;
+const go=h=>{location.hash=h;};
+function toast(msg,action,fn){ document.querySelector(".toast")?.remove(); const e=document.createElement("div"); e.className="toast"; e.innerHTML=esc(msg)+(action?`<button>${action}</button>`:""); if(action)e.querySelector("button").onclick=()=>{e.remove();fn();}; document.body.append(e); setTimeout(()=>e.remove(),4000); }
+function dialog(html){ const e=document.createElement("div"); e.className="dlg"; e.innerHTML=`<div>${html}</div>`; document.body.append(e); e.addEventListener("click",ev=>{if(ev.target===e)e.remove();}); return e; }
+// 削除の確認：BR-29 のとおり左に実行、右にキャンセル
+function confirmDelete(title,body,run,label="削除"){ const e=dialog(`<h2>${title}</h2><p class="sub">${body}</p><div class="two"><button class="btn dan" id="ok">${label}</button><button class="btn" id="no">キャンセル</button></div>`); e.querySelector("#ok").onclick=()=>{e.remove();run();}; e.querySelector("#no").onclick=()=>e.remove(); }
+function keepDialog(title,run){ const e=dialog(`<h2>${title}</h2><p class="sub">おうちの記録を残しますか？</p><div class="two"><button class="btn" data-k="残す">残す</button><button class="btn" data-k="消す">消す</button></div><button class="btn" id="no">キャンセル</button>`); e.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{e.remove();run(b.dataset.k);}); e.querySelector("#no").onclick=()=>e.remove(); }
+// 記録の流れ：項目 → 猫 → 即保存 → 「詳細を追加」
+function record(type){ const c=activeCats(); if(c.length===1)return save(type,c[0].n);
+  const e=dialog(`<h2>${esc(type)}：どの子ですか？</h2>${c.map(x=>`<button class="row" data-c="${esc(x.n)}">${cat(x.n)}</button>`).join("")}<button class="btn" id="no">キャンセル</button>`);
+  e.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{e.remove();save(type,b.dataset.c);}); e.querySelector("#no").onclick=()=>e.remove(); }
+function save(type,c){ const r=add({cat:c,type,d:new Date(2026,10,2,new Date().getHours(),new Date().getMinutes()),by:"はる"}); state.unsent++; render(); toast("保存しました","詳細を追加",()=>go("edit/"+r.id)); }
+
+// ---- 各画面 ----
+const V={
+ login:()=>`<div style="max-width:380px;margin:30px auto"><h1 style="text-align:center;color:var(--main)">🐾 MeowScope</h1>
+   <label class="f">メールアドレス</label><input class="i" inputmode="email" value="demo@example.com"><label class="f">パスワード</label><input class="i" type="password" value="password">
+   <button class="btn pri" id="doLogin">ログイン</button><button class="link" data-go="register">新規アカウント作成</button><button class="link" data-go="trouble">ログインに困ったら</button></div>`,
+ register:()=>head("新規アカウント作成","login")+`<label class="f">名前</label><input class="i"><label class="f">メールアドレス</label><input class="i"><label class="f">パスワード</label><input class="i" type="password"><button class="btn pri" data-go="house-new">登録する</button>`,
+ trouble:()=>head("ログインに困ったら","login")+`<button class="btn" data-go="reset">パスワード再発行</button><button class="btn" data-go="contact">問い合わせ</button>`,
+ reset:()=>head("パスワード再発行","trouble")+`<p class="sub">登録したメールアドレスへ再設定の案内を送ります。</p><label class="f">メールアドレス</label><input class="i"><button class="btn pri" data-go="login">送信する</button><div class="note">Q-26 の結果で内容が変わる画面です</div>`,
+ contact:()=>head("問い合わせ",state.login?"settings":"trouble")+`<p>不具合があったときは、ログを保存して次の宛先へ添付して連絡してください。</p><div class="card">問い合わせ先：<b>contact@example.com</b></div><button class="btn" data-toast="ログを保存しました">ログを保存する</button><button class="btn" data-toast="宛先をコピーしました">宛先をコピーする</button>`,
+ "house-new":()=>head("おうちを準備します")+`<label class="f">おうちの名前</label><input class="i" value="みけ家"><button class="btn pri" data-go="cat-first">新しいおうちを作る</button><button class="btn" data-go="cat-first">招待されたおうちに参加</button>`,
+ "cat-first":()=>head("猫を登録しましょう")+catForm()+`<button class="btn pri" id="enter">登録する</button>`,
+ home:()=>{const t=dayRecs(2026,10,2).reverse(); return `<div class="top"><h1>${esc(state.house)}</h1><span class="sub">11/02</span><button class="sync" data-toast="同期しました">☁ 09:30 同期済み</button></div>
+   <div class="grid">${types.map(x=>`<button class="tile" data-rec="${x.n}"><b>${x.e}</b>${x.n}</button>`).join("")}${state.extra.map(n=>`<button class="tile" data-rec="${esc(n)}"><b>⭐</b>${esc(n)}</button>`).join("")}<button class="tile" data-go="types"><b>＋</b>項目</button></div>
+   <h2 style="font-size:15px">今日の記録</h2>${t.map(row).join("")||'<p class="sub">まだ記録がありません</p>'}
+   <button class="link" data-go="widget">Android ウィジェットのイメージを見る</button>`;},
+ calendar:()=>{const {y,m,week}=state; const first=new Date(y,m,1); const off=(first.getDay()-week+7)%7; const names=week?["月","火","水","木","金","土","日"]:["日","月","火","水","木","金","土"]; let cells="";
+   for(let i=0;i<42;i++){const d=new Date(y,m,1-off+i); const inM=d.getMonth()===m; const rs=dayRecs(d.getFullYear(),d.getMonth(),d.getDate(),state.calCat); const icons=[...new Set(rs.map(r=>emoji(r.type)))].join("")+(rs.some(r=>r.memo)?"📝":"");
+     cells+=`<button class="${inM?"":"out"} ${inM&&d.getDate()===state.sel?"sel":""}" data-day="${d.getFullYear()}-${d.getMonth()}-${d.getDate()}">${d.getDate()}<i>${inM?icons:""}</i></button>`;}
+   return `<div class="top"><select class="i" id="calCat" style="width:auto">${["全員",...state.cats.map(c=>c.n)].map(n=>`<option ${n===state.calCat?"selected":""}>${n}</option>`).join("")}</select><h1 style="text-align:center"><button class="back" data-mon="-1">‹</button>${y}年${m+1}月<button class="back" data-mon="1">›</button></h1></div>
+   <div id="split" class="on"><div><div class="cal">${names.map(n=>`<div class="h">${n}</div>`).join("")}${cells}</div></div><div id="detail">${dayList(y,m,state.sel)}</div></div>`;},
+ day:(a)=>{const [y,m,x]=a.split("-").map(Number); return `<div class="top"><button class="link" style="flex:none;padding:0" data-go="calendar">戻る</button><h1 style="text-align:center"><button class="back" data-shift="-1">‹</button>${m+1}月 ${x}日<button class="back" data-shift="1">›</button></h1><span style="width:28px"></span></div>`+dayList(y,m,x,false);},
+ rec:(id)=>{const r=state.records.find(x=>x.id==id); if(!r)return head("記録の詳細","calendar"); return head("記録の詳細",`day/${r.d.getFullYear()}-${r.d.getMonth()}-${r.d.getDate()}`,`<button class="sync" data-go="edit/${id}">編集</button><button class="sync" id="delRec" data-id="${id}">削除</button>`)+`<div class="card"><p>${cat(r.cat)} ${esc(r.type)}</p><p class="sub">11/${r.d.getDate()} ${hm(r.d)}　投稿者：${person(r.by)}</p>${r.num?`<p>${r.num} kg</p>`:""}${r.level?`<p>量：${esc(r.level)}</p>`:""}<div class="photo" id="oldPhoto">写真（押すとオフラインの案内）</div>${r.memo?`<p>メモ：${esc(r.memo)}</p>`:""}</div>`;},
+ edit:(id)=>{const r=state.records.find(x=>x.id==id); return head(esc(r.type),"rec/"+id,`<button class="sync" id="saveRec" data-id="${id}">保存</button>`)+`<p>猫：${cat(r.cat)}</p><label class="f">日時</label><input class="i" value="2026/11/02 ${hm(r.d)}"><p class="sub">以下は任意です</p><label class="f">量</label><div class="seg" id="lv">${["少し","普通","多い"].map(v=>`<button class="${r.level===v?"on":""}">${v}</button>`).join("")}</div><label class="f">写真（3枚まで）</label><button class="btn" data-toast="写真の選択（イメージ）">写真を追加</button><label class="f">メモ</label><textarea class="i" id="memo" rows="3">${esc(r.memo||"")}</textarea>`;},
+ stats:()=>{const n=state.span==="週"?7:30; const bars=Array.from({length:n},(_, i)=>{const d=new Date(2026,10,2-n+1+i);return dayRecs(d.getFullYear(),d.getMonth(),d.getDate(),state.statCat).filter(r=>r.type===(state.statType||"ご飯")).length;}); const w=Array.from({length:n},(_, i)=>4.1+Math.sin((i-n)/5)*.12); const pts=w.map((v,i)=>`${i*300/(n-1)},${(4.3-v)*300}`).join(" ");
+   return head("統計","",`<select class="i" id="statCat" style="width:auto">${state.cats.map(c=>`<option ${c.n===state.statCat?"selected":""}>${c.n}</option>`).join("")}</select>`)+`<div class="seg" style="margin-bottom:12px">${["週","月"].map(s=>`<button data-span="${s}" class="${s===state.span?"on":""}">${s}</button>`).join("")}</div>
+   <div class="card"><b>体重 (kg)</b><svg viewBox="0 0 300 120" style="width:100%"><polyline fill="none" stroke="#c2662d" stroke-width="2" points="${pts}"/></svg></div>
+   <div class="card"><div class="top"><b style="flex:1">回数の推移</b><select class="i" id="statType" style="width:auto">${types.filter(t=>t.n!=="体重").map(t=>`<option ${t.n===(state.statType||"ご飯")?"selected":""}>${t.n}</option>`).join("")}</select></div><div class="bars">${bars.map(b=>`<span style="height:${Math.max(b*22,2)}%" title="${b}回"></span>`).join("")}</div></div>
+   <button class="btn" data-toast="次の段階の機能です">AI で分析する（次の段階）</button>`;},
+ settings:()=>head("設定")+[["猫の一覧とプロフィール","cats"],["おうちの管理","house"],["記録項目の設定","types"],["ウィジェットのボタン（Android のみ）","buttons"],["アカウント","account"],["同期の状態","sync"],["問い合わせ","contact"]].map(([t,h])=>`<button class="row" data-go="${h}"><span class="grow">${t}</span>›</button>`).join("")+
+   `<label class="f">カレンダーの週の始まり</label><div class="seg">${["日曜","月曜"].map((s,i)=>`<button data-week="${i}" class="${state.week===i?"on":""}">${s}</button>`).join("")}</div>
+   <label class="f">記録忘れの通知（最後の記録から）</label><select class="i" id="rem">${[6,10,12,24,0].map(v=>`<option value="${v}" ${v===state.reminder?"selected":""}>${v?v+"時間":"オフ"}</option>`).join("")}</select>
+   <label class="f">いつもとの差の判定</label><select class="i" id="method"><option ${state.method==="stat"?"selected":""} value="stat">統計的な外れ値</option><option ${state.method==="own"?"selected":""} value="own">自分で設定したしきい値</option></select>${state.method==="own"?`<button class="row" data-go="thresholds" style="margin-top:6px"><span class="grow">しきい値の設定</span>›</button>`:""}
+   <label class="f">通知する内容</label>${["投薬などの予定","いつもとの差","記録忘れ","家族の記録"].map(n=>`<label class="row"><input type="checkbox" checked><span class="grow">${n}</span></label>`).join("")}`,
+ thresholds:()=>head("しきい値の設定","settings",`<select class="i" style="width:auto">${activeCats().map(c=>`<option>${c.n}</option>`).join("")}</select>`)+`<p class="sub">1日の回数が範囲から外れたら「いつもとの差」として通知します。空欄の項目は判定しません。</p>`+types.filter(t=>t.n!=="体重").map(t=>`<div class="row"><span class="grow">${t.e} ${t.n}</span><input class="i" style="width:56px" inputmode="numeric" placeholder="下限"><span class="sub">〜</span><input class="i" style="width:56px" inputmode="numeric" placeholder="上限"><span class="sub">回</span></div>`).join("")+`<div class="row"><span class="grow">⚖️ 体重（直近の平均から）</span><span class="sub">±</span><input class="i" style="width:56px" inputmode="decimal" value="5"><span class="sub">%</span></div><button class="btn pri" data-go="settings">保存</button>`,
+ cats:()=>head("猫","settings",`<button class="sync" data-go="cat-add">追加</button>`)+state.cats.map((c,i)=>`<button class="row" data-go="cat/${i}"><span class="grow">${cat(c.n)} <span class="sub">${c.age}</span></span>${c.s==="お別れ"?'<span class="sub">お別れ</span>':""}›</button>`).join(""),
+ "cat-add":()=>head("猫を追加","cats")+catForm()+`<button class="btn pri" id="addCat">登録する</button>`,
+ cat:(i)=>{const c=state.cats[i]; return head(esc(c.n),"cats")+catForm(c)+`<button class="btn pri" data-go="cats">保存</button><button class="btn" id="farewell" data-i="${i}">${c.s==="お別れ"?"通常に戻す":"お別れの状態にする"}</button><button class="btn dan" id="delCat" data-i="${i}">削除</button>`;},
+ house:()=>head("おうちの管理","settings")+`<label class="f">おうち名</label><input class="i" value="${esc(state.house)}"><p>メンバー　${state.members.map(person).join(" ")}</p><button class="btn" data-toast="招待メールを送りました（イメージ）">メールで招待する</button><button class="btn dan" id="leave">おうちを抜ける</button>`,
+ types:()=>head("記録項目","settings",`<button class="sync" id="addType">追加</button>`)+types.map(t=>`<div class="row"><span class="grow">${t.e} ${t.n}（標準）</span></div>`).join("")+state.extra.map((n,i)=>`<div class="row"><span class="grow">⭐ ${esc(n)}</span><button class="sync" id="" data-deltype="${i}">削除</button></div>`).join(""),
+ buttons:()=>head("ウィジェットのボタン","settings")+state.buttons.map((b,i)=>`<div class="row"><span class="grow">${esc(b)}</span><button class="sync" data-delbtn="${i}">削除</button></div>`).join("")+`<button class="btn" id="addBtn">ボタンを追加</button><button class="link" data-go="widget">ウィジェットのイメージを見る</button>`,
+ widget:()=>head("Android ウィジェット（イメージ）","home")+`<div class="widget">${state.buttons.map(b=>`<button data-rec="${esc(b)}">${emoji(b)} ${esc(b)}</button>`).join("")}</div><div class="note">実際はホーム画面に置きます。猫が2匹以上なら押した後に猫を選び、1匹なら即保存します。</div>`,
+ account:()=>head("アカウント","settings")+`<p><span class="ic" style="width:56px;height:56px;font-size:26px">🧑</span> <button class="sync" data-toast="画像の選択（イメージ）">アイコンを変更</button></p><label class="f">名前</label><input class="i" value="はる"><label class="f">メールアドレス</label><input class="i" value="demo@example.com" readonly><button class="btn">パスワードを変更</button><button class="btn" id="logout">ログアウト</button><button class="btn dan" id="delAcc">アカウントを削除</button>`,
+ sync:()=>head("同期の状態","settings")+`<div class="card"><p>最終同期　11/02 09:30</p><p>未送信　${state.unsent}件</p></div><button class="btn pri" id="doSync">今すぐ同期</button>`
+};
+function row(r){return `<button class="row" data-go="rec/${r.id}"><span class="sub">${hm(r.d)}</span>${cat(r.cat)}<span class="grow">${esc(r.type)}${r.num?" "+r.num+"kg":""}</span>${r.memo?"📝":""}</button>`;}
+function dayList(y,m,x,title=true){const l=dayRecs(y,m,x,state.calCat); return (title?`<h2 style="font-size:15px">${m+1}月${x}日</h2>`:"")+(l.map(row).join("")||'<p class="sub">記録がありません</p>');}
+function catForm(c={}){return `<p><span class="ic" style="width:56px;height:56px;font-size:26px">🐱</span> <button class="sync" data-toast="画像の選択（イメージ）">アイコンを設定</button></p><label class="f">名前</label><input class="i" id="catName" value="${esc(c.n||"")}"><p class="sub">以下は任意です</p><label class="f">生年月日</label><input class="i" type="date"><label class="f">性別</label><div class="seg" id="sx"><button>男の子</button><button>女の子</button><button>不明</button></div><label class="f">持病</label><input class="i">`;}
+
+// ---- 描画とイベント ----
+const noNav=["login","register","trouble","reset","house-new","cat-first"];
+function render(){ const [n,arg]=(location.hash.slice(1)||"login").split("/"); const name=(!state.login&&!noNav.includes(n)&&n!=="contact")?"login":n;
+  const body=(V[name]||V.home)(arg); const showNav=state.login&&!noNav.includes(name);
+  const tab=name==="home"?"home":["calendar","day","rec","edit"].includes(name)?"calendar":name==="stats"?"stats":"settings";
+  $("#app").innerHTML=`<main>${body}</main>`+(showNav?`<nav class="nav">${[["home","ホーム"],["calendar","カレンダー"],["stats","統計"],["settings","設定"]].map(([h,t])=>`<button data-go="${h}" class="${tab===h?"on":""}">${t}</button>`).join("")}</nav>`:""); scrollTo(0,0); }
+addEventListener("hashchange",render);
+document.addEventListener("change",e=>{const t=e.target; if(t.id==="calCat"){state.calCat=t.value;render();} if(t.id==="statCat"){state.statCat=t.value;render();} if(t.id==="statType"){state.statType=t.value;render();} if(t.id==="rem")state.reminder=+t.value; if(t.id==="method"){state.method=t.value;render();}});
+document.addEventListener("click",e=>{const b=e.target.closest("button"); if(!b)return; const d=b.dataset;
+  if(d.go)return go(d.go); if(d.toast)return toast(d.toast); if(d.rec)return record(d.rec);
+  if(d.span){state.span=d.span;return render();} if(d.week){state.week=+d.week;return render();}
+  if(d.mon){const x=new Date(state.y,state.m+ +d.mon,1);state.y=x.getFullYear();state.m=x.getMonth();state.sel=1;return render();}
+  if(d.day){const [y,m,x]=d.day.split("-").map(Number); state.y=y;state.m=m;state.sel=x; if(innerWidth>=900)return render(); return go("day/"+d.day);}
+  if(d.shift){const [y,m,x]=location.hash.split("/")[1].split("-").map(Number);const n=new Date(y,m,x+ +d.shift);state.y=n.getFullYear();state.m=n.getMonth();state.sel=n.getDate();return go(`day/${n.getFullYear()}-${n.getMonth()}-${n.getDate()}`);}
+  if(d.delbtn){state.buttons.splice(+d.delbtn,1);return render();} if(d.deltype){const i=+d.deltype;return confirmDelete("項目を削除しますか？","元に戻せません",()=>{state.extra.splice(i,1);render();});}
+  if(b.parentElement.classList.contains("seg")&&!d.span&&!d.week){[...b.parentElement.children].forEach(x=>x.classList.remove("on"));b.classList.add("on");return;}
+  switch(b.id){
+   case"doLogin":case"enter":state.login=true;go("home");render();break;
+   case"delRec":{const id=+d.id;confirmDelete("記録を削除しますか？","元に戻せません",()=>{state.records=state.records.filter(r=>r.id!==id);go("calendar");});break;}
+   case"saveRec":{const r=state.records.find(x=>x.id==d.id);r.memo=$("#memo").value;r.level=$("#lv .on")?.textContent;go("rec/"+d.id);break;}
+   case"addCat":{const n=$("#catName").value.trim();if(n){state.cats.push({n,age:"-",s:"通常"});go("cats");}else toast("名前を入力してください");break;}
+   case"farewell":{const c=state.cats[+d.i];c.s=c.s==="お別れ"?"通常":"お別れ";go("cats");break;}
+   case"delCat":{const i=+d.i,n=state.cats[i].n;confirmDelete(`${esc(n)}と記録をすべて削除しますか？`,"元に戻せません",()=>{state.cats.splice(i,1);state.records=state.records.filter(r=>r.cat!==n);go("cats");});break;}
+   case"leave":keepDialog("おうちを抜ける",k=>{toast(`記録を${k}設定で抜けました（イメージ）`);state.login=false;go("house-new");});break;
+   case"delAcc":keepDialog("アカウントを削除",k=>{confirmDelete("本当に削除しますか？","元に戻せません",()=>{state.login=false;go("login");toast(`記録を${k}設定で削除しました（イメージ）`);});});break;
+   case"logout":state.login=false;go("login");render();break;
+   case"addType":{const n=prompt("項目の名前");if(n){state.extra.push(n);render();}break;}
+   case"addBtn":{const n=prompt("ボタンにする項目（例：うんち）");if(n){state.buttons.push(n);render();}break;}
+   case"doSync":state.unsent=0;render();toast("同期しました");break;
+  }});
+document.addEventListener("click",e=>{if(e.target.id==="oldPhoto")toast("オンラインのときに見られます");});
+render();
+</script>
+</body>
+</html>
