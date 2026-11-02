@@ -20,3 +20,6 @@ Thumbs.db
 !.vscode/extensions.json
 
 # 言語・ツールの生成物は、技術を決めたらここに足す
+coverage/
+.gradle/
+server/build/

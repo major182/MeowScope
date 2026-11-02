@@ -37,7 +37,7 @@
 1. Issue を作る（本文：`## 目的` / `## やること`（チェックリスト）/ `## 完了の条件`）
 2. `git switch main && git pull` → 最新の `main` からブランチを切る
 3. 実装してこまめにコミット
-4. **チェックを通す**：`{{全チェックを実行するコマンド}}`。CI でも同じチェックが動く
+4. **チェックを通す**：`cd app; dart run tool/check.dart --all`。CI でも同じチェックが動く
 5. **プッシュ前に `git fetch`** — `main` が動いていないか、PR がマージ済みでないかを確かめる
 6. プッシュして PR を作る。本文に `Closes #<Issue番号>`
 7. **PR の状態と CI の結果を確認する（1.4）**。マージは利用者が行う
@@ -113,10 +113,11 @@ gh pr checks <番号>                                        # ④ 実行 ID（r
 
 ### 4.1 開発環境の作り方
 
-前提：{{必要なツールとバージョン}}
+前提：Flutter 3.47.9、Android SDK、Visual Studio の C++ 開発環境、Docker。Java 25 は Gradle が用意する
 
 ```powershell
-{{起動コマンド}}
+cd app; flutter run -d windows
+cd server; .gradlew bootRun
 ```
 
 ### 4.2 注意
