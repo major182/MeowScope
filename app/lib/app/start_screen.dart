@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/providers.dart';
 import '../features/household/presentation/household_setup_screen.dart';
-import '../features/records/presentation/home_screen.dart';
+import 'main_shell.dart';
 
 /// 最初の画面。おうちがあればホーム、なければおうちの作成を出す
 class StartScreen extends ConsumerWidget {
@@ -16,7 +16,7 @@ class StartScreen extends ConsumerWidget {
         .when(
           data: (session) => session == null
               ? const HouseholdSetupScreen()
-              : const HomeScreen(),
+              : const MainShell(),
           loading: () =>
               const Scaffold(body: Center(child: CircularProgressIndicator())),
           error: (error, stack) => const Scaffold(
