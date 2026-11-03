@@ -64,7 +64,7 @@ void main() {
     await tester.enterText(find.widgetWithText(TextFormField, '名前'), 'ミケ');
     await tester.tap(find.widgetWithText(FilledButton, '登録する'));
     await tester.pumpAndSettle();
-    expect(find.text('ホーム'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'ホーム'), findsOneWidget);
 
     await tester.tap(find.widgetWithText(OutlinedButton, 'ご飯'));
     await tester.pumpAndSettle();
@@ -81,7 +81,7 @@ void main() {
 
     await start(tester);
 
-    expect(find.text('ホーム'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'ホーム'), findsOneWidget);
     expect(find.text('猫が登録されていません'), findsOneWidget);
     await close(tester);
   });
