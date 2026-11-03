@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 05 |
-| 版数 | 0.8 |
+| 版数 | 0.9 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md) |
@@ -105,6 +105,7 @@ erDiagram
 | `icon` | text | | アイコンのイラストの名前。標準の項目は種類で決まり、独自の項目は用意した一覧（`custom_vet` `custom_play` `custom_nail` `custom_teeth` `custom_treat` `custom_other`）から選ぶ |
 | `kind` | text | 必須 | `food` `water` `medicine` `urine` `stool` `vomit` `weight` `brushing` `custom` |
 | `sort_order` | integer | | 並び順 |
+| `hidden` | boolean | 既定 false | 非表示（独自の項目だけ）。記録のボタンと選択に出さず、過去の記録は残す。記録項目は削除しない |
 
 おうちを作るときに標準の8項目を登録する。
 
@@ -199,3 +200,4 @@ erDiagram
 | 0.6 | 2026-11-03 | 端末の状態の表（app_states）を記入 |
 | 0.7 | 2026-11-03 | 独自の項目のアイコンの値を記入 |
 | 0.8 | 2026-11-03 | 独自の項目のアイコンの値を、届いたイラストに合わせて変更 |
+| 0.9 | 2026-11-03 | 記録項目に hidden（非表示）を追加 |

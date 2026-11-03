@@ -9,13 +9,30 @@ import '../domain/record_kind.dart';
 import 'record_providers.dart';
 import 'type_icon.dart';
 
-/// 記録項目の設定（S-43）。標準の項目は変えられず、独自の項目は編集できる
+/// 記録項目の設定（S-43）。標準の項目は変えられず、独自の項目は編集と非表示ができる。
+/// 削除はできない
 class RecordTypesScreen extends ConsumerWidget {
   const RecordTypesScreen({super.key});
 
+  Future<void> _setHidden(WidgetRef ref, RecordTypeRow type) async {
+    final session = ref.read(sessionProvider).value;
+    if (session == null) {
+      return;
+    }
+    await ref
+        .read(recordRepositoryProvider)
+        .setTypeHidden(
+          id: type.id,
+          userId: session.author.id,
+          hidden: !type.hidden,
+        );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final types = ref.watch(recordTypesProvider).value ?? const [];
+    // 非表示にするときにセッションを使うので、読み込んでおく
+    ref.watch(sessionProvider);
+    final types = ref.watch(allRecordTypesProvider).value ?? const [];
     return Scaffold(
       appBar: AppBar(
         title: const Text('記録項目'),
@@ -37,10 +54,20 @@ class RecordTypesScreen extends ConsumerWidget {
               title: Text(
                 t.kind == RecordKind.custom ? t.name : '${t.name}（標準）',
               ),
+              subtitle: t.hidden ? const Text('非表示（過去の記録は残ります）') : null,
               trailing: t.kind == RecordKind.custom
-                  ? TextButton(
-                      onPressed: () => context.push('/record-types/${t.id}'),
-                      child: const Text('編集'),
+                  ? Wrap(
+                      children: [
+                        TextButton(
+                          onPressed: () =>
+                              context.push('/record-types/${t.id}'),
+                          child: const Text('編集'),
+                        ),
+                        TextButton(
+                          onPressed: () => _setHidden(ref, t),
+                          child: Text(t.hidden ? '表示に戻す' : '非表示にする'),
+                        ),
+                      ],
                     )
                   : null,
             ),
@@ -121,7 +148,8 @@ class _RecordTypeFormScreenState extends ConsumerState<RecordTypeFormScreen> {
   Widget build(BuildContext context) {
     // 保存のときにセッションを使うので、読み込んでおく
     ref.watch(sessionProvider);
-    final types = ref.watch(recordTypesProvider).value;
+    // 名前の重なりは非表示の項目も含めて確かめる
+    final types = ref.watch(allRecordTypesProvider).value;
     if (types == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
