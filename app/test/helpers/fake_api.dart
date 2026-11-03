@@ -69,6 +69,10 @@ class FakeServer implements HttpClientAdapter {
         reason: 'offline',
       );
     }
+    // 画像などのバイト列はそのまま返す
+    if (response.body case final Uint8List bytes) {
+      return ResponseBody.fromBytes(bytes, response.status);
+    }
     return ResponseBody.fromString(
       response.body == null ? '' : jsonEncode(response.body),
       response.status,

@@ -426,6 +426,8 @@ class SyncEngine {
               )..where((m) => m.userId.equals(id))).write(
                 HouseholdMembersCompanion(
                   displayName: Value(data['displayName'] as String?),
+                  hasIcon: Value(data['hasIcon'] as bool? ?? false),
+                  iconSeq: Value(seq),
                 ),
               );
             case 'cats':
@@ -448,6 +450,7 @@ class SyncEngine {
                       sex: Value(data['sex'] as String?),
                       conditions: Value(data['conditions'] as String?),
                       status: Value(data['status'] as String? ?? 'active'),
+                      hasIcon: Value(data['hasIcon'] as bool? ?? false),
                     ),
                   );
             case 'record_types':

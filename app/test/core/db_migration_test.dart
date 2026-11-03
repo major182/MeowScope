@@ -75,6 +75,14 @@ void main() {
         AppStatesCompanion.insert(key: 'settings.weekStart', value: 'monday'),
       ]),
     );
+    if (version < 8) {
+      await db.customStatement('ALTER TABLE cats DROP COLUMN has_icon');
+      for (final column in ['has_icon', 'icon_seq']) {
+        await db.customStatement(
+          'ALTER TABLE household_members DROP COLUMN $column',
+        );
+      }
+    }
     if (version < 7) {
       await db.customStatement('DROP TABLE client_logs');
     }

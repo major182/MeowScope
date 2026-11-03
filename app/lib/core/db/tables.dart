@@ -30,6 +30,10 @@ class HouseholdMembers extends Table with SyncColumns {
 
   /// メンバーの表示名。サーバーの users の表から受け取る
   TextColumn get displayName => text().nullable()();
+
+  /// アイコンがあるか（同期で受け取る）と、その版（users の通し番号）。版が変わったら取り直す
+  BoolColumn get hasIcon => boolean().withDefault(const Constant(false))();
+  IntColumn get iconSeq => integer().nullable()();
 }
 
 @DataClassName('CatRow')
@@ -43,6 +47,9 @@ class Cats extends Table with SyncColumns {
 
   /// `active` または `farewell`（お別れ）
   TextColumn get status => text().withDefault(const Constant('active'))();
+
+  /// サーバーにアイコンがあるか（同期で受け取る）。版は猫の行の通し番号（serverSeq）を使う
+  BoolColumn get hasIcon => boolean().withDefault(const Constant(false))();
 }
 
 @DataClassName('RecordTypeRow')

@@ -5,6 +5,7 @@ import com.meowscope.server.common.error.ApiException;
 import com.meowscope.server.common.error.ErrorCode;
 import com.meowscope.server.common.logging.Severity;
 import com.meowscope.server.household.LeaveService;
+import com.meowscope.server.photo.PhotoStorage;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +25,11 @@ public class AccountService {
     private final TokenService tokens;
     private final LeaveService leave;
     private final JdbcClient jdbc;
+    private final PhotoStorage storage;
 
     AccountService(UserRepository users, PasswordEncoder passwordEncoder, TokenService tokens, LeaveService leave,
-            JdbcClient jdbc) {
+            JdbcClient jdbc, PhotoStorage storage) {
+        this.storage = storage;
         this.users = users;
         this.passwordEncoder = passwordEncoder;
         this.tokens = tokens;
@@ -80,7 +83,9 @@ public class AccountService {
         for (UUID household : leave.householdsOf(id)) {
             leave.leave(id, household, keepRecords);
         }
+        String icon = users.findById(id).map(UserRepository.UserRow::iconPath).orElse(null);
         jdbc.sql("DELETE FROM users WHERE id = :id").param("id", id).update();
+        storage.delete(icon);
         log.atInfo().addMarker(Severity.NOTICE).addKeyValue("evt.name", "account_delete")
                 .addKeyValue("evt.outcome", "success").addKeyValue("usr.id", id.toString())
                 .addKeyValue("evt.reason", keepRecords ? "keep" : "delete").log("退会");

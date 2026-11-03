@@ -6,15 +6,26 @@ import 'package:drift/drift.dart';
 import '../../../core/api/api_error.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/db/local_cleanup.dart';
+import '../../icons/icon_repository.dart';
 import 'auth_repository.dart';
 import 'token_store.dart';
 
 /// おうちのメンバー（S-42）
 class Member {
-  const Member({required this.userId, required this.name});
+  const Member({
+    required this.userId,
+    required this.name,
+    this.hasIcon = false,
+    this.iconSeq,
+  });
 
   final String userId;
   final String name;
+  final bool hasIcon;
+  final int? iconSeq;
+
+  IconRef get icon =>
+      IconRef(IconOwner.user, userId, hasIcon: hasIcon, version: iconSeq);
 }
 
 /// アカウントとおうちの管理（S-42、S-45、API 設計書 3〜4章）
@@ -52,8 +63,30 @@ class AccountRepository {
     return query.watch().map(
       (rows) => [
         for (final r in rows)
-          Member(userId: r.userId!, name: r.displayName ?? ''),
+          Member(
+            userId: r.userId!,
+            name: r.displayName ?? '',
+            hasIcon: r.hasIcon,
+            iconSeq: r.iconSeq,
+          ),
       ]..sort((a, b) => a.name.compareTo(b.name)),
+    );
+  }
+
+  /// 自分のアイコン。同期でメンバーの行が届くまでは、端末で設定したものだけを出す
+  Stream<IconRef> watchMyIcon(String userId) {
+    final query = _db.select(_db.householdMembers)
+      ..where((m) => m.userId.equals(userId))
+      ..limit(1);
+    return query.watch().map(
+      (rows) => rows.isEmpty
+          ? IconRef(IconOwner.user, userId)
+          : IconRef(
+              IconOwner.user,
+              userId,
+              hasIcon: rows.first.hasIcon,
+              version: rows.first.iconSeq,
+            ),
     );
   }
 

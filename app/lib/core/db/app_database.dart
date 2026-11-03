@@ -32,7 +32,8 @@ class AppDatabase extends _$AppDatabase {
   // 4：おうちのメンバーの表を追加（同期）　5：写真の表を追加
   // 6：メンバーのユーザーの ID を空にできるようにする（退会した人）
   // 7：端末のログの表を追加
-  int get schemaVersion => 7;
+  // 8：アイコンの有無を追加
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -67,6 +68,14 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 7) {
         await m.createTable(clientLogs);
+      }
+      if (from < 8) {
+        await m.addColumn(cats, cats.hasIcon);
+        // 版 6 より前からの更新では、メンバーの表は上で新しい形で作り直されている
+        if (from >= 6) {
+          await m.addColumn(householdMembers, householdMembers.hasIcon);
+          await m.addColumn(householdMembers, householdMembers.iconSeq);
+        }
       }
     },
     beforeOpen: (details) async {

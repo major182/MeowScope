@@ -505,6 +505,32 @@ class $HouseholdMembersTable extends HouseholdMembers
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _hasIconMeta = const VerificationMeta(
+    'hasIcon',
+  );
+  @override
+  late final GeneratedColumn<bool> hasIcon = GeneratedColumn<bool>(
+    'has_icon',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_icon" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _iconSeqMeta = const VerificationMeta(
+    'iconSeq',
+  );
+  @override
+  late final GeneratedColumn<int> iconSeq = GeneratedColumn<int>(
+    'icon_seq',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -515,6 +541,8 @@ class $HouseholdMembersTable extends HouseholdMembers
     householdId,
     userId,
     displayName,
+    hasIcon,
+    iconSeq,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -587,6 +615,18 @@ class $HouseholdMembersTable extends HouseholdMembers
         ),
       );
     }
+    if (data.containsKey('has_icon')) {
+      context.handle(
+        _hasIconMeta,
+        hasIcon.isAcceptableOrUnknown(data['has_icon']!, _hasIconMeta),
+      );
+    }
+    if (data.containsKey('icon_seq')) {
+      context.handle(
+        _iconSeqMeta,
+        iconSeq.isAcceptableOrUnknown(data['icon_seq']!, _iconSeqMeta),
+      );
+    }
     return context;
   }
 
@@ -628,6 +668,14 @@ class $HouseholdMembersTable extends HouseholdMembers
         DriftSqlType.string,
         data['${effectivePrefix}display_name'],
       ),
+      hasIcon: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_icon'],
+      )!,
+      iconSeq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}icon_seq'],
+      ),
     );
   }
 
@@ -653,6 +701,10 @@ class HouseholdMemberRow extends DataClass
 
   /// メンバーの表示名。サーバーの users の表から受け取る
   final String? displayName;
+
+  /// アイコンがあるか（同期で受け取る）と、その版（users の通し番号）。版が変わったら取り直す
+  final bool hasIcon;
+  final int? iconSeq;
   const HouseholdMemberRow({
     required this.id,
     required this.createdAt,
@@ -662,6 +714,8 @@ class HouseholdMemberRow extends DataClass
     required this.householdId,
     this.userId,
     this.displayName,
+    required this.hasIcon,
+    this.iconSeq,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -681,6 +735,10 @@ class HouseholdMemberRow extends DataClass
     }
     if (!nullToAbsent || displayName != null) {
       map['display_name'] = Variable<String>(displayName);
+    }
+    map['has_icon'] = Variable<bool>(hasIcon);
+    if (!nullToAbsent || iconSeq != null) {
+      map['icon_seq'] = Variable<int>(iconSeq);
     }
     return map;
   }
@@ -703,6 +761,10 @@ class HouseholdMemberRow extends DataClass
       displayName: displayName == null && nullToAbsent
           ? const Value.absent()
           : Value(displayName),
+      hasIcon: Value(hasIcon),
+      iconSeq: iconSeq == null && nullToAbsent
+          ? const Value.absent()
+          : Value(iconSeq),
     );
   }
 
@@ -720,6 +782,8 @@ class HouseholdMemberRow extends DataClass
       householdId: serializer.fromJson<String>(json['householdId']),
       userId: serializer.fromJson<String?>(json['userId']),
       displayName: serializer.fromJson<String?>(json['displayName']),
+      hasIcon: serializer.fromJson<bool>(json['hasIcon']),
+      iconSeq: serializer.fromJson<int?>(json['iconSeq']),
     );
   }
   @override
@@ -734,6 +798,8 @@ class HouseholdMemberRow extends DataClass
       'householdId': serializer.toJson<String>(householdId),
       'userId': serializer.toJson<String?>(userId),
       'displayName': serializer.toJson<String?>(displayName),
+      'hasIcon': serializer.toJson<bool>(hasIcon),
+      'iconSeq': serializer.toJson<int?>(iconSeq),
     };
   }
 
@@ -746,6 +812,8 @@ class HouseholdMemberRow extends DataClass
     String? householdId,
     Value<String?> userId = const Value.absent(),
     Value<String?> displayName = const Value.absent(),
+    bool? hasIcon,
+    Value<int?> iconSeq = const Value.absent(),
   }) => HouseholdMemberRow(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -755,6 +823,8 @@ class HouseholdMemberRow extends DataClass
     householdId: householdId ?? this.householdId,
     userId: userId.present ? userId.value : this.userId,
     displayName: displayName.present ? displayName.value : this.displayName,
+    hasIcon: hasIcon ?? this.hasIcon,
+    iconSeq: iconSeq.present ? iconSeq.value : this.iconSeq,
   );
   HouseholdMemberRow copyWithCompanion(HouseholdMembersCompanion data) {
     return HouseholdMemberRow(
@@ -770,6 +840,8 @@ class HouseholdMemberRow extends DataClass
       displayName: data.displayName.present
           ? data.displayName.value
           : this.displayName,
+      hasIcon: data.hasIcon.present ? data.hasIcon.value : this.hasIcon,
+      iconSeq: data.iconSeq.present ? data.iconSeq.value : this.iconSeq,
     );
   }
 
@@ -783,7 +855,9 @@ class HouseholdMemberRow extends DataClass
           ..write('serverSeq: $serverSeq, ')
           ..write('householdId: $householdId, ')
           ..write('userId: $userId, ')
-          ..write('displayName: $displayName')
+          ..write('displayName: $displayName, ')
+          ..write('hasIcon: $hasIcon, ')
+          ..write('iconSeq: $iconSeq')
           ..write(')'))
         .toString();
   }
@@ -798,6 +872,8 @@ class HouseholdMemberRow extends DataClass
     householdId,
     userId,
     displayName,
+    hasIcon,
+    iconSeq,
   );
   @override
   bool operator ==(Object other) =>
@@ -810,7 +886,9 @@ class HouseholdMemberRow extends DataClass
           other.serverSeq == this.serverSeq &&
           other.householdId == this.householdId &&
           other.userId == this.userId &&
-          other.displayName == this.displayName);
+          other.displayName == this.displayName &&
+          other.hasIcon == this.hasIcon &&
+          other.iconSeq == this.iconSeq);
 }
 
 class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
@@ -822,6 +900,8 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
   final Value<String> householdId;
   final Value<String?> userId;
   final Value<String?> displayName;
+  final Value<bool> hasIcon;
+  final Value<int?> iconSeq;
   final Value<int> rowid;
   const HouseholdMembersCompanion({
     this.id = const Value.absent(),
@@ -832,6 +912,8 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
     this.householdId = const Value.absent(),
     this.userId = const Value.absent(),
     this.displayName = const Value.absent(),
+    this.hasIcon = const Value.absent(),
+    this.iconSeq = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   HouseholdMembersCompanion.insert({
@@ -843,6 +925,8 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
     required String householdId,
     this.userId = const Value.absent(),
     this.displayName = const Value.absent(),
+    this.hasIcon = const Value.absent(),
+    this.iconSeq = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        createdAt = Value(createdAt),
@@ -857,6 +941,8 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
     Expression<String>? householdId,
     Expression<String>? userId,
     Expression<String>? displayName,
+    Expression<bool>? hasIcon,
+    Expression<int>? iconSeq,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -868,6 +954,8 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
       if (householdId != null) 'household_id': householdId,
       if (userId != null) 'user_id': userId,
       if (displayName != null) 'display_name': displayName,
+      if (hasIcon != null) 'has_icon': hasIcon,
+      if (iconSeq != null) 'icon_seq': iconSeq,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -881,6 +969,8 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
     Value<String>? householdId,
     Value<String?>? userId,
     Value<String?>? displayName,
+    Value<bool>? hasIcon,
+    Value<int?>? iconSeq,
     Value<int>? rowid,
   }) {
     return HouseholdMembersCompanion(
@@ -892,6 +982,8 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
       householdId: householdId ?? this.householdId,
       userId: userId ?? this.userId,
       displayName: displayName ?? this.displayName,
+      hasIcon: hasIcon ?? this.hasIcon,
+      iconSeq: iconSeq ?? this.iconSeq,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -923,6 +1015,12 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
     if (displayName.present) {
       map['display_name'] = Variable<String>(displayName.value);
     }
+    if (hasIcon.present) {
+      map['has_icon'] = Variable<bool>(hasIcon.value);
+    }
+    if (iconSeq.present) {
+      map['icon_seq'] = Variable<int>(iconSeq.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -940,6 +1038,8 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
           ..write('householdId: $householdId, ')
           ..write('userId: $userId, ')
           ..write('displayName: $displayName, ')
+          ..write('hasIcon: $hasIcon, ')
+          ..write('iconSeq: $iconSeq, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1079,6 +1179,21 @@ class $CatsTable extends Cats with TableInfo<$CatsTable, CatRow> {
     requiredDuringInsert: false,
     defaultValue: const Constant('active'),
   );
+  static const VerificationMeta _hasIconMeta = const VerificationMeta(
+    'hasIcon',
+  );
+  @override
+  late final GeneratedColumn<bool> hasIcon = GeneratedColumn<bool>(
+    'has_icon',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("has_icon" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1093,6 +1208,7 @@ class $CatsTable extends Cats with TableInfo<$CatsTable, CatRow> {
     conditions,
     iconPath,
     status,
+    hasIcon,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1188,6 +1304,12 @@ class $CatsTable extends Cats with TableInfo<$CatsTable, CatRow> {
         status.isAcceptableOrUnknown(data['status']!, _statusMeta),
       );
     }
+    if (data.containsKey('has_icon')) {
+      context.handle(
+        _hasIconMeta,
+        hasIcon.isAcceptableOrUnknown(data['has_icon']!, _hasIconMeta),
+      );
+    }
     return context;
   }
 
@@ -1245,6 +1367,10 @@ class $CatsTable extends Cats with TableInfo<$CatsTable, CatRow> {
         DriftSqlType.string,
         data['${effectivePrefix}status'],
       )!,
+      hasIcon: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}has_icon'],
+      )!,
     );
   }
 
@@ -1271,6 +1397,9 @@ class CatRow extends DataClass implements Insertable<CatRow> {
 
   /// `active` または `farewell`（お別れ）
   final String status;
+
+  /// サーバーにアイコンがあるか（同期で受け取る）。版は猫の行の通し番号（serverSeq）を使う
+  final bool hasIcon;
   const CatRow({
     required this.id,
     required this.createdAt,
@@ -1284,6 +1413,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
     this.conditions,
     this.iconPath,
     required this.status,
+    required this.hasIcon,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1312,6 +1442,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
       map['icon_path'] = Variable<String>(iconPath);
     }
     map['status'] = Variable<String>(status);
+    map['has_icon'] = Variable<bool>(hasIcon);
     return map;
   }
 
@@ -1339,6 +1470,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
           ? const Value.absent()
           : Value(iconPath),
       status: Value(status),
+      hasIcon: Value(hasIcon),
     );
   }
 
@@ -1360,6 +1492,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
       conditions: serializer.fromJson<String?>(json['conditions']),
       iconPath: serializer.fromJson<String?>(json['iconPath']),
       status: serializer.fromJson<String>(json['status']),
+      hasIcon: serializer.fromJson<bool>(json['hasIcon']),
     );
   }
   @override
@@ -1378,6 +1511,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
       'conditions': serializer.toJson<String?>(conditions),
       'iconPath': serializer.toJson<String?>(iconPath),
       'status': serializer.toJson<String>(status),
+      'hasIcon': serializer.toJson<bool>(hasIcon),
     };
   }
 
@@ -1394,6 +1528,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
     Value<String?> conditions = const Value.absent(),
     Value<String?> iconPath = const Value.absent(),
     String? status,
+    bool? hasIcon,
   }) => CatRow(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -1407,6 +1542,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
     conditions: conditions.present ? conditions.value : this.conditions,
     iconPath: iconPath.present ? iconPath.value : this.iconPath,
     status: status ?? this.status,
+    hasIcon: hasIcon ?? this.hasIcon,
   );
   CatRow copyWithCompanion(CatsCompanion data) {
     return CatRow(
@@ -1426,6 +1562,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
           : this.conditions,
       iconPath: data.iconPath.present ? data.iconPath.value : this.iconPath,
       status: data.status.present ? data.status.value : this.status,
+      hasIcon: data.hasIcon.present ? data.hasIcon.value : this.hasIcon,
     );
   }
 
@@ -1443,7 +1580,8 @@ class CatRow extends DataClass implements Insertable<CatRow> {
           ..write('sex: $sex, ')
           ..write('conditions: $conditions, ')
           ..write('iconPath: $iconPath, ')
-          ..write('status: $status')
+          ..write('status: $status, ')
+          ..write('hasIcon: $hasIcon')
           ..write(')'))
         .toString();
   }
@@ -1462,6 +1600,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
     conditions,
     iconPath,
     status,
+    hasIcon,
   );
   @override
   bool operator ==(Object other) =>
@@ -1478,7 +1617,8 @@ class CatRow extends DataClass implements Insertable<CatRow> {
           other.sex == this.sex &&
           other.conditions == this.conditions &&
           other.iconPath == this.iconPath &&
-          other.status == this.status);
+          other.status == this.status &&
+          other.hasIcon == this.hasIcon);
 }
 
 class CatsCompanion extends UpdateCompanion<CatRow> {
@@ -1494,6 +1634,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
   final Value<String?> conditions;
   final Value<String?> iconPath;
   final Value<String> status;
+  final Value<bool> hasIcon;
   final Value<int> rowid;
   const CatsCompanion({
     this.id = const Value.absent(),
@@ -1508,6 +1649,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
     this.conditions = const Value.absent(),
     this.iconPath = const Value.absent(),
     this.status = const Value.absent(),
+    this.hasIcon = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CatsCompanion.insert({
@@ -1523,6 +1665,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
     this.conditions = const Value.absent(),
     this.iconPath = const Value.absent(),
     this.status = const Value.absent(),
+    this.hasIcon = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        createdAt = Value(createdAt),
@@ -1542,6 +1685,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
     Expression<String>? conditions,
     Expression<String>? iconPath,
     Expression<String>? status,
+    Expression<bool>? hasIcon,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1557,6 +1701,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
       if (conditions != null) 'conditions': conditions,
       if (iconPath != null) 'icon_path': iconPath,
       if (status != null) 'status': status,
+      if (hasIcon != null) 'has_icon': hasIcon,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1574,6 +1719,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
     Value<String?>? conditions,
     Value<String?>? iconPath,
     Value<String>? status,
+    Value<bool>? hasIcon,
     Value<int>? rowid,
   }) {
     return CatsCompanion(
@@ -1589,6 +1735,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
       conditions: conditions ?? this.conditions,
       iconPath: iconPath ?? this.iconPath,
       status: status ?? this.status,
+      hasIcon: hasIcon ?? this.hasIcon,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1632,6 +1779,9 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
     if (status.present) {
       map['status'] = Variable<String>(status.value);
     }
+    if (hasIcon.present) {
+      map['has_icon'] = Variable<bool>(hasIcon.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1653,6 +1803,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
           ..write('conditions: $conditions, ')
           ..write('iconPath: $iconPath, ')
           ..write('status: $status, ')
+          ..write('hasIcon: $hasIcon, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5736,6 +5887,8 @@ typedef $$HouseholdMembersTableCreateCompanionBuilder =
       required String householdId,
       Value<String?> userId,
       Value<String?> displayName,
+      Value<bool> hasIcon,
+      Value<int?> iconSeq,
       Value<int> rowid,
     });
 typedef $$HouseholdMembersTableUpdateCompanionBuilder =
@@ -5748,6 +5901,8 @@ typedef $$HouseholdMembersTableUpdateCompanionBuilder =
       Value<String> householdId,
       Value<String?> userId,
       Value<String?> displayName,
+      Value<bool> hasIcon,
+      Value<int?> iconSeq,
       Value<int> rowid,
     });
 
@@ -5797,6 +5952,16 @@ class $$HouseholdMembersTableFilterComposer
 
   ColumnFilters<String> get displayName => $composableBuilder(
     column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasIcon => $composableBuilder(
+    column: $table.hasIcon,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get iconSeq => $composableBuilder(
+    column: $table.iconSeq,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5849,6 +6014,16 @@ class $$HouseholdMembersTableOrderingComposer
     column: $table.displayName,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get hasIcon => $composableBuilder(
+    column: $table.hasIcon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get iconSeq => $composableBuilder(
+    column: $table.iconSeq,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$HouseholdMembersTableAnnotationComposer
@@ -5887,6 +6062,12 @@ class $$HouseholdMembersTableAnnotationComposer
     column: $table.displayName,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get hasIcon =>
+      $composableBuilder(column: $table.hasIcon, builder: (column) => column);
+
+  GeneratedColumn<int> get iconSeq =>
+      $composableBuilder(column: $table.iconSeq, builder: (column) => column);
 }
 
 class $$HouseholdMembersTableTableManager
@@ -5934,6 +6115,8 @@ class $$HouseholdMembersTableTableManager
                 Value<String> householdId = const Value.absent(),
                 Value<String?> userId = const Value.absent(),
                 Value<String?> displayName = const Value.absent(),
+                Value<bool> hasIcon = const Value.absent(),
+                Value<int?> iconSeq = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => HouseholdMembersCompanion(
                 id: id,
@@ -5944,6 +6127,8 @@ class $$HouseholdMembersTableTableManager
                 householdId: householdId,
                 userId: userId,
                 displayName: displayName,
+                hasIcon: hasIcon,
+                iconSeq: iconSeq,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5956,6 +6141,8 @@ class $$HouseholdMembersTableTableManager
                 required String householdId,
                 Value<String?> userId = const Value.absent(),
                 Value<String?> displayName = const Value.absent(),
+                Value<bool> hasIcon = const Value.absent(),
+                Value<int?> iconSeq = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => HouseholdMembersCompanion.insert(
                 id: id,
@@ -5966,6 +6153,8 @@ class $$HouseholdMembersTableTableManager
                 householdId: householdId,
                 userId: userId,
                 displayName: displayName,
+                hasIcon: hasIcon,
+                iconSeq: iconSeq,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -6021,6 +6210,7 @@ typedef $$CatsTableCreateCompanionBuilder = CatsCompanion Function({
   Value<String?> conditions,
   Value<String?> iconPath,
   Value<String> status,
+  Value<bool> hasIcon,
   Value<int> rowid,
 });
 typedef $$CatsTableUpdateCompanionBuilder = CatsCompanion Function({
@@ -6036,6 +6226,7 @@ typedef $$CatsTableUpdateCompanionBuilder = CatsCompanion Function({
   Value<String?> conditions,
   Value<String?> iconPath,
   Value<String> status,
+  Value<bool> hasIcon,
   Value<int> rowid,
 });
 
@@ -6140,6 +6331,11 @@ class $$CatsTableFilterComposer extends Composer<_$AppDatabase, $CatsTable> {
 
   ColumnFilters<String> get status => $composableBuilder(
     column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hasIcon => $composableBuilder(
+    column: $table.hasIcon,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -6255,6 +6451,11 @@ class $$CatsTableOrderingComposer extends Composer<_$AppDatabase, $CatsTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get hasIcon => $composableBuilder(
+    column: $table.hasIcon,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$HouseholdsTableOrderingComposer get householdId {
     final $$HouseholdsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -6322,6 +6523,9 @@ class $$CatsTableAnnotationComposer
 
   GeneratedColumn<String> get status =>
       $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<bool> get hasIcon =>
+      $composableBuilder(column: $table.hasIcon, builder: (column) => column);
 
   $$HouseholdsTableAnnotationComposer get householdId {
     final $$HouseholdsTableAnnotationComposer composer = $composerBuilder(
@@ -6412,6 +6616,7 @@ class $$CatsTableTableManager
                 Value<String?> conditions = const Value.absent(),
                 Value<String?> iconPath = const Value.absent(),
                 Value<String> status = const Value.absent(),
+                Value<bool> hasIcon = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CatsCompanion(
                 id: id,
@@ -6426,6 +6631,7 @@ class $$CatsTableTableManager
                 conditions: conditions,
                 iconPath: iconPath,
                 status: status,
+                hasIcon: hasIcon,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6442,6 +6648,7 @@ class $$CatsTableTableManager
                 Value<String?> conditions = const Value.absent(),
                 Value<String?> iconPath = const Value.absent(),
                 Value<String> status = const Value.absent(),
+                Value<bool> hasIcon = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CatsCompanion.insert(
                 id: id,
@@ -6456,6 +6663,7 @@ class $$CatsTableTableManager
                 conditions: conditions,
                 iconPath: iconPath,
                 status: status,
+                hasIcon: hasIcon,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

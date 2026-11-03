@@ -11,6 +11,7 @@ import '../features/calendar/domain/calendar_month.dart';
 import '../features/cats/data/cat_repository.dart';
 import '../features/household/data/household_repository.dart';
 import '../features/records/data/record_repository.dart';
+import '../features/icons/icon_repository.dart';
 import '../features/photos/data/photo_picker.dart';
 import '../features/photos/data/photo_repository.dart';
 import '../features/settings/data/settings_repository.dart';
@@ -132,4 +133,12 @@ final logFileSaverProvider = Provider<Future<String> Function(String text)>(
     await file.writeAsString(text, flush: true);
     return file.path;
   },
+);
+
+final iconRepositoryProvider = Provider<IconRepository>(
+  (ref) => IconRepository(
+    ref.watch(databaseProvider),
+    ref.watch(apiClientProvider),
+    ref.watch(photoDirectoryProvider),
+  ),
 );

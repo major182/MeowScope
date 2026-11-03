@@ -38,12 +38,12 @@ class SyncReader {
                     "json_build_object('householdId', household_id, 'userId', user_id,"
                             + " 'displayName', (SELECT display_name FROM users u WHERE u.id = t.user_id))",
                     "(household_id IN (" + MY_HOUSEHOLDS + ") OR user_id = :user)"),
-            new Source("users", "json_build_object('displayName', display_name)",
+            new Source("users", "json_build_object('displayName', display_name, 'hasIcon', icon_path IS NOT NULL)",
                     "id IN (SELECT user_id FROM household_members WHERE deleted_at IS NULL AND household_id IN ("
                             + MY_HOUSEHOLDS + "))"),
             new Source("cats",
                     "json_build_object('householdId', household_id, 'name', name, 'birthDate', birth_date,"
-                            + " 'sex', sex, 'conditions', conditions, 'status', status)",
+                            + " 'sex', sex, 'conditions', conditions, 'status', status, 'hasIcon', icon_path IS NOT NULL)",
                     "household_id IN (" + MY_HOUSEHOLDS + ")"),
             new Source("record_types",
                     "json_build_object('householdId', household_id, 'name', name, 'icon', icon, 'kind', kind,"
