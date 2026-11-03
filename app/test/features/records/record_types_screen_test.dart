@@ -32,7 +32,7 @@ void main() {
     householdId: 'h1',
     userId: 'u1',
     name: name,
-    icon: CustomIcon.bath.value,
+    icon: CustomIcon.treat.value,
   );
 
   Future<List<RecordTypeRow>> customTypes() =>
@@ -115,7 +115,10 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
     expect(find.widgetWithText(OutlinedButton, '爪切り'), findsOneWidget);
-    expect(find.byIcon(Icons.content_cut), findsOneWidget);
+    expect(
+      find.image(const AssetImage('assets/icons/custom_nail.png')),
+      findsWidgets,
+    );
     await close(tester);
   });
 
@@ -141,17 +144,17 @@ void main() {
     expect(find.widgetWithText(TextFormField, '通院'), findsOneWidget);
     expect(
       tester
-          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'お風呂'))
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'おやつ'))
           .selected,
       isTrue,
     );
-    await tester.tap(find.widgetWithText(ChoiceChip, '星'));
+    await tester.tap(find.widgetWithText(ChoiceChip, 'その他'));
     await tester.tap(find.widgetWithText(TextButton, '保存'));
     await tester.pumpAndSettle();
 
     final saved = (await customTypes()).single;
     expect(saved.name, '通院');
-    expect(saved.icon, 'custom_star');
+    expect(saved.icon, 'custom_other');
     await close(tester);
   });
 

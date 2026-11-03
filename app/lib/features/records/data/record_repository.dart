@@ -18,6 +18,7 @@ class RecordEntry {
     required this.hasMemo,
     required this.recordTypeId,
     this.valueNumber,
+    this.typeIcon,
   });
 
   final String id;
@@ -36,6 +37,9 @@ class RecordEntry {
 
   /// 体重などの数値
   final double? valueNumber;
+
+  /// 項目のアイコンの値（record_types.icon）
+  final String? typeIcon;
 }
 
 /// 記録の詳細の画面に出す内容
@@ -310,6 +314,7 @@ class RecordRepository {
             hasMemo: row.readTable(r).memo != null,
             recordTypeId: row.readTable(r).recordTypeId,
             valueNumber: row.readTable(r).valueNumber,
+            typeIcon: row.readTable(t).icon,
           ),
       ],
     );

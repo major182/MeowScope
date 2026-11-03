@@ -166,7 +166,7 @@ class _RecordTypeFormScreenState extends ConsumerState<RecordTypeFormScreen> {
               children: [
                 for (final i in CustomIcon.values)
                   ChoiceChip(
-                    avatar: Icon(customIconData(i)),
+                    avatar: Image.asset('assets/icons/${i.value}.png'),
                     label: Text(i.label),
                     selected: _icon == i,
                     onSelected: (_) => setState(() => _icon = i),

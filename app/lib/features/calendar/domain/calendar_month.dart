@@ -38,21 +38,8 @@ DateTime dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 bool isSameDay(DateTime a, DateTime b) =>
     a.year == b.year && a.month == b.month && a.day == b.day;
 
-/// カレンダーのセルに出す項目の印。カレンダー用のイラストが届くまでの仮の文字
-String kindMark(String kind, String name) => switch (kind) {
-  'food' => '食',
-  'water' => '水',
-  'medicine' => '薬',
-  'urine' => '尿',
-  'stool' => '便',
-  'vomit' => '吐',
-  'weight' => '体',
-  'brushing' => 'ブ',
-  _ => name.isEmpty ? '？' : String.fromCharCode(name.runes.first),
-};
-
-/// メモありの印
-const memoMark = 'メ';
+/// カレンダーのセルに出す印（イラストの場所と、読み上げに使う名前）
+typedef CalendarMark = ({String asset, String label});
 
 /// 標準の項目の並び順（印を並べる順）。独自の項目は後ろ
 int kindOrder(String kind) {
