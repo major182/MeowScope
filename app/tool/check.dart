@@ -22,11 +22,20 @@ Future<void> run(String command, List<String> args, {String? dir}) async {
 }
 
 /// lcov.info の LF（対象の行）と LH（通った行）から割合を求める
+/// 自動生成のコード（*.g.dart）は書いたコードではないので除く
+/// drift の表の定義（tables.dart）も、生成の元になるだけで実行されないので除く
 double lineCoverage(String lcov) {
   var found = 0;
   var hit = 0;
+  var generated = false;
   for (final line in lcov.split('\n')) {
-    if (line.startsWith('LF:')) {
+    if (line.startsWith('SF:')) {
+      final path = line.trim().replaceAll(r'\', '/');
+      generated =
+          path.endsWith('.g.dart') || path.endsWith('lib/core/db/tables.dart');
+    } else if (generated) {
+      continue;
+    } else if (line.startsWith('LF:')) {
       found += int.parse(line.substring(3).trim());
     } else if (line.startsWith('LH:')) {
       hit += int.parse(line.substring(3).trim());
