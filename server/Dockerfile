@@ -12,7 +12,9 @@ RUN ./gradlew --no-daemon bootJar
 FROM eclipse-temurin:25.0.5_8-jre
 WORKDIR /app
 # 管理者の権限で動かさない
-RUN useradd --system --uid 10001 meowscope
+RUN useradd --system --uid 10001 meowscope \
+    # 写真の保存先。ボリュームを初めて付けたとき、この持ち主が引き継がれる
+    && mkdir -p /data/photos && chown meowscope /data/photos
 COPY --from=build /src/build/libs/*.jar app.jar
 USER meowscope
 EXPOSE 8080

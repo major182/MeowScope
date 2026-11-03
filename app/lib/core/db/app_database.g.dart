@@ -3138,6 +3138,579 @@ class RecordsCompanion extends UpdateCompanion<RecordRow> {
   }
 }
 
+class $RecordPhotosTable extends RecordPhotos
+    with TableInfo<$RecordPhotosTable, RecordPhotoRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RecordPhotosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverSeqMeta = const VerificationMeta(
+    'serverSeq',
+  );
+  @override
+  late final GeneratedColumn<int> serverSeq = GeneratedColumn<int>(
+    'server_seq',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _recordIdMeta = const VerificationMeta(
+    'recordId',
+  );
+  @override
+  late final GeneratedColumn<String> recordId = GeneratedColumn<String>(
+    'record_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES records (id)',
+    ),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sizeBytesMeta = const VerificationMeta(
+    'sizeBytes',
+  );
+  @override
+  late final GeneratedColumn<int> sizeBytes = GeneratedColumn<int>(
+    'size_bytes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _uploadedMeta = const VerificationMeta(
+    'uploaded',
+  );
+  @override
+  late final GeneratedColumn<bool> uploaded = GeneratedColumn<bool>(
+    'uploaded',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("uploaded" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    serverSeq,
+    recordId,
+    sortOrder,
+    sizeBytes,
+    uploaded,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'record_photos';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RecordPhotoRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('server_seq')) {
+      context.handle(
+        _serverSeqMeta,
+        serverSeq.isAcceptableOrUnknown(data['server_seq']!, _serverSeqMeta),
+      );
+    }
+    if (data.containsKey('record_id')) {
+      context.handle(
+        _recordIdMeta,
+        recordId.isAcceptableOrUnknown(data['record_id']!, _recordIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_recordIdMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    if (data.containsKey('size_bytes')) {
+      context.handle(
+        _sizeBytesMeta,
+        sizeBytes.isAcceptableOrUnknown(data['size_bytes']!, _sizeBytesMeta),
+      );
+    }
+    if (data.containsKey('uploaded')) {
+      context.handle(
+        _uploadedMeta,
+        uploaded.isAcceptableOrUnknown(data['uploaded']!, _uploadedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  RecordPhotoRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RecordPhotoRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      serverSeq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_seq'],
+      ),
+      recordId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}record_id'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      sizeBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}size_bytes'],
+      ),
+      uploaded: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}uploaded'],
+      )!,
+    );
+  }
+
+  @override
+  $RecordPhotosTable createAlias(String alias) {
+    return $RecordPhotosTable(attachedDatabase, alias);
+  }
+}
+
+class RecordPhotoRow extends DataClass implements Insertable<RecordPhotoRow> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  /// サーバーが振る通し番号。端末では作らない
+  final int? serverSeq;
+  final String recordId;
+
+  /// 何枚目か（1〜3）
+  final int sortOrder;
+  final int? sizeBytes;
+
+  /// サーバーへ画像が送られたか。相手の端末は、送られた写真だけを取りに行く
+  final bool uploaded;
+  const RecordPhotoRow({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    this.serverSeq,
+    required this.recordId,
+    required this.sortOrder,
+    this.sizeBytes,
+    required this.uploaded,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || serverSeq != null) {
+      map['server_seq'] = Variable<int>(serverSeq);
+    }
+    map['record_id'] = Variable<String>(recordId);
+    map['sort_order'] = Variable<int>(sortOrder);
+    if (!nullToAbsent || sizeBytes != null) {
+      map['size_bytes'] = Variable<int>(sizeBytes);
+    }
+    map['uploaded'] = Variable<bool>(uploaded);
+    return map;
+  }
+
+  RecordPhotosCompanion toCompanion(bool nullToAbsent) {
+    return RecordPhotosCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      serverSeq: serverSeq == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverSeq),
+      recordId: Value(recordId),
+      sortOrder: Value(sortOrder),
+      sizeBytes: sizeBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sizeBytes),
+      uploaded: Value(uploaded),
+    );
+  }
+
+  factory RecordPhotoRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RecordPhotoRow(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      serverSeq: serializer.fromJson<int?>(json['serverSeq']),
+      recordId: serializer.fromJson<String>(json['recordId']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      sizeBytes: serializer.fromJson<int?>(json['sizeBytes']),
+      uploaded: serializer.fromJson<bool>(json['uploaded']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'serverSeq': serializer.toJson<int?>(serverSeq),
+      'recordId': serializer.toJson<String>(recordId),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'sizeBytes': serializer.toJson<int?>(sizeBytes),
+      'uploaded': serializer.toJson<bool>(uploaded),
+    };
+  }
+
+  RecordPhotoRow copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<int?> serverSeq = const Value.absent(),
+    String? recordId,
+    int? sortOrder,
+    Value<int?> sizeBytes = const Value.absent(),
+    bool? uploaded,
+  }) => RecordPhotoRow(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    serverSeq: serverSeq.present ? serverSeq.value : this.serverSeq,
+    recordId: recordId ?? this.recordId,
+    sortOrder: sortOrder ?? this.sortOrder,
+    sizeBytes: sizeBytes.present ? sizeBytes.value : this.sizeBytes,
+    uploaded: uploaded ?? this.uploaded,
+  );
+  RecordPhotoRow copyWithCompanion(RecordPhotosCompanion data) {
+    return RecordPhotoRow(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      serverSeq: data.serverSeq.present ? data.serverSeq.value : this.serverSeq,
+      recordId: data.recordId.present ? data.recordId.value : this.recordId,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      sizeBytes: data.sizeBytes.present ? data.sizeBytes.value : this.sizeBytes,
+      uploaded: data.uploaded.present ? data.uploaded.value : this.uploaded,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecordPhotoRow(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverSeq: $serverSeq, ')
+          ..write('recordId: $recordId, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('uploaded: $uploaded')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    serverSeq,
+    recordId,
+    sortOrder,
+    sizeBytes,
+    uploaded,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RecordPhotoRow &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.serverSeq == this.serverSeq &&
+          other.recordId == this.recordId &&
+          other.sortOrder == this.sortOrder &&
+          other.sizeBytes == this.sizeBytes &&
+          other.uploaded == this.uploaded);
+}
+
+class RecordPhotosCompanion extends UpdateCompanion<RecordPhotoRow> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int?> serverSeq;
+  final Value<String> recordId;
+  final Value<int> sortOrder;
+  final Value<int?> sizeBytes;
+  final Value<bool> uploaded;
+  final Value<int> rowid;
+  const RecordPhotosCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.serverSeq = const Value.absent(),
+    this.recordId = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.sizeBytes = const Value.absent(),
+    this.uploaded = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RecordPhotosCompanion.insert({
+    required String id,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.serverSeq = const Value.absent(),
+    required String recordId,
+    required int sortOrder,
+    this.sizeBytes = const Value.absent(),
+    this.uploaded = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt),
+       recordId = Value(recordId),
+       sortOrder = Value(sortOrder);
+  static Insertable<RecordPhotoRow> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? serverSeq,
+    Expression<String>? recordId,
+    Expression<int>? sortOrder,
+    Expression<int>? sizeBytes,
+    Expression<bool>? uploaded,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (serverSeq != null) 'server_seq': serverSeq,
+      if (recordId != null) 'record_id': recordId,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (sizeBytes != null) 'size_bytes': sizeBytes,
+      if (uploaded != null) 'uploaded': uploaded,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RecordPhotosCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int?>? serverSeq,
+    Value<String>? recordId,
+    Value<int>? sortOrder,
+    Value<int?>? sizeBytes,
+    Value<bool>? uploaded,
+    Value<int>? rowid,
+  }) {
+    return RecordPhotosCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      serverSeq: serverSeq ?? this.serverSeq,
+      recordId: recordId ?? this.recordId,
+      sortOrder: sortOrder ?? this.sortOrder,
+      sizeBytes: sizeBytes ?? this.sizeBytes,
+      uploaded: uploaded ?? this.uploaded,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (serverSeq.present) {
+      map['server_seq'] = Variable<int>(serverSeq.value);
+    }
+    if (recordId.present) {
+      map['record_id'] = Variable<String>(recordId.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (sizeBytes.present) {
+      map['size_bytes'] = Variable<int>(sizeBytes.value);
+    }
+    if (uploaded.present) {
+      map['uploaded'] = Variable<bool>(uploaded.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RecordPhotosCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverSeq: $serverSeq, ')
+          ..write('recordId: $recordId, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('sizeBytes: $sizeBytes, ')
+          ..write('uploaded: $uploaded, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $AppStatesTable extends AppStates
     with TableInfo<$AppStatesTable, AppStateRow> {
   @override
@@ -3807,6 +4380,542 @@ class PendingChangesCompanion extends UpdateCompanion<PendingChangeRow> {
   }
 }
 
+class $PendingPhotosTable extends PendingPhotos
+    with TableInfo<$PendingPhotosTable, PendingPhotoRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PendingPhotosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _photoIdMeta = const VerificationMeta(
+    'photoId',
+  );
+  @override
+  late final GeneratedColumn<String> photoId = GeneratedColumn<String>(
+    'photo_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localPathMeta = const VerificationMeta(
+    'localPath',
+  );
+  @override
+  late final GeneratedColumn<String> localPath = GeneratedColumn<String>(
+    'local_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [photoId, userId, localPath];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pending_photos';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PendingPhotoRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('photo_id')) {
+      context.handle(
+        _photoIdMeta,
+        photoId.isAcceptableOrUnknown(data['photo_id']!, _photoIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_photoIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('local_path')) {
+      context.handle(
+        _localPathMeta,
+        localPath.isAcceptableOrUnknown(data['local_path']!, _localPathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_localPathMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {photoId};
+  @override
+  PendingPhotoRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PendingPhotoRow(
+      photoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      localPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_path'],
+      )!,
+    );
+  }
+
+  @override
+  $PendingPhotosTable createAlias(String alias) {
+    return $PendingPhotosTable(attachedDatabase, alias);
+  }
+}
+
+class PendingPhotoRow extends DataClass implements Insertable<PendingPhotoRow> {
+  final String photoId;
+  final String userId;
+  final String localPath;
+  const PendingPhotoRow({
+    required this.photoId,
+    required this.userId,
+    required this.localPath,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['photo_id'] = Variable<String>(photoId);
+    map['user_id'] = Variable<String>(userId);
+    map['local_path'] = Variable<String>(localPath);
+    return map;
+  }
+
+  PendingPhotosCompanion toCompanion(bool nullToAbsent) {
+    return PendingPhotosCompanion(
+      photoId: Value(photoId),
+      userId: Value(userId),
+      localPath: Value(localPath),
+    );
+  }
+
+  factory PendingPhotoRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PendingPhotoRow(
+      photoId: serializer.fromJson<String>(json['photoId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      localPath: serializer.fromJson<String>(json['localPath']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'photoId': serializer.toJson<String>(photoId),
+      'userId': serializer.toJson<String>(userId),
+      'localPath': serializer.toJson<String>(localPath),
+    };
+  }
+
+  PendingPhotoRow copyWith({
+    String? photoId,
+    String? userId,
+    String? localPath,
+  }) => PendingPhotoRow(
+    photoId: photoId ?? this.photoId,
+    userId: userId ?? this.userId,
+    localPath: localPath ?? this.localPath,
+  );
+  PendingPhotoRow copyWithCompanion(PendingPhotosCompanion data) {
+    return PendingPhotoRow(
+      photoId: data.photoId.present ? data.photoId.value : this.photoId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      localPath: data.localPath.present ? data.localPath.value : this.localPath,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingPhotoRow(')
+          ..write('photoId: $photoId, ')
+          ..write('userId: $userId, ')
+          ..write('localPath: $localPath')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(photoId, userId, localPath);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PendingPhotoRow &&
+          other.photoId == this.photoId &&
+          other.userId == this.userId &&
+          other.localPath == this.localPath);
+}
+
+class PendingPhotosCompanion extends UpdateCompanion<PendingPhotoRow> {
+  final Value<String> photoId;
+  final Value<String> userId;
+  final Value<String> localPath;
+  final Value<int> rowid;
+  const PendingPhotosCompanion({
+    this.photoId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.localPath = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PendingPhotosCompanion.insert({
+    required String photoId,
+    required String userId,
+    required String localPath,
+    this.rowid = const Value.absent(),
+  }) : photoId = Value(photoId),
+       userId = Value(userId),
+       localPath = Value(localPath);
+  static Insertable<PendingPhotoRow> custom({
+    Expression<String>? photoId,
+    Expression<String>? userId,
+    Expression<String>? localPath,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (photoId != null) 'photo_id': photoId,
+      if (userId != null) 'user_id': userId,
+      if (localPath != null) 'local_path': localPath,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PendingPhotosCompanion copyWith({
+    Value<String>? photoId,
+    Value<String>? userId,
+    Value<String>? localPath,
+    Value<int>? rowid,
+  }) {
+    return PendingPhotosCompanion(
+      photoId: photoId ?? this.photoId,
+      userId: userId ?? this.userId,
+      localPath: localPath ?? this.localPath,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (photoId.present) {
+      map['photo_id'] = Variable<String>(photoId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (localPath.present) {
+      map['local_path'] = Variable<String>(localPath.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PendingPhotosCompanion(')
+          ..write('photoId: $photoId, ')
+          ..write('userId: $userId, ')
+          ..write('localPath: $localPath, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalPhotosTable extends LocalPhotos
+    with TableInfo<$LocalPhotosTable, LocalPhotoRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalPhotosTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _photoIdMeta = const VerificationMeta(
+    'photoId',
+  );
+  @override
+  late final GeneratedColumn<String> photoId = GeneratedColumn<String>(
+    'photo_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localPathMeta = const VerificationMeta(
+    'localPath',
+  );
+  @override
+  late final GeneratedColumn<String> localPath = GeneratedColumn<String>(
+    'local_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _savedAtMeta = const VerificationMeta(
+    'savedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> savedAt = GeneratedColumn<DateTime>(
+    'saved_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [photoId, localPath, savedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_photos';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalPhotoRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('photo_id')) {
+      context.handle(
+        _photoIdMeta,
+        photoId.isAcceptableOrUnknown(data['photo_id']!, _photoIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_photoIdMeta);
+    }
+    if (data.containsKey('local_path')) {
+      context.handle(
+        _localPathMeta,
+        localPath.isAcceptableOrUnknown(data['local_path']!, _localPathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_localPathMeta);
+    }
+    if (data.containsKey('saved_at')) {
+      context.handle(
+        _savedAtMeta,
+        savedAt.isAcceptableOrUnknown(data['saved_at']!, _savedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_savedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {photoId};
+  @override
+  LocalPhotoRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalPhotoRow(
+      photoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}photo_id'],
+      )!,
+      localPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_path'],
+      )!,
+      savedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}saved_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalPhotosTable createAlias(String alias) {
+    return $LocalPhotosTable(attachedDatabase, alias);
+  }
+}
+
+class LocalPhotoRow extends DataClass implements Insertable<LocalPhotoRow> {
+  final String photoId;
+  final String localPath;
+  final DateTime savedAt;
+  const LocalPhotoRow({
+    required this.photoId,
+    required this.localPath,
+    required this.savedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['photo_id'] = Variable<String>(photoId);
+    map['local_path'] = Variable<String>(localPath);
+    map['saved_at'] = Variable<DateTime>(savedAt);
+    return map;
+  }
+
+  LocalPhotosCompanion toCompanion(bool nullToAbsent) {
+    return LocalPhotosCompanion(
+      photoId: Value(photoId),
+      localPath: Value(localPath),
+      savedAt: Value(savedAt),
+    );
+  }
+
+  factory LocalPhotoRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalPhotoRow(
+      photoId: serializer.fromJson<String>(json['photoId']),
+      localPath: serializer.fromJson<String>(json['localPath']),
+      savedAt: serializer.fromJson<DateTime>(json['savedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'photoId': serializer.toJson<String>(photoId),
+      'localPath': serializer.toJson<String>(localPath),
+      'savedAt': serializer.toJson<DateTime>(savedAt),
+    };
+  }
+
+  LocalPhotoRow copyWith({
+    String? photoId,
+    String? localPath,
+    DateTime? savedAt,
+  }) => LocalPhotoRow(
+    photoId: photoId ?? this.photoId,
+    localPath: localPath ?? this.localPath,
+    savedAt: savedAt ?? this.savedAt,
+  );
+  LocalPhotoRow copyWithCompanion(LocalPhotosCompanion data) {
+    return LocalPhotoRow(
+      photoId: data.photoId.present ? data.photoId.value : this.photoId,
+      localPath: data.localPath.present ? data.localPath.value : this.localPath,
+      savedAt: data.savedAt.present ? data.savedAt.value : this.savedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalPhotoRow(')
+          ..write('photoId: $photoId, ')
+          ..write('localPath: $localPath, ')
+          ..write('savedAt: $savedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(photoId, localPath, savedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalPhotoRow &&
+          other.photoId == this.photoId &&
+          other.localPath == this.localPath &&
+          other.savedAt == this.savedAt);
+}
+
+class LocalPhotosCompanion extends UpdateCompanion<LocalPhotoRow> {
+  final Value<String> photoId;
+  final Value<String> localPath;
+  final Value<DateTime> savedAt;
+  final Value<int> rowid;
+  const LocalPhotosCompanion({
+    this.photoId = const Value.absent(),
+    this.localPath = const Value.absent(),
+    this.savedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalPhotosCompanion.insert({
+    required String photoId,
+    required String localPath,
+    required DateTime savedAt,
+    this.rowid = const Value.absent(),
+  }) : photoId = Value(photoId),
+       localPath = Value(localPath),
+       savedAt = Value(savedAt);
+  static Insertable<LocalPhotoRow> custom({
+    Expression<String>? photoId,
+    Expression<String>? localPath,
+    Expression<DateTime>? savedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (photoId != null) 'photo_id': photoId,
+      if (localPath != null) 'local_path': localPath,
+      if (savedAt != null) 'saved_at': savedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalPhotosCompanion copyWith({
+    Value<String>? photoId,
+    Value<String>? localPath,
+    Value<DateTime>? savedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalPhotosCompanion(
+      photoId: photoId ?? this.photoId,
+      localPath: localPath ?? this.localPath,
+      savedAt: savedAt ?? this.savedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (photoId.present) {
+      map['photo_id'] = Variable<String>(photoId.value);
+    }
+    if (localPath.present) {
+      map['local_path'] = Variable<String>(localPath.value);
+    }
+    if (savedAt.present) {
+      map['saved_at'] = Variable<DateTime>(savedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalPhotosCompanion(')
+          ..write('photoId: $photoId, ')
+          ..write('localPath: $localPath, ')
+          ..write('savedAt: $savedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3817,8 +4926,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CatsTable cats = $CatsTable(this);
   late final $RecordTypesTable recordTypes = $RecordTypesTable(this);
   late final $RecordsTable records = $RecordsTable(this);
+  late final $RecordPhotosTable recordPhotos = $RecordPhotosTable(this);
   late final $AppStatesTable appStates = $AppStatesTable(this);
   late final $PendingChangesTable pendingChanges = $PendingChangesTable(this);
+  late final $PendingPhotosTable pendingPhotos = $PendingPhotosTable(this);
+  late final $LocalPhotosTable localPhotos = $LocalPhotosTable(this);
   late final Index recordsCatRecordedAt = Index(
     'records_cat_recorded_at',
     'CREATE INDEX records_cat_recorded_at ON records (cat_id, recorded_at)',
@@ -3833,8 +4945,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     cats,
     recordTypes,
     records,
+    recordPhotos,
     appStates,
     pendingChanges,
+    pendingPhotos,
+    localPhotos,
     recordsCatRecordedAt,
   ];
 }
@@ -5652,6 +6767,24 @@ final class $$RecordsTableReferences
       manager.$state.copyWith(prefetchedData: [item]),
     );
   }
+
+  static MultiTypedResultKey<$RecordPhotosTable, List<RecordPhotoRow>>
+  _recordPhotosRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.recordPhotos,
+    aliasName: 'records__id__record_photos__record_id',
+  );
+
+  $$RecordPhotosTableProcessedTableManager get recordPhotosRefs {
+    final manager = $$RecordPhotosTableTableManager(
+      $_db,
+      $_db.recordPhotos,
+    ).filter((f) => f.recordId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_recordPhotosRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$RecordsTableFilterComposer
@@ -5767,6 +6900,31 @@ class $$RecordsTableFilterComposer
           ),
     );
     return composer;
+  }
+
+  Expression<bool> recordPhotosRefs(
+    Expression<bool> Function($$RecordPhotosTableFilterComposer f) f,
+  ) {
+    final $$RecordPhotosTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recordPhotos,
+      getReferencedColumn: (t) => t.recordId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecordPhotosTableFilterComposer(
+            $db: $db,
+            $table: $db.recordPhotos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
   }
 }
 
@@ -5982,6 +7140,31 @@ class $$RecordsTableAnnotationComposer
     );
     return composer;
   }
+
+  Expression<T> recordPhotosRefs<T extends Object>(
+    Expression<T> Function($$RecordPhotosTableAnnotationComposer a) f,
+  ) {
+    final $$RecordPhotosTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.recordPhotos,
+      getReferencedColumn: (t) => t.recordId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecordPhotosTableAnnotationComposer(
+            $db: $db,
+            $table: $db.recordPhotos,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$RecordsTableTableManager
@@ -5997,7 +7180,11 @@ class $$RecordsTableTableManager
           $$RecordsTableUpdateCompanionBuilder,
           (RecordRow, $$RecordsTableReferences),
           RecordRow,
-          PrefetchHooks Function({bool catId, bool recordTypeId})
+          PrefetchHooks Function({
+            bool catId,
+            bool recordTypeId,
+            bool recordPhotosRefs,
+          })
         > {
   $$RecordsTableTableManager(_$AppDatabase db, $RecordsTable table)
     : super(
@@ -6086,7 +7273,441 @@ class $$RecordsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({catId = false, recordTypeId = false}) {
+          prefetchHooksCallback:
+              ({
+                catId = false,
+                recordTypeId = false,
+                recordPhotosRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (recordPhotosRefs) db.recordPhotos,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (catId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.catId,
+                            referencedTable: $$RecordsTableReferences
+                                ._catIdTable(db),
+                            referencedColumn: $$RecordsTableReferences
+                                ._catIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+                        if (recordTypeId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.recordTypeId,
+                            referencedTable: $$RecordsTableReferences
+                                ._recordTypeIdTable(db),
+                            referencedColumn: $$RecordsTableReferences
+                                ._recordTypeIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (recordPhotosRefs)
+                        await $_getPrefetchedDataByColumns<
+                          RecordRow,
+                          $RecordsTable,
+                          RecordPhotoRow,
+                          $RecordPhotosTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RecordsTableReferences
+                              ._recordPhotosRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RecordsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).recordPhotosRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'record_id',
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$RecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RecordsTable,
+      RecordRow,
+      $$RecordsTableFilterComposer,
+      $$RecordsTableOrderingComposer,
+      $$RecordsTableAnnotationComposer,
+      $$RecordsTableCreateCompanionBuilder,
+      $$RecordsTableUpdateCompanionBuilder,
+      (RecordRow, $$RecordsTableReferences),
+      RecordRow,
+      PrefetchHooks Function({
+        bool catId,
+        bool recordTypeId,
+        bool recordPhotosRefs,
+      })
+    >;
+typedef $$RecordPhotosTableCreateCompanionBuilder =
+    RecordPhotosCompanion Function({
+      required String id,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int?> serverSeq,
+      required String recordId,
+      required int sortOrder,
+      Value<int?> sizeBytes,
+      Value<bool> uploaded,
+      Value<int> rowid,
+    });
+typedef $$RecordPhotosTableUpdateCompanionBuilder =
+    RecordPhotosCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int?> serverSeq,
+      Value<String> recordId,
+      Value<int> sortOrder,
+      Value<int?> sizeBytes,
+      Value<bool> uploaded,
+      Value<int> rowid,
+    });
+
+final class $$RecordPhotosTableReferences
+    extends BaseReferences<_$AppDatabase, $RecordPhotosTable, RecordPhotoRow> {
+  $$RecordPhotosTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $RecordsTable _recordIdTable(_$AppDatabase db) =>
+      db.records.createAlias('record_photos__record_id__records__id');
+
+  $$RecordsTableProcessedTableManager get recordId {
+    final $_column = $_itemColumn<String>('record_id')!;
+
+    final manager = $$RecordsTableTableManager(
+      $_db,
+      $_db.records,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_recordIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$RecordPhotosTableFilterComposer
+    extends Composer<_$AppDatabase, $RecordPhotosTable> {
+  $$RecordPhotosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverSeq => $composableBuilder(
+    column: $table.serverSeq,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get uploaded => $composableBuilder(
+    column: $table.uploaded,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$RecordsTableFilterComposer get recordId {
+    final $$RecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recordId,
+      referencedTable: $db.records,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.records,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecordPhotosTableOrderingComposer
+    extends Composer<_$AppDatabase, $RecordPhotosTable> {
+  $$RecordPhotosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverSeq => $composableBuilder(
+    column: $table.serverSeq,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sizeBytes => $composableBuilder(
+    column: $table.sizeBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get uploaded => $composableBuilder(
+    column: $table.uploaded,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$RecordsTableOrderingComposer get recordId {
+    final $$RecordsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recordId,
+      referencedTable: $db.records,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecordsTableOrderingComposer(
+            $db: $db,
+            $table: $db.records,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecordPhotosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RecordPhotosTable> {
+  $$RecordPhotosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get serverSeq =>
+      $composableBuilder(column: $table.serverSeq, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<int> get sizeBytes =>
+      $composableBuilder(column: $table.sizeBytes, builder: (column) => column);
+
+  GeneratedColumn<bool> get uploaded =>
+      $composableBuilder(column: $table.uploaded, builder: (column) => column);
+
+  $$RecordsTableAnnotationComposer get recordId {
+    final $$RecordsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recordId,
+      referencedTable: $db.records,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecordsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.records,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RecordPhotosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RecordPhotosTable,
+          RecordPhotoRow,
+          $$RecordPhotosTableFilterComposer,
+          $$RecordPhotosTableOrderingComposer,
+          $$RecordPhotosTableAnnotationComposer,
+          $$RecordPhotosTableCreateCompanionBuilder,
+          $$RecordPhotosTableUpdateCompanionBuilder,
+          (RecordPhotoRow, $$RecordPhotosTableReferences),
+          RecordPhotoRow,
+          PrefetchHooks Function({bool recordId})
+        > {
+  $$RecordPhotosTableTableManager(_$AppDatabase db, $RecordPhotosTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RecordPhotosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RecordPhotosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RecordPhotosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int?> serverSeq = const Value.absent(),
+                Value<String> recordId = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int?> sizeBytes = const Value.absent(),
+                Value<bool> uploaded = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecordPhotosCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                serverSeq: serverSeq,
+                recordId: recordId,
+                sortOrder: sortOrder,
+                sizeBytes: sizeBytes,
+                uploaded: uploaded,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int?> serverSeq = const Value.absent(),
+                required String recordId,
+                required int sortOrder,
+                Value<int?> sizeBytes = const Value.absent(),
+                Value<bool> uploaded = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RecordPhotosCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                serverSeq: serverSeq,
+                recordId: recordId,
+                sortOrder: sortOrder,
+                sizeBytes: sizeBytes,
+                uploaded: uploaded,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RecordPhotosTable, RecordPhotoRow>(table),
+                  $$RecordPhotosTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({recordId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
@@ -6106,26 +7727,14 @@ class $$RecordsTableTableManager
                       dynamic
                     >
                   >(state) {
-                    if (catId) {
+                    if (recordId) {
                       state = state.withJoin(
                         currentTable: table,
-                        currentColumn: table.catId,
-                        referencedTable: $$RecordsTableReferences._catIdTable(
-                          db,
-                        ),
-                        referencedColumn: $$RecordsTableReferences
-                            ._catIdTable(db)
-                            .id,
-                      ) as T;
-                    }
-                    if (recordTypeId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.recordTypeId,
-                        referencedTable: $$RecordsTableReferences
-                            ._recordTypeIdTable(db),
-                        referencedColumn: $$RecordsTableReferences
-                            ._recordTypeIdTable(db)
+                        currentColumn: table.recordId,
+                        referencedTable: $$RecordPhotosTableReferences
+                            ._recordIdTable(db),
+                        referencedColumn: $$RecordPhotosTableReferences
+                            ._recordIdTable(db)
                             .id,
                       ) as T;
                     }
@@ -6141,19 +7750,19 @@ class $$RecordsTableTableManager
       );
 }
 
-typedef $$RecordsTableProcessedTableManager =
+typedef $$RecordPhotosTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
-      $RecordsTable,
-      RecordRow,
-      $$RecordsTableFilterComposer,
-      $$RecordsTableOrderingComposer,
-      $$RecordsTableAnnotationComposer,
-      $$RecordsTableCreateCompanionBuilder,
-      $$RecordsTableUpdateCompanionBuilder,
-      (RecordRow, $$RecordsTableReferences),
-      RecordRow,
-      PrefetchHooks Function({bool catId, bool recordTypeId})
+      $RecordPhotosTable,
+      RecordPhotoRow,
+      $$RecordPhotosTableFilterComposer,
+      $$RecordPhotosTableOrderingComposer,
+      $$RecordPhotosTableAnnotationComposer,
+      $$RecordPhotosTableCreateCompanionBuilder,
+      $$RecordPhotosTableUpdateCompanionBuilder,
+      (RecordPhotoRow, $$RecordPhotosTableReferences),
+      RecordPhotoRow,
+      PrefetchHooks Function({bool recordId})
     >;
 typedef $$AppStatesTableCreateCompanionBuilder = AppStatesCompanion Function({
   required String key,
@@ -6544,6 +8153,348 @@ typedef $$PendingChangesTableProcessedTableManager =
       PendingChangeRow,
       PrefetchHooks Function()
     >;
+typedef $$PendingPhotosTableCreateCompanionBuilder =
+    PendingPhotosCompanion Function({
+      required String photoId,
+      required String userId,
+      required String localPath,
+      Value<int> rowid,
+    });
+typedef $$PendingPhotosTableUpdateCompanionBuilder =
+    PendingPhotosCompanion Function({
+      Value<String> photoId,
+      Value<String> userId,
+      Value<String> localPath,
+      Value<int> rowid,
+    });
+
+class $$PendingPhotosTableFilterComposer
+    extends Composer<_$AppDatabase, $PendingPhotosTable> {
+  $$PendingPhotosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get photoId => $composableBuilder(
+    column: $table.photoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PendingPhotosTableOrderingComposer
+    extends Composer<_$AppDatabase, $PendingPhotosTable> {
+  $$PendingPhotosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get photoId => $composableBuilder(
+    column: $table.photoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PendingPhotosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PendingPhotosTable> {
+  $$PendingPhotosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get photoId =>
+      $composableBuilder(column: $table.photoId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get localPath =>
+      $composableBuilder(column: $table.localPath, builder: (column) => column);
+}
+
+class $$PendingPhotosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PendingPhotosTable,
+          PendingPhotoRow,
+          $$PendingPhotosTableFilterComposer,
+          $$PendingPhotosTableOrderingComposer,
+          $$PendingPhotosTableAnnotationComposer,
+          $$PendingPhotosTableCreateCompanionBuilder,
+          $$PendingPhotosTableUpdateCompanionBuilder,
+          (
+            PendingPhotoRow,
+            BaseReferences<_$AppDatabase, $PendingPhotosTable, PendingPhotoRow>,
+          ),
+          PendingPhotoRow,
+          PrefetchHooks Function()
+        > {
+  $$PendingPhotosTableTableManager(_$AppDatabase db, $PendingPhotosTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PendingPhotosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PendingPhotosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PendingPhotosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> photoId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> localPath = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => PendingPhotosCompanion(
+                photoId: photoId,
+                userId: userId,
+                localPath: localPath,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String photoId,
+                required String userId,
+                required String localPath,
+                Value<int> rowid = const Value.absent(),
+              }) => PendingPhotosCompanion.insert(
+                photoId: photoId,
+                userId: userId,
+                localPath: localPath,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$PendingPhotosTable, PendingPhotoRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $PendingPhotosTable,
+                    PendingPhotoRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PendingPhotosTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PendingPhotosTable,
+      PendingPhotoRow,
+      $$PendingPhotosTableFilterComposer,
+      $$PendingPhotosTableOrderingComposer,
+      $$PendingPhotosTableAnnotationComposer,
+      $$PendingPhotosTableCreateCompanionBuilder,
+      $$PendingPhotosTableUpdateCompanionBuilder,
+      (
+        PendingPhotoRow,
+        BaseReferences<_$AppDatabase, $PendingPhotosTable, PendingPhotoRow>,
+      ),
+      PendingPhotoRow,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalPhotosTableCreateCompanionBuilder =
+    LocalPhotosCompanion Function({
+      required String photoId,
+      required String localPath,
+      required DateTime savedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalPhotosTableUpdateCompanionBuilder =
+    LocalPhotosCompanion Function({
+      Value<String> photoId,
+      Value<String> localPath,
+      Value<DateTime> savedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalPhotosTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalPhotosTable> {
+  $$LocalPhotosTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get photoId => $composableBuilder(
+    column: $table.photoId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get savedAt => $composableBuilder(
+    column: $table.savedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalPhotosTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalPhotosTable> {
+  $$LocalPhotosTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get photoId => $composableBuilder(
+    column: $table.photoId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get savedAt => $composableBuilder(
+    column: $table.savedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalPhotosTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalPhotosTable> {
+  $$LocalPhotosTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get photoId =>
+      $composableBuilder(column: $table.photoId, builder: (column) => column);
+
+  GeneratedColumn<String> get localPath =>
+      $composableBuilder(column: $table.localPath, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get savedAt =>
+      $composableBuilder(column: $table.savedAt, builder: (column) => column);
+}
+
+class $$LocalPhotosTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalPhotosTable,
+          LocalPhotoRow,
+          $$LocalPhotosTableFilterComposer,
+          $$LocalPhotosTableOrderingComposer,
+          $$LocalPhotosTableAnnotationComposer,
+          $$LocalPhotosTableCreateCompanionBuilder,
+          $$LocalPhotosTableUpdateCompanionBuilder,
+          (
+            LocalPhotoRow,
+            BaseReferences<_$AppDatabase, $LocalPhotosTable, LocalPhotoRow>,
+          ),
+          LocalPhotoRow,
+          PrefetchHooks Function()
+        > {
+  $$LocalPhotosTableTableManager(_$AppDatabase db, $LocalPhotosTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalPhotosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalPhotosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LocalPhotosTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> photoId = const Value.absent(),
+                Value<String> localPath = const Value.absent(),
+                Value<DateTime> savedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalPhotosCompanion(
+                photoId: photoId,
+                localPath: localPath,
+                savedAt: savedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String photoId,
+                required String localPath,
+                required DateTime savedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalPhotosCompanion.insert(
+                photoId: photoId,
+                localPath: localPath,
+                savedAt: savedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$LocalPhotosTable, LocalPhotoRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $LocalPhotosTable,
+                    LocalPhotoRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalPhotosTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalPhotosTable,
+      LocalPhotoRow,
+      $$LocalPhotosTableFilterComposer,
+      $$LocalPhotosTableOrderingComposer,
+      $$LocalPhotosTableAnnotationComposer,
+      $$LocalPhotosTableCreateCompanionBuilder,
+      $$LocalPhotosTableUpdateCompanionBuilder,
+      (
+        LocalPhotoRow,
+        BaseReferences<_$AppDatabase, $LocalPhotosTable, LocalPhotoRow>,
+      ),
+      LocalPhotoRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6557,8 +8508,14 @@ class $AppDatabaseManager {
       $$RecordTypesTableTableManager(_db, _db.recordTypes);
   $$RecordsTableTableManager get records =>
       $$RecordsTableTableManager(_db, _db.records);
+  $$RecordPhotosTableTableManager get recordPhotos =>
+      $$RecordPhotosTableTableManager(_db, _db.recordPhotos);
   $$AppStatesTableTableManager get appStates =>
       $$AppStatesTableTableManager(_db, _db.appStates);
   $$PendingChangesTableTableManager get pendingChanges =>
       $$PendingChangesTableTableManager(_db, _db.pendingChanges);
+  $$PendingPhotosTableTableManager get pendingPhotos =>
+      $$PendingPhotosTableTableManager(_db, _db.pendingPhotos);
+  $$LocalPhotosTableTableManager get localPhotos =>
+      $$LocalPhotosTableTableManager(_db, _db.localPhotos);
 }

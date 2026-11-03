@@ -156,7 +156,8 @@ void main() {
       await show(tester, '/records/$id/edit');
       final before = (await stored()).recordedAt.toLocal();
 
-      await tester.tap(find.byType(OutlinedButton));
+      // 日時のボタン（写真の追加のボタンより上にある）
+      await tester.tap(find.byType(OutlinedButton).first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
@@ -178,13 +179,14 @@ void main() {
       final label = tester
           .widget<Text>(
             find.descendant(
-              of: find.byType(OutlinedButton),
+              of: find.byType(OutlinedButton).first,
               matching: find.byType(Text),
             ),
           )
           .data;
 
-      await tester.tap(find.byType(OutlinedButton));
+      // 日時のボタン（写真の追加のボタンより上にある）
+      await tester.tap(find.byType(OutlinedButton).first);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Cancel'));
       await tester.pumpAndSettle();

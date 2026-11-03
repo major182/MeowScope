@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
+import '../../photos/presentation/photo_widgets.dart';
 import '../data/record_repository.dart';
 import '../domain/record_detail.dart';
 import 'record_format.dart';
@@ -209,6 +210,9 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
               maxLines: 4,
               maxLength: maxMemoLength,
             ),
+            const SizedBox(height: 16),
+            // 写真はその場で保存する（「保存」を押さなくても付く）
+            PhotoEditor(recordId: widget.view.record.id),
           ],
         ),
       ),

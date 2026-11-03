@@ -54,6 +54,12 @@ class SyncReader {
                             + " 'authorId', author_id, 'authorName', author_name, 'valueNumber', value_number,"
                             + " 'level', level, 'detail', detail, 'memo', memo)",
                     "cat_id IN (SELECT id FROM cats WHERE household_id IN (" + MY_HOUSEHOLDS + "))"),
+            // 画像の本体は送らず、送られたかどうか（uploaded）だけを伝える。端末は必要なときに GET /photos で取る
+            new Source("record_photos",
+                    "json_build_object('recordId', record_id, 'sortOrder', sort_order, 'sizeBytes', size_bytes,"
+                            + " 'uploaded', file_path IS NOT NULL)",
+                    "record_id IN (SELECT r.id FROM records r JOIN cats c ON c.id = r.cat_id WHERE c.household_id IN ("
+                            + MY_HOUSEHOLDS + "))"),
             new Source("user_settings", "json_build_object('weekStart', week_start)", "user_id = :user"));
 
     private final JdbcClient jdbc;

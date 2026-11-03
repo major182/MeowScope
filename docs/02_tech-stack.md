@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 02 |
-| 版数 | 0.10 |
+| 版数 | 0.11 |
 | 作成日 | 2026-11-01 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md) |
@@ -38,6 +38,9 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 | トークンの保管 | flutter_secure_storage | 11.2.0 | Android は Keystore、Windows は資格情報の保管庫を使う（NF-SC-07） | |
 | 端末内の DB | SQLite（drift） | drift 2.35.3 | Windows と Android で共通に使え、型安全 | |
 | グラフ | fl_chart | 1.3.0 | MIT ライセンスで無料。Flutter のグラフで最も利用が多く（pub.dev の評価 160 点）、折れ線と棒の両方を描ける | syncfusion_flutter_charts：商用ライセンスか登録が必要。graphic：利用者が少ない |
+| 写真の選択 | image_picker | 1.2.4 | Flutter チームの公式パッケージで、Android のカメラとアルバム、Windows のファイル選択に対応する | |
+| 写真の縮小 | image | 4.12.0 | Dart だけで動き、Windows と Android で同じ処理になる。向きの反映と縮小、JPEG の保存ができる | flutter_image_compress：Windows に対応していない |
+| 端末のフォルダー | path_provider | 2.1.6 | Flutter チームの公式パッケージで、写真を置くアプリ用フォルダーを得る | |
 | 通知 | flutter_local_notifications | 22.3.3 | 端末内で通知でき、時刻を予約できる。アプリ未使用時の処理が不要になったので、workmanager は採用しない | workmanager：定期実行が不要になった |
 | サーバー | Spring Boot | 4.1.2 | 開発者の経験があり、Spring Security で認証と認可を標準的に作れる | 2人の利用には大きいが、経験と安全性を優先した |
 | 認証 | Spring Security（OAuth2 Resource Server） | Spring Boot の管理に従う | アクセストークンは JWT とし、標準の仕組みで検証する。毎回 DB を見ない | すべて DB のトークン：自作の部分が増える |
@@ -107,3 +110,4 @@ Windows 版は、費用がかかるため保留する。署名しない場合、
 | 0.8 | 2026-11-03 | E2E テストと脆弱性検査の道具を決定、署名の選択肢を記入（保留） |
 | 0.9 | 2026-11-03 | グラフのライブラリを決定 |
 | 0.10 | 2026-11-03 | Compose の版、サーバーのイメージ、DB の操作、結合テストの DB を決定 |
+| 0.11 | 2026-11-03 | 写真の選択・縮小・保存先のライブラリを決定 |

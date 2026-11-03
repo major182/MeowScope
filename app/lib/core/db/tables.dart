@@ -98,3 +98,38 @@ class PendingChanges extends Table {
   TextColumn get payload => text()();
   IntColumn get attempts => integer().withDefault(const Constant(0))();
 }
+
+/// 記録の写真の情報（DB 設計書 4章 record_photos）。画像の本体は端末のファイルとサーバーにある
+@DataClassName('RecordPhotoRow')
+class RecordPhotos extends Table with SyncColumns {
+  TextColumn get recordId => text().references(Records, #id)();
+
+  /// 何枚目か（1〜3）
+  IntColumn get sortOrder => integer()();
+  IntColumn get sizeBytes => integer().nullable()();
+
+  /// サーバーへ画像が送られたか。相手の端末は、送られた写真だけを取りに行く
+  BoolColumn get uploaded => boolean().withDefault(const Constant(false))();
+}
+
+/// 送信待ちの写真（端末だけの表）。送り終わるまで画像を端末に残す（データ要件）
+@DataClassName('PendingPhotoRow')
+class PendingPhotos extends Table {
+  TextColumn get photoId => text()();
+  TextColumn get userId => text()();
+  TextColumn get localPath => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {photoId};
+}
+
+/// 端末に置いた写真（端末だけの表）。30日を過ぎたら消す（BR-14、AC-14）
+@DataClassName('LocalPhotoRow')
+class LocalPhotos extends Table {
+  TextColumn get photoId => text()();
+  TextColumn get localPath => text()();
+  DateTimeColumn get savedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {photoId};
+}

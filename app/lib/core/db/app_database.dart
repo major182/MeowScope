@@ -12,8 +12,11 @@ part 'app_database.g.dart';
     Cats,
     RecordTypes,
     Records,
+    RecordPhotos,
     AppStates,
     PendingChanges,
+    PendingPhotos,
+    LocalPhotos,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -25,8 +28,8 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   // 1：最初の版　2：記録項目に hidden（非表示）を追加　3：認証の前に作ったデータを消す
-  // 4：おうちのメンバーの表を追加（同期）
-  int get schemaVersion => 4;
+  // 4：おうちのメンバーの表を追加（同期）　5：写真の表を追加
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -49,6 +52,11 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 4) {
         await m.createTable(householdMembers);
+      }
+      if (from < 5) {
+        await m.createTable(recordPhotos);
+        await m.createTable(pendingPhotos);
+        await m.createTable(localPhotos);
       }
     },
     beforeOpen: (details) async {
