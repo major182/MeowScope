@@ -1,5 +1,8 @@
 import 'package:go_router/go_router.dart';
 
+import '../features/auth/presentation/account_screen.dart';
+import '../features/auth/presentation/login_screen.dart';
+import '../features/auth/presentation/register_screen.dart';
 import '../features/calendar/presentation/day_records.dart';
 import '../features/cats/presentation/cat_form_screen.dart';
 import '../features/cats/presentation/cat_list_screen.dart';
@@ -12,6 +15,18 @@ import 'start_screen.dart';
 GoRouter createRouter() => GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const StartScreen()),
+    GoRoute(
+      path: '/register',
+      builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/login-help',
+      builder: (context, state) => const LoginHelpScreen(),
+    ),
+    GoRoute(
+      path: '/account',
+      builder: (context, state) => const AccountScreen(),
+    ),
     GoRoute(
       path: '/cats',
       builder: (context, state) => const CatListScreen(),

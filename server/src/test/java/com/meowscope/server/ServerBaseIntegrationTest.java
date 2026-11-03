@@ -59,7 +59,8 @@ class ServerBaseIntegrationTest {
     @Test
     @DisplayName("IT-ER-01 存在しないパスは RFC 9457 の形で 404 を返し、問い合わせ番号を付ける")
     void 存在しないパス() throws Exception {
-        mvc.perform(get("/api/v1/nothing").header("X-Request-Id", "req-123"))
+        TestUsers.Registered user = TestUsers.register(mvc);
+        mvc.perform(get("/api/v1/nothing").header("X-Request-Id", "req-123").header("Authorization", user.bearer()))
                 .andExpect(status().isNotFound())
                 .andExpect(header().string("X-Request-Id", "req-123"))
                 .andExpect(header().string("Content-Type", MediaType.APPLICATION_PROBLEM_JSON_VALUE))

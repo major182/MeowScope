@@ -22,7 +22,7 @@ class SettingsScreen extends ConsumerWidget {
           const _Pending(label: 'おうちの管理'),
           _Link(label: '記録項目の設定', path: '/record-types'),
           if (android) const _Pending(label: 'ウィジェットのボタン'),
-          const _Pending(label: 'アカウント'),
+          _Link(label: 'アカウント', path: '/account'),
           const _Pending(label: '同期の状態'),
           const _Pending(label: '問い合わせ'),
           const Divider(),

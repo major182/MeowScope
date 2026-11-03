@@ -24,6 +24,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    // 認証（技術選定書 3章）。アクセストークンは JWT とし、Spring Security の標準の仕組みで検証する
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     // DB：SQL をそのまま書ける JdbcClient を使う。同期は表をまたいだ一括の処理が多く、ORM の自動の動きより見通しがよいため
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
     // DB の変更管理（技術選定書 3章）。PostgreSQL 用の部品は別になっている
@@ -32,6 +35,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     // 結合テストは本物の PostgreSQL をコンテナで動かす（テスト仕様書 1章）
     testImplementation("org.springframework.boot:spring-boot-testcontainers")
     testImplementation("org.testcontainers:testcontainers-junit-jupiter")

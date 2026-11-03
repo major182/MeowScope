@@ -6,8 +6,8 @@ import '../../../core/providers.dart';
 
 /// おうちの作成（S-04）
 ///
-/// 「あなたの名前」は、ログインができるまでの仮の欄。記録の投稿者名に使う（BR-17）。
-/// 認証の実装で、新規登録の画面へ移す。招待されたおうちへの参加は、招待の実装で足す
+/// 作った人はログイン中のユーザーで、投稿者名には新規登録の名前を使う（BR-17）。
+/// 招待されたおうちへの参加は、招待の実装で足す
 class HouseholdSetupScreen extends ConsumerStatefulWidget {
   const HouseholdSetupScreen({super.key});
 
@@ -18,35 +18,33 @@ class HouseholdSetupScreen extends ConsumerStatefulWidget {
 
 class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
   final _form = GlobalKey<FormState>();
-  final _userName = TextEditingController();
   final _householdName = TextEditingController();
   var _saving = false;
 
   @override
   void dispose() {
-    _userName.dispose();
     _householdName.dispose();
     super.dispose();
   }
 
   Future<void> _create() async {
-    if (_saving || !_form.currentState!.validate()) {
+    final user = ref.read(authUserProvider).value;
+    if (_saving || user == null || !_form.currentState!.validate()) {
       return;
     }
     setState(() => _saving = true);
     final router = GoRouter.of(context);
     await ref
         .read(householdRepositoryProvider)
-        .createHousehold(
-          householdName: _householdName.text,
-          userName: _userName.text,
-        );
+        .createHousehold(householdName: _householdName.text, user: user);
     // おうちができたら、続けて最初の猫を登録する（S-05）
     router.push('/cats/new');
   }
 
   @override
   Widget build(BuildContext context) {
+    // ref.read で読めるよう、ログイン中のユーザーを見張っておく
+    ref.watch(authUserProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('おうちを準備します')),
       body: Form(
@@ -54,12 +52,6 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            TextFormField(
-              controller: _userName,
-              decoration: const InputDecoration(labelText: 'あなたの名前'),
-              validator: _required('あなたの名前'),
-            ),
-            const SizedBox(height: 12),
             TextFormField(
               controller: _householdName,
               decoration: const InputDecoration(labelText: 'おうちの名前'),
