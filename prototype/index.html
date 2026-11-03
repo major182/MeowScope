@@ -27,6 +27,8 @@ main { flex:1; padding:12px 14px 80px; width:100%; }
 .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:14px; }
 .tile { padding:14px 2px; border:1px solid var(--line); border-radius:10px; background:#fff; font-size:13px; }
 .tile b { display:block; font-size:22px; font-weight:400; }
+.tile img { width:48px; height:48px; display:block; margin:0 auto 2px; }
+.cal i img { width:16px; height:16px; vertical-align:middle; margin-right:1px; }
 .row { display:flex; align-items:center; gap:8px; width:100%; padding:11px; border:1px solid var(--line); border-radius:8px; background:#fff; margin-bottom:6px; text-align:left; }
 .row .grow { flex:1; }
 .sub { color:var(--sub); font-size:12px; }
@@ -67,7 +69,7 @@ input.i,select.i,textarea.i { width:100%; padding:10px; border:1px solid var(--l
   .nav { position:sticky; top:0; align-self:flex-start; height:100vh; width:170px; flex-direction:column; border-top:0; border-right:1px solid var(--line); padding-top:12px; order:-1; }
   .nav button { flex:none; padding:13px 18px; text-align:left; font-size:15px; }
   main { padding:18px 24px; max-width:1040px; }
-  .cal button { height:88px; font-size:12px; } .cal i { font-size:12px; }
+  .cal button { height:88px; font-size:12px; } .cal i { font-size:12px; } .cal i img { width:22px; height:22px; }
   .toast { bottom:24px; }
   #split.on { display:grid; grid-template-columns:1fr 300px; gap:18px; }
   #split.on #detail { display:block; }
@@ -78,7 +80,9 @@ input.i,select.i,textarea.i { width:100%; padding:10px; border:1px solid var(--l
 <div id="app"></div>
 <script>
 // ---- 架空のデータ（再読み込みで元に戻る） ----
-const types = [["ご飯","🍚"],["水","💧"],["薬","💊"],["おしっこ","🟡"],["うんち","💩"],["吐いた","🤮"],["体重","⚖️"]].map(([n,e])=>({n,e}));
+const types = [["ご飯","🍚","food"],["水","💧","water"],["薬","💊","medicine"],["おしっこ","🟡","pee"],["うんち","💩","poop"],["吐いた","🤮","vomit"],["体重","⚖️","weight"]].map(([n,e,f])=>({n,e,f}));
+// イラストのある項目（標準以外も含む）。ホームのボタンとカレンダーで使う
+const illust = Object.fromEntries([...types.map(t=>[t.n,t.f]),["ブラッシング","brushing"]]);
 const state = {
   login:false, house:"みけ家", cats:[{n:"ミケ",age:"3歳",s:"通常"},{n:"タマ",age:"5歳",s:"通常"},{n:"ソラ",age:"12歳",s:"お別れ"}],
   members:["はる","あき"], extra:["ブラッシング"], buttons:["ご飯","薬","水","おしっこ"],
@@ -98,6 +102,7 @@ let uid=1; function add(r){ r.id=uid++; state.records.push(r); return r; } seed(
 const $=s=>document.querySelector(s);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const emoji=t=>(types.find(x=>x.n===t)||{e:"⭐"}).e;
+const pic=t=>illust[t]?`<img src="../app/assets/icons/${illust[t]}.png" alt="${esc(t)}">`:emoji(t);
 const cat=n=>`<span class="who"><span class="ic">🐱</span>${esc(n)}</span>`;
 const person=n=>`<span class="who"><span class="ic">🧑</span>${esc(n)}</span>`;
 const hm=d=>`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
@@ -129,11 +134,11 @@ const V={
  "house-new":()=>head("おうちを準備します")+`<label class="f">おうちの名前</label><input class="i" value="みけ家"><button class="btn pri" data-go="cat-first">新しいおうちを作る</button><button class="btn" data-go="cat-first">招待されたおうちに参加</button>`,
  "cat-first":()=>head("猫を登録しましょう")+catForm()+`<button class="btn pri" id="enter">登録する</button>`,
  home:()=>{const t=dayRecs(2026,10,2).reverse(); return `<div class="top"><h1>${esc(state.house)}</h1><span class="sub">11/02</span><button class="sync" data-toast="同期しました">☁ 09:30 同期済み</button></div>
-   <div class="grid">${types.map(x=>`<button class="tile" data-rec="${x.n}"><b>${x.e}</b>${x.n}</button>`).join("")}${state.extra.map(n=>`<button class="tile" data-rec="${esc(n)}"><b>⭐</b>${esc(n)}</button>`).join("")}<button class="tile" data-go="types"><b>＋</b>項目</button></div>
+   <div class="grid">${types.map(x=>`<button class="tile" data-rec="${x.n}"><b>${pic(x.n)}</b>${x.n}</button>`).join("")}${state.extra.map(n=>`<button class="tile" data-rec="${esc(n)}"><b>${pic(n)}</b>${esc(n)}</button>`).join("")}<button class="tile" data-go="types"><b>＋</b>項目</button></div>
    <h2 style="font-size:15px">今日の記録</h2>${t.map(row).join("")||'<p class="sub">まだ記録がありません</p>'}
    <button class="link" data-go="widget">Android ウィジェットのイメージを見る</button>`;},
  calendar:()=>{const {y,m,week}=state; const first=new Date(y,m,1); const off=(first.getDay()-week+7)%7; const names=week?["月","火","水","木","金","土","日"]:["日","月","火","水","木","金","土"]; let cells="";
-   for(let i=0;i<42;i++){const d=new Date(y,m,1-off+i); const inM=d.getMonth()===m; const rs=dayRecs(d.getFullYear(),d.getMonth(),d.getDate(),state.calCat); const icons=[...new Set(rs.map(r=>emoji(r.type)))].join("")+(rs.some(r=>r.memo)?"📝":"");
+   for(let i=0;i<42;i++){const d=new Date(y,m,1-off+i); const inM=d.getMonth()===m; const rs=dayRecs(d.getFullYear(),d.getMonth(),d.getDate(),state.calCat); const icons=[...new Set(rs.map(r=>pic(r.type)))].join("")+(rs.some(r=>r.memo)?"📝":"");
      cells+=`<button class="${inM?"":"out"} ${inM&&d.getDate()===state.sel?"sel":""}" data-day="${d.getFullYear()}-${d.getMonth()}-${d.getDate()}">${d.getDate()}<i>${inM?icons:""}</i></button>`;}
    return `<div class="top"><select class="i" id="calCat" style="width:auto">${["全員",...state.cats.map(c=>c.n)].map(n=>`<option ${n===state.calCat?"selected":""}>${n}</option>`).join("")}</select><h1 style="text-align:center"><button class="back" data-mon="-1">‹</button>${y}年${m+1}月<button class="back" data-mon="1">›</button></h1></div>
    <div id="split" class="on"><div><div class="cal">${names.map(n=>`<div class="h">${n}</div>`).join("")}${cells}</div></div><div id="detail">${dayList(y,m,state.sel)}</div></div>`;},
