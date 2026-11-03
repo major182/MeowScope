@@ -21,6 +21,23 @@ class RecordEntry {
   final String typeName;
 }
 
+/// 記録の詳細の画面に出す内容
+class RecordDetailView {
+  const RecordDetailView({
+    required this.record,
+    required this.catName,
+    required this.typeName,
+    required this.kind,
+  });
+
+  final RecordRow record;
+  final String catName;
+  final String typeName;
+
+  /// 項目の種類（RecordKind の名前または custom）
+  final String kind;
+}
+
 /// 記録したユーザー
 class Author {
   const Author({required this.id, required this.name});
@@ -162,4 +179,101 @@ class RecordRepository {
       ],
     );
   }
+
+  /// 記録1件を、猫と項目の名前つきで見張る。削除済みや存在しなければ null
+  Stream<RecordDetailView?> watchRecord(String id) {
+    final r = _db.records;
+    final c = _db.cats;
+    final t = _db.recordTypes;
+    final q = _db.select(r).join([
+      innerJoin(c, c.id.equalsExp(r.catId)),
+      innerJoin(t, t.id.equalsExp(r.recordTypeId)),
+    ])..where(r.id.equals(id) & r.deletedAt.isNull());
+    return q.watchSingleOrNull().map((row) {
+      if (row == null) {
+        return null;
+      }
+      final type = row.readTable(t);
+      return RecordDetailView(
+        record: row.readTable(r),
+        catName: row.readTable(c).name,
+        typeName: type.name,
+        kind: type.kind,
+      );
+    });
+  }
+
+  /// 記録の詳細を更新する（BR-01：すべて任意）。空のメモは空として保存する
+  Future<void> updateRecord({
+    required String id,
+    required DateTime recordedAt,
+    required String? level,
+    required double? valueNumber,
+    required String? memo,
+    required Author author,
+  }) {
+    final now = _clock().toUtc();
+    final trimmed = memo?.trim();
+    final cleanMemo = trimmed == null || trimmed.isEmpty ? null : trimmed;
+    return _db.transaction(() async {
+      final count =
+          await (_db.update(
+            _db.records,
+          )..where((r) => r.id.equals(id) & r.deletedAt.isNull())).write(
+            RecordsCompanion(
+              updatedAt: Value(now),
+              recordedAt: Value(recordedAt.toUtc()),
+              level: Value(level),
+              valueNumber: Value(valueNumber),
+              memo: Value(cleanMemo),
+            ),
+          );
+      if (count == 0) {
+        throw StateError('記録が見つかりません: $id');
+      }
+      await _addPending(author, id, 'upsert', {
+        'recordedAt': recordedAt.toUtc().toIso8601String(),
+        'level': level,
+        'valueNumber': valueNumber,
+        'memo': cleanMemo,
+        'updatedAt': now.toIso8601String(),
+      });
+    });
+  }
+
+  /// 記録を削除する。削除の時刻を残し、更新として同期する（BR-11）
+  Future<void> deleteRecord({required String id, required Author author}) {
+    final now = _clock().toUtc();
+    return _db.transaction(() async {
+      final count =
+          await (_db.update(
+            _db.records,
+          )..where((r) => r.id.equals(id) & r.deletedAt.isNull())).write(
+            RecordsCompanion(updatedAt: Value(now), deletedAt: Value(now)),
+          );
+      if (count == 0) {
+        throw StateError('記録が見つかりません: $id');
+      }
+      await _addPending(author, id, 'delete', {
+        'deletedAt': now.toIso8601String(),
+      });
+    });
+  }
+
+  Future<void> _addPending(
+    Author author,
+    String id,
+    String operation,
+    Map<String, Object?> payload,
+  ) => _db
+      .into(_db.pendingChanges)
+      .insert(
+        PendingChangesCompanion.insert(
+          userId: author.id,
+          targetTable: 'records',
+          rowId: id,
+          operation: operation,
+          payload: jsonEncode(payload),
+        ),
+      );
 }

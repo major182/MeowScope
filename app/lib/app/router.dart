@@ -1,6 +1,8 @@
 import 'package:go_router/go_router.dart';
 
 import '../features/cats/presentation/cat_form_screen.dart';
+import '../features/records/presentation/record_detail_screen.dart';
+import '../features/records/presentation/record_edit_screen.dart';
 import 'start_screen.dart';
 
 /// 画面の一覧（04 画面設計書）。画面を作るたびに足す
@@ -10,6 +12,18 @@ GoRouter createRouter() => GoRouter(
     GoRoute(
       path: '/cats/new',
       builder: (context, state) => const CatFormScreen(),
+    ),
+    GoRoute(
+      path: '/records/:id',
+      builder: (context, state) =>
+          RecordDetailScreen(recordId: state.pathParameters['id']!),
+      routes: [
+        GoRoute(
+          path: 'edit',
+          builder: (context, state) =>
+              RecordEditScreen(recordId: state.pathParameters['id']!),
+        ),
+      ],
     ),
   ],
 );

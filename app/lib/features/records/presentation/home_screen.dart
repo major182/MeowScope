@@ -7,6 +7,7 @@ import '../../../core/providers.dart';
 import '../../household/data/household_repository.dart';
 import '../data/record_repository.dart';
 import '../domain/record_kind.dart';
+import 'record_format.dart';
 
 final _typesProvider = StreamProvider.autoDispose<List<RecordTypeRow>>((ref) {
   final session = ref.watch(sessionProvider).value;
@@ -99,8 +100,9 @@ class HomeScreen extends ConsumerWidget {
             ),
           for (final e in today)
             ListTile(
-              leading: Text(_hm(e.recordedAt)),
+              leading: Text(formatTime(e.recordedAt)),
               title: Text('${e.catName}　${e.typeName}'),
+              onTap: () => context.push('/records/${e.id}'),
             ),
         ],
       ),
@@ -115,6 +117,7 @@ class HomeScreen extends ConsumerWidget {
     RecordTypeRow type,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
     if (cats.isEmpty) {
       messenger.showSnackBar(const SnackBar(content: Text('先に猫を登録してください')));
       return;
@@ -138,7 +141,7 @@ class HomeScreen extends ConsumerWidget {
     if (cat == null) {
       return;
     }
-    await ref
+    final id = await ref
         .read(recordRepositoryProvider)
         .addRecord(
           catId: cat.id,
@@ -146,13 +149,17 @@ class HomeScreen extends ConsumerWidget {
           author: session.author,
         );
     messenger.showSnackBar(
-      SnackBar(content: Text('${cat.name}の${type.name}を記録しました')),
+      SnackBar(
+        content: Text('${cat.name}の${type.name}を記録しました'),
+        duration: const Duration(seconds: 4),
+        action: SnackBarAction(
+          label: '詳細を追加',
+          onPressed: () => router.push('/records/$id/edit'),
+        ),
+      ),
     );
   }
 }
-
-String _hm(DateTime d) =>
-    '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
 
 class _TypeButton extends StatelessWidget {
   const _TypeButton({required this.type, required this.onPressed});
