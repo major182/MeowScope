@@ -1,0 +1,50 @@
+# DB とサーバーを動かす。AWS と PC で同じ定義を使う（技術選定書 3章）
+# 値は .env から読む（見本は .env.example）。開発で DB だけを動かすときは docker compose up -d db
+name: meowscope
+
+# Docker のログは JSON のファイルに、10MB を5世代まで残す（ログ設計書 7章）
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: "5"
+
+services:
+  db:
+    image: postgres:18.6
+    environment:
+      POSTGRES_DB: meowscope
+      POSTGRES_USER: ${DB_USER:-meowscope}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD を .env に書いてください}
+    volumes:
+      # PostgreSQL 18 のイメージは、データを /var/lib/postgresql の下の版ごとのフォルダに置く
+      - db-data:/var/lib/postgresql
+    ports:
+      # 開発で手元のサーバーから使う。外からは接続させない
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d meowscope"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    logging: *logging
+
+  server:
+    build: ./server
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/meowscope
+      DB_USER: ${DB_USER:-meowscope}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD を .env に書いてください}
+      MEOWSCOPE_ENV: ${MEOWSCOPE_ENV:-local}
+      MEOWSCOPE_VERSION: ${MEOWSCOPE_VERSION:-dev}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  db-data:
