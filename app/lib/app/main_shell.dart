@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/records/presentation/home_screen.dart';
+import '../features/settings/presentation/settings_screen.dart';
 import '../features/stats/presentation/stats_screen.dart';
 
 /// この幅以上なら左にメニューを置く（Windows 向け。04 画面設計書 1章）
@@ -46,7 +47,7 @@ class _MainShellState extends State<MainShell> {
         HomeScreen(),
         CalendarScreen(),
         StatsScreen(),
-        PlaceholderScreen(title: '設定'),
+        SettingsScreen(),
       ],
     );
     final wide = MediaQuery.sizeOf(context).width >= wideLayoutWidth;
@@ -87,21 +88,6 @@ class _MainShellState extends State<MainShell> {
             ),
         ],
       ),
-    );
-  }
-}
-
-/// まだ作っていない画面の仮の表示
-class PlaceholderScreen extends StatelessWidget {
-  const PlaceholderScreen({super.key, required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: const Center(child: Text('準備中です')),
     );
   }
 }
