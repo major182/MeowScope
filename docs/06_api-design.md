@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 06 |
-| 版数 | 0.4 |
+| 版数 | 0.5 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[05 DB 設計書](05_db-design.md) |
@@ -51,7 +51,7 @@
 
 | メソッド | パス | 説明 |
 |---|---|---|
-| POST | `/households` | おうちの作成。標準の8項目も登録する |
+| POST | `/households` | おうちの作成。端末が作ったおうちの ID と名前、標準の8項目（ID を含む）を受け取って登録し、作った人をメンバーにする。サーバーでは標準の項目を作らない |
 | POST | `/households/{id}/invitations` | 招待の作成（Q-26 の結果で見直す） |
 | POST | `/invitations/accept` | 招待の受諾 |
 | POST | `/households/{id}/leave` | おうちを抜ける。本文に `keepRecords` |
@@ -95,15 +95,24 @@ POST /sync
 
 | 項目 | 動作 |
 |---|---|
-| 競合 | `updatedAt` が新しい方を採用する。同じなら `id` の大きい方（BR-10） |
-| 結果の値 | `applied`（反映）、`ignored`（サーバーの方が新しい）、`rejected`（権限や内容の誤り） |
+| 競合 | サーバーが後から受け取った変更を採用する（BR-10）。受け取った順に `server_seq` を振る。`updatedAt` は比べない |
+| 結果の値 | `applied`（反映）、`ignored`（同じ変更の再送で、すでに反映済み）、`rejected`（権限や内容の誤り） |
 | 再送 | 同じ変更を再送しても結果は同じになる。通信が切れても安全に送り直せる |
 | 分割 | 1回で送受信するのは500件まで。`hasMore` が真なら続けて呼ぶ |
 | 全件の取り直し | `lastSeq` が90日の保持より古いときは `fullResyncRequired` を返す |
-| 未来の時刻 | サーバーの時刻より5分以上先の `updatedAt` は、サーバーの時刻に置き換える |
 | 同時実行 | 端末では同時に1つだけ実行する |
 
 `rejected` の変更は再送せず、S-46 に件数を表示する。
+
+同期する表と `data` に入れる主な列は次のとおり（列の意味は [05 DB 設計書](05_db-design.md)）。おうちそのものの作成は `POST /households` で行う。
+
+| 表 | `data` の主な列 |
+|---|---|
+| `households` | `name` |
+| `cats` | `householdId`、`name`、`birthDate`、`sex`、`conditions`、`status` |
+| `record_types` | `householdId`、`name`、`icon`、`kind`、`sortOrder`、`hidden`（非表示） |
+| `records` | `catId`、`recordTypeId`、`recordedAt`、`authorName`、`valueNumber`、`level`、`detail`、`memo` |
+| `user_settings` | `weekStart` など。端末では同期の実装まで `app_states` の `settings.weekStart` に置いており、同期の実装で移す |
 
 退会やおうちを抜ける操作を別の端末で行ったときは、次の同期で検知し、端末のそのおうちのデータを消して S-04 へ戻る。
 
@@ -161,3 +170,4 @@ RFC 9457（Problem Details）の形式で返す。
 | 0.2 | 2026-11-02 | ログアウトと別端末での退会の動作を追加 |
 | 0.3 | 2026-11-02 | 端末のログの受信を追加 |
 | 0.4 | 2026-11-03 | 標準の項目を8つに変更 |
+| 0.5 | 2026-11-03 | 標準の8項目は端末で作って送る形に変更。競合をサーバーが受け取った順に変更。同期する表と列を記入 |
