@@ -17,6 +17,7 @@ part 'app_database.g.dart';
     PendingChanges,
     PendingPhotos,
     LocalPhotos,
+    ClientLogs,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -30,7 +31,8 @@ class AppDatabase extends _$AppDatabase {
   // 1：最初の版　2：記録項目に hidden（非表示）を追加　3：認証の前に作ったデータを消す
   // 4：おうちのメンバーの表を追加（同期）　5：写真の表を追加
   // 6：メンバーのユーザーの ID を空にできるようにする（退会した人）
-  int get schemaVersion => 6;
+  // 7：端末のログの表を追加
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -62,6 +64,9 @@ class AppDatabase extends _$AppDatabase {
       if (from >= 4 && from < 6) {
         // SQLite は列の制約を変えられないので、表を作り直して中身を移す
         await m.alterTable(TableMigration(householdMembers));
+      }
+      if (from < 7) {
+        await m.createTable(clientLogs);
       }
     },
     beforeOpen: (details) async {

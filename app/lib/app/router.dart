@@ -10,6 +10,7 @@ import '../features/household/presentation/household_screen.dart';
 import '../features/records/presentation/record_detail_screen.dart';
 import '../features/records/presentation/record_edit_screen.dart';
 import '../features/records/presentation/record_types_screen.dart';
+import '../features/settings/presentation/contact_screen.dart';
 import '../features/sync/presentation/sync_status_screen.dart';
 import 'start_screen.dart';
 
@@ -28,6 +29,10 @@ GoRouter createRouter() => GoRouter(
     GoRoute(
       path: '/account',
       builder: (context, state) => const AccountScreen(),
+    ),
+    GoRoute(
+      path: '/contact',
+      builder: (context, state) => const ContactScreen(),
     ),
     GoRoute(
       path: '/household',

@@ -75,6 +75,9 @@ void main() {
         AppStatesCompanion.insert(key: 'settings.weekStart', value: 'monday'),
       ]),
     );
+    if (version < 7) {
+      await db.customStatement('DROP TABLE client_logs');
+    }
     if (version < 5) {
       for (final table in ['record_photos', 'pending_photos', 'local_photos']) {
         await db.customStatement('DROP TABLE $table');

@@ -135,3 +135,17 @@ class LocalPhotos extends Table {
   @override
   Set<Column<Object>> get primaryKey => {photoId};
 }
+
+/// 端末のログ（端末だけの表）。同期のときにサーバーへ送り、送れたら消す。最新の1000件まで（ログ設計書 8章）
+@DataClassName('ClientLogRow')
+class ClientLogs extends Table {
+  IntColumn get seq => integer().autoIncrement()();
+
+  /// 重大度（critical・error・warning・notice・info）
+  TextColumn get status => text()();
+  TextColumn get message => text()();
+  DateTimeColumn get occurredAt => dateTime()();
+
+  /// 失敗した通信の問い合わせ番号
+  TextColumn get requestId => text().nullable()();
+}

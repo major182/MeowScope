@@ -32,11 +32,32 @@ class SyncController extends Notifier<SyncState> {
     }
     state = SyncState(running: true, needsLogin: state.needsLogin);
     SyncOutcome outcome;
+    var unexpected = false;
     try {
       outcome = await ref.read(syncEngineProvider).run(user.id);
-    } on Exception {
-      // 想定外の失敗でも、アプリの操作は止めない。同期待ちは残っているので次に送る
+    } catch (e) {
+      // 想定外の失敗（壊れた応答による型の誤りなども）でも、アプリの操作は止めない。同期待ちは残っているので次に送る
+      // ログには例外の種類だけを書く（内容に記録が含まれるおそれがあるため。ログ設計書 6章）
+      await ref
+          .read(appLogProvider)
+          .record('error', '同期で想定外の例外：${e.runtimeType}');
+      unexpected = true;
       outcome = const SyncFailed(ApiError(status: 500));
+    }
+    final log = ref.read(appLogProvider);
+    switch (outcome) {
+      case SyncSucceeded():
+        // 同期できたときに、たまっている端末のログも送る（F-LG-03）
+        await log.send(ref.read(apiClientProvider));
+      case SyncFailed(:final error) when !error.isOffline && !unexpected:
+        // つながらないのはよくあることなので記録しない。サーバーの応答があった失敗だけを残す
+        await log.record(
+          error.isServerError ? 'error' : 'warning',
+          '同期に失敗（状態コード：${error.status}、${error.code ?? '-'}）',
+          requestId: error.requestId,
+        );
+      default:
+        break;
     }
     if (!ref.mounted) {
       return;

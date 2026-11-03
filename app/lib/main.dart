@@ -1,11 +1,36 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'app/router.dart';
+import 'core/providers.dart';
 
 void main() {
-  runApp(const ProviderScope(child: MeowScopeApp()));
+  final container = ProviderContainer();
+  // 例外とクラッシュを端末のログに残す（F-LG-03）。内容に記録が含まれないよう、種類と場所だけを書く
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    container
+        .read(appLogProvider)
+        .record(
+          'error',
+          '画面の例外：${details.exception.runtimeType}（${details.library}）',
+        );
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    container
+        .read(appLogProvider)
+        .record('critical', '想定外の例外：${error.runtimeType}');
+    return true;
+  };
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const MeowScopeApp(),
+    ),
+  );
 }
 
 class MeowScopeApp extends StatefulWidget {

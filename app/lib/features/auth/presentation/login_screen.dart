@@ -116,7 +116,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
 /// ログインに困ったら（S-07）
 ///
-/// パスワードの再設定はメール送信の手段が決まってから（Q-26）、問い合わせは S-06 を作ってから押せるようにする
+/// パスワードの再設定はメール送信の手段が決まってから（Q-26）押せるようにする。問い合わせは S-06 を開く
 class LoginHelpScreen extends StatelessWidget {
   const LoginHelpScreen({super.key});
 
@@ -126,13 +126,17 @@ class LoginHelpScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('ログインに困ったら')),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: const [
-          ListTile(
+        children: [
+          const ListTile(
             enabled: false,
             title: Text('パスワード再発行'),
             subtitle: Text('準備中'),
           ),
-          ListTile(enabled: false, title: Text('問い合わせ'), subtitle: Text('準備中')),
+          ListTile(
+            title: const Text('問い合わせ'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/contact'),
+          ),
         ],
       ),
     );

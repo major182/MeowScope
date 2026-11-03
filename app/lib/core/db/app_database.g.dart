@@ -4919,6 +4919,366 @@ class LocalPhotosCompanion extends UpdateCompanion<LocalPhotoRow> {
   }
 }
 
+class $ClientLogsTable extends ClientLogs
+    with TableInfo<$ClientLogsTable, ClientLogRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ClientLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _seqMeta = const VerificationMeta('seq');
+  @override
+  late final GeneratedColumn<int> seq = GeneratedColumn<int>(
+    'seq',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _messageMeta = const VerificationMeta(
+    'message',
+  );
+  @override
+  late final GeneratedColumn<String> message = GeneratedColumn<String>(
+    'message',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _occurredAtMeta = const VerificationMeta(
+    'occurredAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> occurredAt = GeneratedColumn<DateTime>(
+    'occurred_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requestIdMeta = const VerificationMeta(
+    'requestId',
+  );
+  @override
+  late final GeneratedColumn<String> requestId = GeneratedColumn<String>(
+    'request_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    seq,
+    status,
+    message,
+    occurredAt,
+    requestId,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'client_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ClientLogRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('seq')) {
+      context.handle(
+        _seqMeta,
+        seq.isAcceptableOrUnknown(data['seq']!, _seqMeta),
+      );
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('message')) {
+      context.handle(
+        _messageMeta,
+        message.isAcceptableOrUnknown(data['message']!, _messageMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_messageMeta);
+    }
+    if (data.containsKey('occurred_at')) {
+      context.handle(
+        _occurredAtMeta,
+        occurredAt.isAcceptableOrUnknown(data['occurred_at']!, _occurredAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_occurredAtMeta);
+    }
+    if (data.containsKey('request_id')) {
+      context.handle(
+        _requestIdMeta,
+        requestId.isAcceptableOrUnknown(data['request_id']!, _requestIdMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {seq};
+  @override
+  ClientLogRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ClientLogRow(
+      seq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}seq'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      message: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}message'],
+      )!,
+      occurredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}occurred_at'],
+      )!,
+      requestId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_id'],
+      ),
+    );
+  }
+
+  @override
+  $ClientLogsTable createAlias(String alias) {
+    return $ClientLogsTable(attachedDatabase, alias);
+  }
+}
+
+class ClientLogRow extends DataClass implements Insertable<ClientLogRow> {
+  final int seq;
+
+  /// 重大度（critical・error・warning・notice・info）
+  final String status;
+  final String message;
+  final DateTime occurredAt;
+
+  /// 失敗した通信の問い合わせ番号
+  final String? requestId;
+  const ClientLogRow({
+    required this.seq,
+    required this.status,
+    required this.message,
+    required this.occurredAt,
+    this.requestId,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['seq'] = Variable<int>(seq);
+    map['status'] = Variable<String>(status);
+    map['message'] = Variable<String>(message);
+    map['occurred_at'] = Variable<DateTime>(occurredAt);
+    if (!nullToAbsent || requestId != null) {
+      map['request_id'] = Variable<String>(requestId);
+    }
+    return map;
+  }
+
+  ClientLogsCompanion toCompanion(bool nullToAbsent) {
+    return ClientLogsCompanion(
+      seq: Value(seq),
+      status: Value(status),
+      message: Value(message),
+      occurredAt: Value(occurredAt),
+      requestId: requestId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(requestId),
+    );
+  }
+
+  factory ClientLogRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ClientLogRow(
+      seq: serializer.fromJson<int>(json['seq']),
+      status: serializer.fromJson<String>(json['status']),
+      message: serializer.fromJson<String>(json['message']),
+      occurredAt: serializer.fromJson<DateTime>(json['occurredAt']),
+      requestId: serializer.fromJson<String?>(json['requestId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'seq': serializer.toJson<int>(seq),
+      'status': serializer.toJson<String>(status),
+      'message': serializer.toJson<String>(message),
+      'occurredAt': serializer.toJson<DateTime>(occurredAt),
+      'requestId': serializer.toJson<String?>(requestId),
+    };
+  }
+
+  ClientLogRow copyWith({
+    int? seq,
+    String? status,
+    String? message,
+    DateTime? occurredAt,
+    Value<String?> requestId = const Value.absent(),
+  }) => ClientLogRow(
+    seq: seq ?? this.seq,
+    status: status ?? this.status,
+    message: message ?? this.message,
+    occurredAt: occurredAt ?? this.occurredAt,
+    requestId: requestId.present ? requestId.value : this.requestId,
+  );
+  ClientLogRow copyWithCompanion(ClientLogsCompanion data) {
+    return ClientLogRow(
+      seq: data.seq.present ? data.seq.value : this.seq,
+      status: data.status.present ? data.status.value : this.status,
+      message: data.message.present ? data.message.value : this.message,
+      occurredAt: data.occurredAt.present
+          ? data.occurredAt.value
+          : this.occurredAt,
+      requestId: data.requestId.present ? data.requestId.value : this.requestId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClientLogRow(')
+          ..write('seq: $seq, ')
+          ..write('status: $status, ')
+          ..write('message: $message, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('requestId: $requestId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(seq, status, message, occurredAt, requestId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ClientLogRow &&
+          other.seq == this.seq &&
+          other.status == this.status &&
+          other.message == this.message &&
+          other.occurredAt == this.occurredAt &&
+          other.requestId == this.requestId);
+}
+
+class ClientLogsCompanion extends UpdateCompanion<ClientLogRow> {
+  final Value<int> seq;
+  final Value<String> status;
+  final Value<String> message;
+  final Value<DateTime> occurredAt;
+  final Value<String?> requestId;
+  const ClientLogsCompanion({
+    this.seq = const Value.absent(),
+    this.status = const Value.absent(),
+    this.message = const Value.absent(),
+    this.occurredAt = const Value.absent(),
+    this.requestId = const Value.absent(),
+  });
+  ClientLogsCompanion.insert({
+    this.seq = const Value.absent(),
+    required String status,
+    required String message,
+    required DateTime occurredAt,
+    this.requestId = const Value.absent(),
+  }) : status = Value(status),
+       message = Value(message),
+       occurredAt = Value(occurredAt);
+  static Insertable<ClientLogRow> custom({
+    Expression<int>? seq,
+    Expression<String>? status,
+    Expression<String>? message,
+    Expression<DateTime>? occurredAt,
+    Expression<String>? requestId,
+  }) {
+    return RawValuesInsertable({
+      if (seq != null) 'seq': seq,
+      if (status != null) 'status': status,
+      if (message != null) 'message': message,
+      if (occurredAt != null) 'occurred_at': occurredAt,
+      if (requestId != null) 'request_id': requestId,
+    });
+  }
+
+  ClientLogsCompanion copyWith({
+    Value<int>? seq,
+    Value<String>? status,
+    Value<String>? message,
+    Value<DateTime>? occurredAt,
+    Value<String?>? requestId,
+  }) {
+    return ClientLogsCompanion(
+      seq: seq ?? this.seq,
+      status: status ?? this.status,
+      message: message ?? this.message,
+      occurredAt: occurredAt ?? this.occurredAt,
+      requestId: requestId ?? this.requestId,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (seq.present) {
+      map['seq'] = Variable<int>(seq.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (message.present) {
+      map['message'] = Variable<String>(message.value);
+    }
+    if (occurredAt.present) {
+      map['occurred_at'] = Variable<DateTime>(occurredAt.value);
+    }
+    if (requestId.present) {
+      map['request_id'] = Variable<String>(requestId.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ClientLogsCompanion(')
+          ..write('seq: $seq, ')
+          ..write('status: $status, ')
+          ..write('message: $message, ')
+          ..write('occurredAt: $occurredAt, ')
+          ..write('requestId: $requestId')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4934,6 +5294,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PendingChangesTable pendingChanges = $PendingChangesTable(this);
   late final $PendingPhotosTable pendingPhotos = $PendingPhotosTable(this);
   late final $LocalPhotosTable localPhotos = $LocalPhotosTable(this);
+  late final $ClientLogsTable clientLogs = $ClientLogsTable(this);
   late final Index recordsCatRecordedAt = Index(
     'records_cat_recorded_at',
     'CREATE INDEX records_cat_recorded_at ON records (cat_id, recorded_at)',
@@ -4953,6 +5314,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     pendingChanges,
     pendingPhotos,
     localPhotos,
+    clientLogs,
     recordsCatRecordedAt,
   ];
 }
@@ -8498,6 +8860,209 @@ typedef $$LocalPhotosTableProcessedTableManager =
       LocalPhotoRow,
       PrefetchHooks Function()
     >;
+typedef $$ClientLogsTableCreateCompanionBuilder = ClientLogsCompanion Function({
+  Value<int> seq,
+  required String status,
+  required String message,
+  required DateTime occurredAt,
+  Value<String?> requestId,
+});
+typedef $$ClientLogsTableUpdateCompanionBuilder = ClientLogsCompanion Function({
+  Value<int> seq,
+  Value<String> status,
+  Value<String> message,
+  Value<DateTime> occurredAt,
+  Value<String?> requestId,
+});
+
+class $$ClientLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $ClientLogsTable> {
+  $$ClientLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get seq => $composableBuilder(
+    column: $table.seq,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get message => $composableBuilder(
+    column: $table.message,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requestId => $composableBuilder(
+    column: $table.requestId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ClientLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ClientLogsTable> {
+  $$ClientLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get seq => $composableBuilder(
+    column: $table.seq,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get message => $composableBuilder(
+    column: $table.message,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requestId => $composableBuilder(
+    column: $table.requestId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ClientLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ClientLogsTable> {
+  $$ClientLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get seq =>
+      $composableBuilder(column: $table.seq, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<String> get message =>
+      $composableBuilder(column: $table.message, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get occurredAt => $composableBuilder(
+    column: $table.occurredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get requestId =>
+      $composableBuilder(column: $table.requestId, builder: (column) => column);
+}
+
+class $$ClientLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ClientLogsTable,
+          ClientLogRow,
+          $$ClientLogsTableFilterComposer,
+          $$ClientLogsTableOrderingComposer,
+          $$ClientLogsTableAnnotationComposer,
+          $$ClientLogsTableCreateCompanionBuilder,
+          $$ClientLogsTableUpdateCompanionBuilder,
+          (
+            ClientLogRow,
+            BaseReferences<_$AppDatabase, $ClientLogsTable, ClientLogRow>,
+          ),
+          ClientLogRow,
+          PrefetchHooks Function()
+        > {
+  $$ClientLogsTableTableManager(_$AppDatabase db, $ClientLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ClientLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ClientLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ClientLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> seq = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<String> message = const Value.absent(),
+                Value<DateTime> occurredAt = const Value.absent(),
+                Value<String?> requestId = const Value.absent(),
+              }) => ClientLogsCompanion(
+                seq: seq,
+                status: status,
+                message: message,
+                occurredAt: occurredAt,
+                requestId: requestId,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> seq = const Value.absent(),
+                required String status,
+                required String message,
+                required DateTime occurredAt,
+                Value<String?> requestId = const Value.absent(),
+              }) => ClientLogsCompanion.insert(
+                seq: seq,
+                status: status,
+                message: message,
+                occurredAt: occurredAt,
+                requestId: requestId,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ClientLogsTable, ClientLogRow>(table),
+                  BaseReferences<_$AppDatabase, $ClientLogsTable, ClientLogRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ClientLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ClientLogsTable,
+      ClientLogRow,
+      $$ClientLogsTableFilterComposer,
+      $$ClientLogsTableOrderingComposer,
+      $$ClientLogsTableAnnotationComposer,
+      $$ClientLogsTableCreateCompanionBuilder,
+      $$ClientLogsTableUpdateCompanionBuilder,
+      (
+        ClientLogRow,
+        BaseReferences<_$AppDatabase, $ClientLogsTable, ClientLogRow>,
+      ),
+      ClientLogRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8521,4 +9086,6 @@ class $AppDatabaseManager {
       $$PendingPhotosTableTableManager(_db, _db.pendingPhotos);
   $$LocalPhotosTableTableManager get localPhotos =>
       $$LocalPhotosTableTableManager(_db, _db.localPhotos);
+  $$ClientLogsTableTableManager get clientLogs =>
+      $$ClientLogsTableTableManager(_db, _db.clientLogs);
 }

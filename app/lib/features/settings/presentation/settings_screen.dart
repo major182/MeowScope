@@ -26,7 +26,7 @@ class SettingsScreen extends ConsumerWidget {
           if (android) const _Pending(label: 'ウィジェットのボタン'),
           _Link(label: 'アカウント', path: '/account'),
           _Link(label: '同期の状態', path: '/sync'),
-          const _Pending(label: '問い合わせ'),
+          _Link(label: '問い合わせ', path: '/contact'),
           const Divider(),
           ListTile(
             title: const Text('カレンダーの週の始まり'),
