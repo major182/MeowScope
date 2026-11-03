@@ -74,3 +74,9 @@ checkstyle {
     configFile = file("config/checkstyle/checkstyle.xml")
     maxWarnings = 0
 }
+
+// 依存関係のバージョンを gradle.lockfile に固定し、OSV-Scanner で脆弱性を検査する（NF-SC-06）
+// 依存関係を変えたら ./gradlew dependencies --write-locks で更新する
+dependencyLocking {
+    lockAllConfigurations()
+}
