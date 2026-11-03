@@ -118,6 +118,62 @@ class AccountRepository {
         );
   });
 
+  /// 招待のリンクを作り、LINE などで送る文を返す（1時間・1回だけ有効）
+  Future<String> createInvitation({
+    required String householdId,
+    required String householdName,
+  }) async {
+    final Map<String, dynamic> body;
+    try {
+      body = (await _api.post<Map<String, dynamic>>(
+        '/households/$householdId/invitations',
+      )).data!;
+    } on DioException catch (e) {
+      throw ApiError.from(e);
+    }
+    return invitationMessage(householdName, body['link'] as String);
+  }
+
+  /// 招待を受ける。参加したおうちを選んだ状態にする（中身は続く同期で届く）
+  Future<void> acceptInvitation({
+    required String userId,
+    required String token,
+  }) async {
+    final Map<String, dynamic> body;
+    try {
+      body = (await _api.post<Map<String, dynamic>>(
+        '/invitations/accept',
+        data: {'token': token},
+      )).data!;
+    } on DioException catch (e) {
+      throw ApiError.from(e);
+    }
+    final householdId = body['householdId'] as String;
+    // 同期が届くまでの間も S-04 に戻らないよう、名前は仮に入れておく（同期で正しい名前になる）
+    await _db.transaction(() async {
+      await _db
+          .into(_db.households)
+          .insertOnConflictUpdate(
+            HouseholdsCompanion.insert(
+              id: householdId,
+              createdAt: _clock().toUtc(),
+              updatedAt: _clock().toUtc(),
+              name: '',
+            ),
+          );
+      for (final key in [
+        SessionKeys.householdId,
+        SessionKeys.householdOf(userId),
+      ]) {
+        await _db
+            .into(_db.appStates)
+            .insertOnConflictUpdate(
+              AppStatesCompanion.insert(key: key, value: householdId),
+            );
+      }
+    });
+  }
+
   /// 表示名を変える。これからの記録の投稿者名になる（過去の記録の投稿者名は変えない。BR-17）
   Future<void> rename(String name) async {
     final Map<String, dynamic> body;
@@ -199,3 +255,9 @@ class AccountRepository {
     });
   }
 }
+
+/// LINE などで送る招待の文（画面設計書 S-42）
+String invitationMessage(String householdName, String link) =>
+    'MeowScope のおうち「$householdName」への招待です。1時間以内に、1回だけ使えます。\n'
+    '$link\n'
+    'リンクを押しても開かないときは、アプリの「招待されたおうちに参加」にこの文をそのまま貼り付けてください。';

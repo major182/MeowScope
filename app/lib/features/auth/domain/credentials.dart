@@ -60,3 +60,14 @@ class AsciiOnlyFormatter extends TextInputFormatter {
     return oldValue;
   }
 }
+
+/// 招待の文やリンク（`meowscope://invite?token=...`）から、トークンを取り出す。
+/// トークンだけを貼り付けても受け付ける。見つからなければ null
+String? extractInviteToken(String text) {
+  final inLink = RegExp(r'token=([A-Za-z0-9_-]{20,100})').firstMatch(text);
+  if (inLink != null) {
+    return inLink.group(1);
+  }
+  final trimmed = text.trim();
+  return RegExp(r'^[A-Za-z0-9_-]{20,100}$').hasMatch(trimmed) ? trimmed : null;
+}
