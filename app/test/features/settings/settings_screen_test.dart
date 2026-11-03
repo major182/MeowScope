@@ -76,18 +76,21 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('UT-SE-03 まだ作っていない項目は準備中で、押せない', (tester) async {
-    // ウィジェットのボタン（Android のみ）を除いた1つを確かめる。おうちの管理・アカウント・同期の状態は作った
+  testWidgets('UT-SE-03 まだ作っていない項目は準備中で押せない：Android のウィジェットのボタンだけ', (
+    tester,
+  ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     await show(tester);
+    expect(find.text('準備中'), findsNothing);
+    await close(tester);
 
-    for (final label in ['問い合わせ']) {
-      final tile = tester.widget<ListTile>(
-        find.widgetWithText(ListTile, label),
-      );
-      expect(tile.enabled, isFalse, reason: label);
-    }
-    expect(find.text('準備中'), findsNWidgets(1));
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    await show(tester);
+    final tile = tester.widget<ListTile>(
+      find.widgetWithText(ListTile, 'ウィジェットのボタン'),
+    );
+    expect(tile.enabled, isFalse);
+    expect(find.text('準備中'), findsOneWidget);
     await close(tester);
     debugDefaultTargetPlatformOverride = null;
   });

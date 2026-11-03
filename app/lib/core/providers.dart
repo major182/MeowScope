@@ -16,6 +16,7 @@ import '../features/photos/data/photo_repository.dart';
 import '../features/settings/data/settings_repository.dart';
 import '../features/sync/data/sync_engine.dart';
 import 'api/api_client.dart';
+import 'logging/app_log.dart';
 import 'db/app_database.dart';
 
 /// 端末内 DB。テストではメモリー上の DB に差し替える
@@ -106,4 +107,29 @@ final accountRepositoryProvider = Provider<AccountRepository>(
     ref.watch(apiClientProvider),
     ref.watch(tokenStoreProvider),
   ),
+);
+
+/// 端末のログ（ログ設計書 8章）
+final appLogProvider = Provider<AppLog>(
+  (ref) => AppLog(ref.watch(databaseProvider)),
+);
+
+/// 問い合わせ用のログをファイルに保存し、保存した場所を返す（S-06）。テストでは差し替える
+///
+/// Windows は「ダウンロード」、Android はアプリの文書のフォルダーに置く
+final logFileSaverProvider = Provider<Future<String> Function(String text)>(
+  (ref) => (text) async {
+    final dir =
+        (Platform.isWindows ? await getDownloadsDirectory() : null) ??
+        await getApplicationDocumentsDirectory();
+    final stamp = DateTime.now()
+        .toIso8601String()
+        .replaceAll(RegExp(r'[^0-9]'), '')
+        .substring(0, 14);
+    final file = File(
+      '${dir.path}${Platform.pathSeparator}meowscope-log-$stamp.txt',
+    );
+    await file.writeAsString(text, flush: true);
+    return file.path;
+  },
 );

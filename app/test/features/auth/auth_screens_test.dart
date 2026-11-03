@@ -160,16 +160,22 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('UT-AU-28 ログインに困ったら（S-07）：再発行と問い合わせは準備中で押せない', (tester) async {
+  testWidgets('UT-AU-28 ログインに困ったら（S-07）：再発行は準備中で押せず、問い合わせは S-06 を開く', (
+    tester,
+  ) async {
     await start(tester);
 
     await tester.tap(find.text('ログインに困ったら'));
     await tester.pumpAndSettle();
 
-    final tiles = tester.widgetList<ListTile>(find.byType(ListTile));
-    expect(tiles.map((t) => (t.title as Text).data), ['パスワード再発行', '問い合わせ']);
-    expect(tiles.every((t) => t.enabled == false), isTrue);
-    expect(find.text('準備中'), findsNWidgets(2));
+    final reset = tester.widget<ListTile>(
+      find.widgetWithText(ListTile, 'パスワード再発行'),
+    );
+    expect(reset.enabled, isFalse);
+    expect(find.text('準備中'), findsOneWidget);
+    await tester.tap(find.text('問い合わせ'));
+    await tester.pumpAndSettle();
+    expect(find.text('ログを保存する'), findsOneWidget);
     await close(tester);
   });
 }
