@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../features/calendar/presentation/day_records.dart';
 import '../features/cats/presentation/cat_form_screen.dart';
 import '../features/records/presentation/record_detail_screen.dart';
 import '../features/records/presentation/record_edit_screen.dart';
@@ -24,6 +25,14 @@ GoRouter createRouter() => GoRouter(
               RecordEditScreen(recordId: state.pathParameters['id']!),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/days/:date',
+      builder: (context, state) => DayListScreen(
+        // 日付の形が正しくなければ今日にする
+        day: DateTime.tryParse(state.pathParameters['date']!) ?? DateTime.now(),
+        catId: state.uri.queryParameters['cat'],
+      ),
     ),
   ],
 );
