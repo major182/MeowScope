@@ -116,9 +116,13 @@ gh pr checks <番号>                                        # ④ 実行 ID（r
 前提：Flutter 3.47.9、Android SDK、Visual Studio の C++ 開発環境、Docker。Java 25 は Gradle が用意する
 
 ```powershell
+Copy-Item .env.example .env   # 初回だけ。DB_PASSWORD を自分の値に書き換える
+docker compose up -d db       # DB だけを動かす（サーバーも Docker で動かすなら docker compose up -d --build）
+cd server; .\gradlew bootRun # 開発用の設定（人が読めるログ）で起動する。DB_PASSWORD は .env と同じ値を環境変数で渡す
 cd app; flutter run -d windows
-cd server; .gradlew bootRun
 ```
+
+サーバーの結合テスト（`.\gradlew check`）は Testcontainers で PostgreSQL を動かすので、Docker Desktop を起動しておく。
 
 ### 4.2 注意
 

@@ -23,8 +23,19 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    // DB：SQL をそのまま書ける JdbcClient を使う。同期は表をまたいだ一括の処理が多く、ORM の自動の動きより見通しがよいため
+    implementation("org.springframework.boot:spring-boot-starter-jdbc")
+    // DB の変更管理（技術選定書 3章）。PostgreSQL 用の部品は別になっている
+    implementation("org.springframework.boot:spring-boot-starter-flyway")
+    implementation("org.flywaydb:flyway-database-postgresql")
+    runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
+    // 結合テストは本物の PostgreSQL をコンテナで動かす（テスト仕様書 1章）
+    testImplementation("org.springframework.boot:spring-boot-testcontainers")
+    testImplementation("org.testcontainers:testcontainers-junit-jupiter")
+    testImplementation("org.testcontainers:testcontainers-postgresql")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
@@ -79,4 +90,9 @@ checkstyle {
 // 依存関係を変えたら ./gradlew dependencies --write-locks で更新する
 dependencyLocking {
     lockAllConfigurations()
+}
+
+// 手元で動かすときは開発用の設定（人が読めるログ）を使う
+tasks.bootRun {
+    systemProperty("spring.profiles.active", "dev")
 }
