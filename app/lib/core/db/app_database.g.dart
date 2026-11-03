@@ -490,9 +490,9 @@ class $HouseholdMembersTable extends HouseholdMembers
   late final GeneratedColumn<String> userId = GeneratedColumn<String>(
     'user_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _displayNameMeta = const VerificationMeta(
     'displayName',
@@ -577,8 +577,6 @@ class $HouseholdMembersTable extends HouseholdMembers
         _userIdMeta,
         userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_userIdMeta);
     }
     if (data.containsKey('display_name')) {
       context.handle(
@@ -625,7 +623,7 @@ class $HouseholdMembersTable extends HouseholdMembers
       userId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}user_id'],
-      )!,
+      ),
       displayName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}display_name'],
@@ -649,7 +647,9 @@ class HouseholdMemberRow extends DataClass
   /// サーバーが振る通し番号。端末では作らない
   final int? serverSeq;
   final String householdId;
-  final String userId;
+
+  /// 退会した人の行は空になる（サーバーで消えたユーザー）
+  final String? userId;
 
   /// メンバーの表示名。サーバーの users の表から受け取る
   final String? displayName;
@@ -660,7 +660,7 @@ class HouseholdMemberRow extends DataClass
     this.deletedAt,
     this.serverSeq,
     required this.householdId,
-    required this.userId,
+    this.userId,
     this.displayName,
   });
   @override
@@ -676,7 +676,9 @@ class HouseholdMemberRow extends DataClass
       map['server_seq'] = Variable<int>(serverSeq);
     }
     map['household_id'] = Variable<String>(householdId);
-    map['user_id'] = Variable<String>(userId);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
     if (!nullToAbsent || displayName != null) {
       map['display_name'] = Variable<String>(displayName);
     }
@@ -695,7 +697,9 @@ class HouseholdMemberRow extends DataClass
           ? const Value.absent()
           : Value(serverSeq),
       householdId: Value(householdId),
-      userId: Value(userId),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
       displayName: displayName == null && nullToAbsent
           ? const Value.absent()
           : Value(displayName),
@@ -714,7 +718,7 @@ class HouseholdMemberRow extends DataClass
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       serverSeq: serializer.fromJson<int?>(json['serverSeq']),
       householdId: serializer.fromJson<String>(json['householdId']),
-      userId: serializer.fromJson<String>(json['userId']),
+      userId: serializer.fromJson<String?>(json['userId']),
       displayName: serializer.fromJson<String?>(json['displayName']),
     );
   }
@@ -728,7 +732,7 @@ class HouseholdMemberRow extends DataClass
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'serverSeq': serializer.toJson<int?>(serverSeq),
       'householdId': serializer.toJson<String>(householdId),
-      'userId': serializer.toJson<String>(userId),
+      'userId': serializer.toJson<String?>(userId),
       'displayName': serializer.toJson<String?>(displayName),
     };
   }
@@ -740,7 +744,7 @@ class HouseholdMemberRow extends DataClass
     Value<DateTime?> deletedAt = const Value.absent(),
     Value<int?> serverSeq = const Value.absent(),
     String? householdId,
-    String? userId,
+    Value<String?> userId = const Value.absent(),
     Value<String?> displayName = const Value.absent(),
   }) => HouseholdMemberRow(
     id: id ?? this.id,
@@ -749,7 +753,7 @@ class HouseholdMemberRow extends DataClass
     deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
     serverSeq: serverSeq.present ? serverSeq.value : this.serverSeq,
     householdId: householdId ?? this.householdId,
-    userId: userId ?? this.userId,
+    userId: userId.present ? userId.value : this.userId,
     displayName: displayName.present ? displayName.value : this.displayName,
   );
   HouseholdMemberRow copyWithCompanion(HouseholdMembersCompanion data) {
@@ -816,7 +820,7 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
   final Value<DateTime?> deletedAt;
   final Value<int?> serverSeq;
   final Value<String> householdId;
-  final Value<String> userId;
+  final Value<String?> userId;
   final Value<String?> displayName;
   final Value<int> rowid;
   const HouseholdMembersCompanion({
@@ -837,14 +841,13 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
     this.deletedAt = const Value.absent(),
     this.serverSeq = const Value.absent(),
     required String householdId,
-    required String userId,
+    this.userId = const Value.absent(),
     this.displayName = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        createdAt = Value(createdAt),
        updatedAt = Value(updatedAt),
-       householdId = Value(householdId),
-       userId = Value(userId);
+       householdId = Value(householdId);
   static Insertable<HouseholdMemberRow> custom({
     Expression<String>? id,
     Expression<DateTime>? createdAt,
@@ -876,7 +879,7 @@ class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
     Value<DateTime?>? deletedAt,
     Value<int?>? serverSeq,
     Value<String>? householdId,
-    Value<String>? userId,
+    Value<String?>? userId,
     Value<String?>? displayName,
     Value<int>? rowid,
   }) {
@@ -5369,7 +5372,7 @@ typedef $$HouseholdMembersTableCreateCompanionBuilder =
       Value<DateTime?> deletedAt,
       Value<int?> serverSeq,
       required String householdId,
-      required String userId,
+      Value<String?> userId,
       Value<String?> displayName,
       Value<int> rowid,
     });
@@ -5381,7 +5384,7 @@ typedef $$HouseholdMembersTableUpdateCompanionBuilder =
       Value<DateTime?> deletedAt,
       Value<int?> serverSeq,
       Value<String> householdId,
-      Value<String> userId,
+      Value<String?> userId,
       Value<String?> displayName,
       Value<int> rowid,
     });
@@ -5567,7 +5570,7 @@ class $$HouseholdMembersTableTableManager
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int?> serverSeq = const Value.absent(),
                 Value<String> householdId = const Value.absent(),
-                Value<String> userId = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
                 Value<String?> displayName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => HouseholdMembersCompanion(
@@ -5589,7 +5592,7 @@ class $$HouseholdMembersTableTableManager
                 Value<DateTime?> deletedAt = const Value.absent(),
                 Value<int?> serverSeq = const Value.absent(),
                 required String householdId,
-                required String userId,
+                Value<String?> userId = const Value.absent(),
                 Value<String?> displayName = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => HouseholdMembersCompanion.insert(

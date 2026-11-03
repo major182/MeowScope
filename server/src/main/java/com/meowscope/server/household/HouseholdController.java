@@ -14,20 +14,37 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** おうちの API（API 設計書 4章）。招待と抜ける操作は、おうちの管理の実装（No.12）で足す。 */
+/** おうちの API（API 設計書 4章）。招待はメール送信の手段が決まってから（Q-26）足す。 */
 @RestController
 @RequestMapping("/api/v1/households")
 class HouseholdController {
 
     private final HouseholdService households;
+    private final LeaveService leave;
 
-    HouseholdController(HouseholdService households) {
+    HouseholdController(HouseholdService households, LeaveService leave) {
         this.households = households;
+        this.leave = leave;
+    }
+
+    /** 抜けるときの選択。記録を残すか（BR-16）。 */
+    record LeaveRequest(@NotNull Boolean keepRecords) {
+    }
+
+    /** 抜けた結果。最後の1人で、おうちごと消したら householdDeleted が真（BR-19）。 */
+    record LeaveResponse(boolean householdDeleted) {
+    }
+
+    @PostMapping("/{id}/leave")
+    LeaveResponse leave(@AuthenticationPrincipal Jwt jwt, @PathVariable UUID id,
+            @Valid @RequestBody LeaveRequest request) {
+        return new LeaveResponse(leave.leave(CurrentUser.id(jwt), id, request.keepRecords()));
     }
 
     /** 端末で作った記録項目。標準の8項目を受け取る。 */

@@ -6,6 +6,7 @@ import '../features/auth/presentation/register_screen.dart';
 import '../features/calendar/presentation/day_records.dart';
 import '../features/cats/presentation/cat_form_screen.dart';
 import '../features/cats/presentation/cat_list_screen.dart';
+import '../features/household/presentation/household_screen.dart';
 import '../features/records/presentation/record_detail_screen.dart';
 import '../features/records/presentation/record_edit_screen.dart';
 import '../features/records/presentation/record_types_screen.dart';
@@ -27,6 +28,10 @@ GoRouter createRouter() => GoRouter(
     GoRoute(
       path: '/account',
       builder: (context, state) => const AccountScreen(),
+    ),
+    GoRoute(
+      path: '/household',
+      builder: (context, state) => const HouseholdScreen(),
     ),
     GoRoute(
       path: '/sync',

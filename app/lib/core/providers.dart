@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../features/auth/data/account_repository.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/data/token_store.dart';
 import '../features/calendar/domain/calendar_month.dart';
@@ -98,3 +99,11 @@ final photoRepositoryProvider = Provider<PhotoRepository>(
 
 /// 写真を選ぶ部品。テストでは決めた画像を返す版に差し替える
 final photoPickerProvider = Provider<PhotoPicker>((ref) => DevicePhotoPicker());
+
+final accountRepositoryProvider = Provider<AccountRepository>(
+  (ref) => AccountRepository(
+    ref.watch(databaseProvider),
+    ref.watch(apiClientProvider),
+    ref.watch(tokenStoreProvider),
+  ),
+);

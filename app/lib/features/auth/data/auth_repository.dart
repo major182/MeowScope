@@ -1,11 +1,9 @@
-import 'dart:io';
-
 import 'package:dio/dio.dart';
-import 'package:drift/drift.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_error.dart';
 import '../../../core/db/app_database.dart';
+import '../../../core/db/local_cleanup.dart';
 import 'token_store.dart';
 
 /// ログイン中のユーザー
@@ -142,23 +140,8 @@ class AuthRepository {
       // 次にログインしたときは、同期で取り直す（API 設計書 2章）
       final pending = await _db.select(_db.pendingChanges).get();
       if (pending.isEmpty) {
-        // 写真は送り終わっているので、端末の画像も消す
-        for (final photo in await _db.select(_db.localPhotos).get()) {
-          final file = File(photo.localPath);
-          if (await file.exists()) {
-            await file.delete();
-          }
-        }
-        await _db.delete(_db.localPhotos).go();
-        await _db.delete(_db.recordPhotos).go();
-        await _db.delete(_db.records).go();
-        await _db.delete(_db.recordTypes).go();
-        await _db.delete(_db.cats).go();
-        await _db.delete(_db.householdMembers).go();
-        await _db.delete(_db.households).go();
-        await (_db.delete(
-          _db.appStates,
-        )..where((s) => s.key.like('sync.%') | s.key.like('household.%'))).go();
+        // 写真も送り終わっているので、端末の画像も消す
+        await wipeLocalData(_db);
       }
     });
   }
