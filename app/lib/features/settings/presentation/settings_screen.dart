@@ -13,6 +13,8 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final weekStart = ref.watch(weekStartProvider).value ?? WeekStart.sunday;
+    // ref.read で読めるよう、ログイン中のユーザーを見張っておく
+    ref.watch(authUserProvider);
     final android = defaultTargetPlatform == TargetPlatform.android;
     return Scaffold(
       appBar: AppBar(title: const Text('設定')),
@@ -23,7 +25,7 @@ class SettingsScreen extends ConsumerWidget {
           _Link(label: '記録項目の設定', path: '/record-types'),
           if (android) const _Pending(label: 'ウィジェットのボタン'),
           _Link(label: 'アカウント', path: '/account'),
-          const _Pending(label: '同期の状態'),
+          _Link(label: '同期の状態', path: '/sync'),
           const _Pending(label: '問い合わせ'),
           const Divider(),
           ListTile(
@@ -36,8 +38,12 @@ class SettingsScreen extends ConsumerWidget {
                   ButtonSegment(value: WeekStart.monday, label: Text('月曜')),
                 ],
                 selected: {weekStart},
-                onSelectionChanged: (s) =>
-                    ref.read(settingsRepositoryProvider).setWeekStart(s.first),
+                onSelectionChanged: (s) => ref
+                    .read(settingsRepositoryProvider)
+                    .setWeekStart(
+                      s.first,
+                      userId: ref.read(authUserProvider).value?.id,
+                    ),
               ),
             ),
           ),

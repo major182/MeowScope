@@ -8,6 +8,7 @@ import '../features/cats/data/cat_repository.dart';
 import '../features/household/data/household_repository.dart';
 import '../features/records/data/record_repository.dart';
 import '../features/settings/data/settings_repository.dart';
+import '../features/sync/data/sync_engine.dart';
 import 'api/api_client.dart';
 import 'db/app_database.dart';
 
@@ -66,4 +67,12 @@ final authRepositoryProvider = Provider<AuthRepository>(
 /// ログイン中のユーザー。ログインしていなければ null
 final authUserProvider = StreamProvider<AuthUser?>(
   (ref) => ref.watch(authRepositoryProvider).watchUser(),
+);
+
+final syncEngineProvider = Provider<SyncEngine>(
+  (ref) => SyncEngine(
+    ref.watch(databaseProvider),
+    ref.watch(apiClientProvider),
+    ref.watch(tokenStoreProvider),
+  ),
 );

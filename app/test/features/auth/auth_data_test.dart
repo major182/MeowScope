@@ -299,7 +299,7 @@ void main() {
       expect(await states(), isEmpty);
     });
 
-    test('UT-AU-19 ログアウト：サーバーへ知らせ、トークンとセッションを消す。おうちの記憶は残す', () async {
+    test('UT-AU-19 ログアウト：サーバーへ知らせ、トークンとセッションを消す。未送信がなければ同期済みのデータも消す', () async {
       server.on('POST', '/auth/login', (r) => FakeResponse(200, authBody()));
       server.on('POST', '/auth/logout', (r) => const FakeResponse(204));
       await repo.login(email: 'haru@example.com', password: 'Passw0rd!');
@@ -307,8 +307,12 @@ void main() {
         (b) => b.insertAll(db.appStates, [
           AppStatesCompanion.insert(key: 'session.householdId', value: 'h1'),
           AppStatesCompanion.insert(key: 'household.u1', value: 'h1'),
+          AppStatesCompanion.insert(key: 'sync.lastSeq.u1', value: '10'),
+          AppStatesCompanion.insert(key: 'settings.weekStart', value: 'monday'),
         ]),
       );
+      await addHousehold(db, 'h1');
+      await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
 
       await repo.logout();
 
@@ -320,8 +324,41 @@ void main() {
         'Bearer access-1',
       );
       expect(tokens.tokens, isNull);
-      expect(await states(), {'household.u1': 'h1'});
+      // 端末の設定は残し、同期の位置とおうちの記憶は消す（次は全件を取り直す）
+      expect(await states(), {'settings.weekStart': 'monday'});
+      expect(await db.select(db.cats).get(), isEmpty);
+      expect(await db.select(db.households).get(), isEmpty);
       expect(await repo.watchUser().first, isNull);
+    });
+
+    test('UT-AU-29 ログアウト：未送信の変更があれば、データと同期の位置を残す（API 設計書 2章）', () async {
+      server.on('POST', '/auth/login', (r) => FakeResponse(200, authBody()));
+      server.on('POST', '/auth/logout', (r) => const FakeResponse(204));
+      await repo.login(email: 'haru@example.com', password: 'Passw0rd!');
+      await addHousehold(db, 'h1');
+      await db.batch(
+        (b) => b
+          ..insert(
+            db.appStates,
+            AppStatesCompanion.insert(key: 'household.u1', value: 'h1'),
+          )
+          ..insert(
+            db.pendingChanges,
+            PendingChangesCompanion.insert(
+              userId: 'u1',
+              targetTable: 'households',
+              rowId: 'h1',
+              operation: 'upsert',
+              payload: '{}',
+            ),
+          ),
+      );
+
+      await repo.logout();
+
+      expect(await states(), {'household.u1': 'h1'});
+      expect(await db.select(db.households).get(), hasLength(1));
+      expect(await db.select(db.pendingChanges).get(), hasLength(1));
     });
 
     test('UT-AU-20 ログアウト：つながらなくても端末ではログアウトする。トークンがなければ知らせない', () async {

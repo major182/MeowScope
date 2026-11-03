@@ -415,6 +415,534 @@ class HouseholdsCompanion extends UpdateCompanion<HouseholdRow> {
   }
 }
 
+class $HouseholdMembersTable extends HouseholdMembers
+    with TableInfo<$HouseholdMembersTable, HouseholdMemberRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $HouseholdMembersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverSeqMeta = const VerificationMeta(
+    'serverSeq',
+  );
+  @override
+  late final GeneratedColumn<int> serverSeq = GeneratedColumn<int>(
+    'server_seq',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _householdIdMeta = const VerificationMeta(
+    'householdId',
+  );
+  @override
+  late final GeneratedColumn<String> householdId = GeneratedColumn<String>(
+    'household_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    serverSeq,
+    householdId,
+    userId,
+    displayName,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'household_members';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<HouseholdMemberRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('server_seq')) {
+      context.handle(
+        _serverSeqMeta,
+        serverSeq.isAcceptableOrUnknown(data['server_seq']!, _serverSeqMeta),
+      );
+    }
+    if (data.containsKey('household_id')) {
+      context.handle(
+        _householdIdMeta,
+        householdId.isAcceptableOrUnknown(
+          data['household_id']!,
+          _householdIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_householdIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  HouseholdMemberRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return HouseholdMemberRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      serverSeq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_seq'],
+      ),
+      householdId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}household_id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      ),
+    );
+  }
+
+  @override
+  $HouseholdMembersTable createAlias(String alias) {
+    return $HouseholdMembersTable(attachedDatabase, alias);
+  }
+}
+
+class HouseholdMemberRow extends DataClass
+    implements Insertable<HouseholdMemberRow> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  /// サーバーが振る通し番号。端末では作らない
+  final int? serverSeq;
+  final String householdId;
+  final String userId;
+
+  /// メンバーの表示名。サーバーの users の表から受け取る
+  final String? displayName;
+  const HouseholdMemberRow({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    this.serverSeq,
+    required this.householdId,
+    required this.userId,
+    this.displayName,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || serverSeq != null) {
+      map['server_seq'] = Variable<int>(serverSeq);
+    }
+    map['household_id'] = Variable<String>(householdId);
+    map['user_id'] = Variable<String>(userId);
+    if (!nullToAbsent || displayName != null) {
+      map['display_name'] = Variable<String>(displayName);
+    }
+    return map;
+  }
+
+  HouseholdMembersCompanion toCompanion(bool nullToAbsent) {
+    return HouseholdMembersCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      serverSeq: serverSeq == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverSeq),
+      householdId: Value(householdId),
+      userId: Value(userId),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
+    );
+  }
+
+  factory HouseholdMemberRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return HouseholdMemberRow(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      serverSeq: serializer.fromJson<int?>(json['serverSeq']),
+      householdId: serializer.fromJson<String>(json['householdId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      displayName: serializer.fromJson<String?>(json['displayName']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'serverSeq': serializer.toJson<int?>(serverSeq),
+      'householdId': serializer.toJson<String>(householdId),
+      'userId': serializer.toJson<String>(userId),
+      'displayName': serializer.toJson<String?>(displayName),
+    };
+  }
+
+  HouseholdMemberRow copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<int?> serverSeq = const Value.absent(),
+    String? householdId,
+    String? userId,
+    Value<String?> displayName = const Value.absent(),
+  }) => HouseholdMemberRow(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    serverSeq: serverSeq.present ? serverSeq.value : this.serverSeq,
+    householdId: householdId ?? this.householdId,
+    userId: userId ?? this.userId,
+    displayName: displayName.present ? displayName.value : this.displayName,
+  );
+  HouseholdMemberRow copyWithCompanion(HouseholdMembersCompanion data) {
+    return HouseholdMemberRow(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      serverSeq: data.serverSeq.present ? data.serverSeq.value : this.serverSeq,
+      householdId: data.householdId.present
+          ? data.householdId.value
+          : this.householdId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HouseholdMemberRow(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverSeq: $serverSeq, ')
+          ..write('householdId: $householdId, ')
+          ..write('userId: $userId, ')
+          ..write('displayName: $displayName')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    serverSeq,
+    householdId,
+    userId,
+    displayName,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is HouseholdMemberRow &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.serverSeq == this.serverSeq &&
+          other.householdId == this.householdId &&
+          other.userId == this.userId &&
+          other.displayName == this.displayName);
+}
+
+class HouseholdMembersCompanion extends UpdateCompanion<HouseholdMemberRow> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int?> serverSeq;
+  final Value<String> householdId;
+  final Value<String> userId;
+  final Value<String?> displayName;
+  final Value<int> rowid;
+  const HouseholdMembersCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.serverSeq = const Value.absent(),
+    this.householdId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  HouseholdMembersCompanion.insert({
+    required String id,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.serverSeq = const Value.absent(),
+    required String householdId,
+    required String userId,
+    this.displayName = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt),
+       householdId = Value(householdId),
+       userId = Value(userId);
+  static Insertable<HouseholdMemberRow> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? serverSeq,
+    Expression<String>? householdId,
+    Expression<String>? userId,
+    Expression<String>? displayName,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (serverSeq != null) 'server_seq': serverSeq,
+      if (householdId != null) 'household_id': householdId,
+      if (userId != null) 'user_id': userId,
+      if (displayName != null) 'display_name': displayName,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  HouseholdMembersCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int?>? serverSeq,
+    Value<String>? householdId,
+    Value<String>? userId,
+    Value<String?>? displayName,
+    Value<int>? rowid,
+  }) {
+    return HouseholdMembersCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      serverSeq: serverSeq ?? this.serverSeq,
+      householdId: householdId ?? this.householdId,
+      userId: userId ?? this.userId,
+      displayName: displayName ?? this.displayName,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (serverSeq.present) {
+      map['server_seq'] = Variable<int>(serverSeq.value);
+    }
+    if (householdId.present) {
+      map['household_id'] = Variable<String>(householdId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('HouseholdMembersCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverSeq: $serverSeq, ')
+          ..write('householdId: $householdId, ')
+          ..write('userId: $userId, ')
+          ..write('displayName: $displayName, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $CatsTable extends Cats with TableInfo<$CatsTable, CatRow> {
   @override
   final GeneratedDatabase attachedDatabase;
@@ -3283,6 +3811,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $HouseholdsTable households = $HouseholdsTable(this);
+  late final $HouseholdMembersTable householdMembers = $HouseholdMembersTable(
+    this,
+  );
   late final $CatsTable cats = $CatsTable(this);
   late final $RecordTypesTable recordTypes = $RecordTypesTable(this);
   late final $RecordsTable records = $RecordsTable(this);
@@ -3298,6 +3829,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     households,
+    householdMembers,
     cats,
     recordTypes,
     records,
@@ -3713,6 +4245,288 @@ typedef $$HouseholdsTableProcessedTableManager =
       (HouseholdRow, $$HouseholdsTableReferences),
       HouseholdRow,
       PrefetchHooks Function({bool catsRefs, bool recordTypesRefs})
+    >;
+typedef $$HouseholdMembersTableCreateCompanionBuilder =
+    HouseholdMembersCompanion Function({
+      required String id,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int?> serverSeq,
+      required String householdId,
+      required String userId,
+      Value<String?> displayName,
+      Value<int> rowid,
+    });
+typedef $$HouseholdMembersTableUpdateCompanionBuilder =
+    HouseholdMembersCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int?> serverSeq,
+      Value<String> householdId,
+      Value<String> userId,
+      Value<String?> displayName,
+      Value<int> rowid,
+    });
+
+class $$HouseholdMembersTableFilterComposer
+    extends Composer<_$AppDatabase, $HouseholdMembersTable> {
+  $$HouseholdMembersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverSeq => $composableBuilder(
+    column: $table.serverSeq,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$HouseholdMembersTableOrderingComposer
+    extends Composer<_$AppDatabase, $HouseholdMembersTable> {
+  $$HouseholdMembersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverSeq => $composableBuilder(
+    column: $table.serverSeq,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$HouseholdMembersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $HouseholdMembersTable> {
+  $$HouseholdMembersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get serverSeq =>
+      $composableBuilder(column: $table.serverSeq, builder: (column) => column);
+
+  GeneratedColumn<String> get householdId => $composableBuilder(
+    column: $table.householdId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+}
+
+class $$HouseholdMembersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $HouseholdMembersTable,
+          HouseholdMemberRow,
+          $$HouseholdMembersTableFilterComposer,
+          $$HouseholdMembersTableOrderingComposer,
+          $$HouseholdMembersTableAnnotationComposer,
+          $$HouseholdMembersTableCreateCompanionBuilder,
+          $$HouseholdMembersTableUpdateCompanionBuilder,
+          (
+            HouseholdMemberRow,
+            BaseReferences<
+              _$AppDatabase,
+              $HouseholdMembersTable,
+              HouseholdMemberRow
+            >,
+          ),
+          HouseholdMemberRow,
+          PrefetchHooks Function()
+        > {
+  $$HouseholdMembersTableTableManager(
+    _$AppDatabase db,
+    $HouseholdMembersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$HouseholdMembersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$HouseholdMembersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$HouseholdMembersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int?> serverSeq = const Value.absent(),
+                Value<String> householdId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String?> displayName = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => HouseholdMembersCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                serverSeq: serverSeq,
+                householdId: householdId,
+                userId: userId,
+                displayName: displayName,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int?> serverSeq = const Value.absent(),
+                required String householdId,
+                required String userId,
+                Value<String?> displayName = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => HouseholdMembersCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                serverSeq: serverSeq,
+                householdId: householdId,
+                userId: userId,
+                displayName: displayName,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$HouseholdMembersTable, HouseholdMemberRow>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $HouseholdMembersTable,
+                    HouseholdMemberRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$HouseholdMembersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $HouseholdMembersTable,
+      HouseholdMemberRow,
+      $$HouseholdMembersTableFilterComposer,
+      $$HouseholdMembersTableOrderingComposer,
+      $$HouseholdMembersTableAnnotationComposer,
+      $$HouseholdMembersTableCreateCompanionBuilder,
+      $$HouseholdMembersTableUpdateCompanionBuilder,
+      (
+        HouseholdMemberRow,
+        BaseReferences<
+          _$AppDatabase,
+          $HouseholdMembersTable,
+          HouseholdMemberRow
+        >,
+      ),
+      HouseholdMemberRow,
+      PrefetchHooks Function()
     >;
 typedef $$CatsTableCreateCompanionBuilder = CatsCompanion Function({
   required String id,
@@ -5736,6 +6550,8 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$HouseholdsTableTableManager get households =>
       $$HouseholdsTableTableManager(_db, _db.households);
+  $$HouseholdMembersTableTableManager get householdMembers =>
+      $$HouseholdMembersTableTableManager(_db, _db.householdMembers);
   $$CatsTableTableManager get cats => $$CatsTableTableManager(_db, _db.cats);
   $$RecordTypesTableTableManager get recordTypes =>
       $$RecordTypesTableTableManager(_db, _db.recordTypes);

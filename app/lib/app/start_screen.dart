@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/household/presentation/household_setup_screen.dart';
+import '../features/sync/presentation/sync_controller.dart';
 import 'main_shell.dart';
 
 /// 最初の画面。ログインしていなければログイン（S-01）、おうちがなければおうちの作成（S-04）、
@@ -26,8 +27,11 @@ class StartScreen extends ConsumerWidget {
     if (user.value == null) {
       return const LoginScreen();
     }
-    return session.value == null
-        ? const HouseholdSetupScreen()
-        : const MainShell();
+    // ログイン中は自動で同期する。おうちがまだなくても、サーバーにあるおうちを探すために同期する
+    return SyncScheduler(
+      child: session.value == null
+          ? const HouseholdSetupScreen()
+          : const MainShell(),
+    );
   }
 }

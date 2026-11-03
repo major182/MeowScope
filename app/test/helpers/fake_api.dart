@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -30,7 +31,7 @@ class FakeResponse {
   final Object? body;
 }
 
-typedef FakeHandler = FakeResponse Function(RequestOptions request);
+typedef FakeHandler = FutureOr<FakeResponse> Function(RequestOptions request);
 
 /// 本物の通信の代わりに、決めた応答を返す（dio の HttpClientAdapter を差し替える）
 ///
@@ -61,7 +62,7 @@ class FakeServer implements HttpClientAdapter {
     final handler = _handlers['${options.method} ${options.path}'];
     final response = handler == null
         ? const FakeResponse(404, {'code': 'NOT_FOUND'})
-        : handler(options);
+        : await handler(options);
     if (response.status == 0) {
       throw DioException.connectionError(
         requestOptions: options,

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:drift/drift.dart';
 
 import '../../../core/api/api_client.dart';
 import '../../../core/api/api_error.dart';
@@ -112,7 +113,7 @@ class AuthRepository {
 
   /// ログアウトする。サーバーにつながらなくても、端末ではログアウトを済ませる
   ///
-  /// 同期の実装までは、端末のデータはユーザーの ID と結び付けたまま残す（API 設計書 2章）
+  /// 送っていない変更があれば、ユーザーの ID と結び付けたまま残し、同じ人が入り直したら送る（API 設計書 2章）
   Future<void> logout() async {
     final saved = await _tokens.read();
     if (saved != null) {
@@ -126,13 +127,28 @@ class AuthRepository {
       }
     }
     await _tokens.clear();
-    await (_db.delete(_db.appStates)..where(
-          (s) => s.key.isIn([
-            SessionKeys.userId,
-            SessionKeys.userName,
-            SessionKeys.householdId,
-          ]),
-        ))
-        .go();
+    await _db.transaction(() async {
+      await (_db.delete(_db.appStates)..where(
+            (s) => s.key.isIn([
+              SessionKeys.userId,
+              SessionKeys.userName,
+              SessionKeys.householdId,
+            ]),
+          ))
+          .go();
+      // 送っていない変更がなければ、データはすべてサーバーにあるので端末から消す。
+      // 次にログインしたときは、同期で取り直す（API 設計書 2章）
+      final pending = await _db.select(_db.pendingChanges).get();
+      if (pending.isEmpty) {
+        await _db.delete(_db.records).go();
+        await _db.delete(_db.recordTypes).go();
+        await _db.delete(_db.cats).go();
+        await _db.delete(_db.householdMembers).go();
+        await _db.delete(_db.households).go();
+        await (_db.delete(
+          _db.appStates,
+        )..where((s) => s.key.like('sync.%') | s.key.like('household.%'))).go();
+      }
+    });
   }
 }
