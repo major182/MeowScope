@@ -16,6 +16,8 @@ class RecordEntry {
     required this.catId,
     required this.kind,
     required this.hasMemo,
+    required this.recordTypeId,
+    this.valueNumber,
   });
 
   final String id;
@@ -29,6 +31,11 @@ class RecordEntry {
 
   /// メモがあるか
   final bool hasMemo;
+
+  final String recordTypeId;
+
+  /// 体重などの数値
+  final double? valueNumber;
 }
 
 /// 記録の詳細の画面に出す内容
@@ -209,6 +216,8 @@ class RecordRepository {
             catId: row.readTable(r).catId,
             kind: row.readTable(t).kind,
             hasMemo: row.readTable(r).memo != null,
+            recordTypeId: row.readTable(r).recordTypeId,
+            valueNumber: row.readTable(r).valueNumber,
           ),
       ],
     );

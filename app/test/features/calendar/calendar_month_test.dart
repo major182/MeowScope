@@ -13,6 +13,7 @@ RecordEntry _entry(DateTime at, String kind, {bool memo = false}) =>
       catId: 'c1',
       kind: kind,
       hasMemo: memo,
+      recordTypeId: kind,
     );
 
 void main() {

@@ -8,14 +8,7 @@ import '../../household/data/household_repository.dart';
 import '../data/record_repository.dart';
 import '../domain/record_kind.dart';
 import 'record_format.dart';
-
-final _typesProvider = StreamProvider.autoDispose<List<RecordTypeRow>>((ref) {
-  final session = ref.watch(sessionProvider).value;
-  if (session == null) {
-    return Stream.value(const []);
-  }
-  return ref.watch(recordRepositoryProvider).watchTypes(session.householdId);
-});
+import 'record_providers.dart';
 
 final _catsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
   final session = ref.watch(sessionProvider).value;
@@ -48,7 +41,7 @@ class HomeScreen extends ConsumerWidget {
     if (session == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    final types = ref.watch(_typesProvider).value ?? const [];
+    final types = ref.watch(recordTypesProvider).value ?? const [];
     final today = ref.watch(_todayProvider).value ?? const [];
     // ボタンを押す前に猫の一覧を読み込んでおく
     final cats = ref.watch(_catsProvider).value ?? const [];

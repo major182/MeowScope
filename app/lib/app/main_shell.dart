@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/records/presentation/home_screen.dart';
+import '../features/stats/presentation/stats_screen.dart';
 
 /// この幅以上なら左にメニューを置く（Windows 向け。04 画面設計書 1章）
 const wideLayoutWidth = 900.0;
@@ -44,7 +45,7 @@ class _MainShellState extends State<MainShell> {
       children: const [
         HomeScreen(),
         CalendarScreen(),
-        PlaceholderScreen(title: '統計'),
+        StatsScreen(),
         PlaceholderScreen(title: '設定'),
       ],
     );
