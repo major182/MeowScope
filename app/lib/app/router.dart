@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/calendar/presentation/day_records.dart';
 import '../features/cats/presentation/cat_form_screen.dart';
+import '../features/cats/presentation/cat_list_screen.dart';
 import '../features/records/presentation/record_detail_screen.dart';
 import '../features/records/presentation/record_edit_screen.dart';
 import 'start_screen.dart';
@@ -11,8 +12,20 @@ GoRouter createRouter() => GoRouter(
   routes: [
     GoRoute(path: '/', builder: (context, state) => const StartScreen()),
     GoRoute(
-      path: '/cats/new',
-      builder: (context, state) => const CatFormScreen(),
+      path: '/cats',
+      builder: (context, state) => const CatListScreen(),
+      routes: [
+        // new を先に置き、猫の ID と見分ける
+        GoRoute(
+          path: 'new',
+          builder: (context, state) => const CatFormScreen(),
+        ),
+        GoRoute(
+          path: ':id',
+          builder: (context, state) =>
+              CatProfileScreen(catId: state.pathParameters['id']!),
+        ),
+      ],
     ),
     GoRoute(
       path: '/records/:id',
