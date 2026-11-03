@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:drift/drift.dart';
@@ -78,6 +79,8 @@ class SyncEngine {
           break;
         }
       }
+      // 写真の情報を送った後で、画像を送る（API 設計書 6章）
+      await _uploadPhotos(userId);
     } on DioException catch (e) {
       final error = ApiError.from(e);
       if (error.status == 401) {
@@ -151,6 +154,37 @@ class SyncEngine {
       )..where((p) => p.seq.equals(pending.seq))).go();
     }
     return rejected;
+  }
+
+  /// 送信待ちの写真の画像を送る。送れたら送信待ちから外す（端末の画像は30日残す）
+  Future<void> _uploadPhotos(String userId) async {
+    final waiting = await (_db.select(
+      _db.pendingPhotos,
+    )..where((p) => p.userId.equals(userId))).get();
+    for (final photo in waiting) {
+      final file = File(photo.localPath);
+      if (await file.exists()) {
+        try {
+          await _api.put<void>(
+            '/photos/${photo.photoId}',
+            data: await file.readAsBytes(),
+            options: Options(contentType: 'image/jpeg'),
+          );
+          await (_db.update(_db.recordPhotos)
+                ..where((p) => p.id.equals(photo.photoId)))
+              .write(const RecordPhotosCompanion(uploaded: Value(true)));
+        } on DioException catch (e) {
+          final status = e.response?.statusCode ?? 0;
+          // 4xx（写真の情報が受け付けられなかった・大きすぎる）は送り直しても変わらない
+          if (status < 400 || status >= 500 || status == 401) {
+            rethrow;
+          }
+        }
+      }
+      await (_db.delete(
+        _db.pendingPhotos,
+      )..where((p) => p.photoId.equals(photo.photoId))).go();
+    }
   }
 
   /// 送受信を1回行う。続けて呼ぶ必要があれば again が真
@@ -302,6 +336,21 @@ class SyncEngine {
                 updatedAt: r.updatedAt,
                 deletedAt: r.deletedAt,
               );
+      case 'record_photos':
+        final p = await (_db.select(
+          _db.recordPhotos,
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
+        return p == null
+            ? null
+            : change(
+                {
+                  'recordId': p.recordId,
+                  'sortOrder': p.sortOrder,
+                  'sizeBytes': p.sizeBytes,
+                },
+                updatedAt: p.updatedAt,
+                deletedAt: p.deletedAt,
+              );
       case 'user_settings':
         final week = await _state(SettingsRepository.weekStartKey);
         return change({'weekStart': week ?? 'sunday'}, updatedAt: _clock());
@@ -445,6 +494,22 @@ class SyncEngine {
                       memo: Value(data['memo'] as String?),
                     ),
                   );
+            case 'record_photos':
+              await _db
+                  .into(_db.recordPhotos)
+                  .insertOnConflictUpdate(
+                    RecordPhotosCompanion.insert(
+                      id: id,
+                      createdAt: updatedAt,
+                      updatedAt: updatedAt,
+                      deletedAt: Value(deletedAt),
+                      serverSeq: Value(seq),
+                      recordId: data['recordId'] as String,
+                      sortOrder: data['sortOrder'] as int,
+                      sizeBytes: Value(data['sizeBytes'] as int?),
+                      uploaded: Value(data['uploaded'] as bool? ?? false),
+                    ),
+                  );
             case 'user_settings':
               final week = data['weekStart'] as String?;
               if (week != null) {
@@ -466,6 +531,12 @@ class SyncEngine {
     final cats = _db.selectOnly(_db.cats)
       ..addColumns([_db.cats.id])
       ..where(_db.cats.householdId.equals(householdId));
+    final records = _db.selectOnly(_db.records)
+      ..addColumns([_db.records.id])
+      ..where(_db.records.catId.isInQuery(cats));
+    await (_db.delete(
+      _db.recordPhotos,
+    )..where((p) => p.recordId.isInQuery(records))).go();
     await (_db.delete(_db.records)..where((r) => r.catId.isInQuery(cats))).go();
     await (_db.delete(
       _db.cats,

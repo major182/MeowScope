@@ -42,6 +42,10 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET を .env に書いてください}
       MEOWSCOPE_ENV: ${MEOWSCOPE_ENV:-local}
       MEOWSCOPE_VERSION: ${MEOWSCOPE_VERSION:-dev}
+      PHOTOS_DIR: /data/photos
+    volumes:
+      # 写真の本体（PC へ移すときは、このボリュームも移す）
+      - photos-data:/data/photos
     ports:
       - "${SERVER_PORT:-8080}:8080"
     restart: unless-stopped
@@ -49,3 +53,4 @@ services:
 
 volumes:
   db-data:
+  photos-data:

@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/data/token_store.dart';
@@ -7,6 +10,8 @@ import '../features/calendar/domain/calendar_month.dart';
 import '../features/cats/data/cat_repository.dart';
 import '../features/household/data/household_repository.dart';
 import '../features/records/data/record_repository.dart';
+import '../features/photos/data/photo_picker.dart';
+import '../features/photos/data/photo_repository.dart';
 import '../features/settings/data/settings_repository.dart';
 import '../features/sync/data/sync_engine.dart';
 import 'api/api_client.dart';
@@ -76,3 +81,20 @@ final syncEngineProvider = Provider<SyncEngine>(
     ref.watch(tokenStoreProvider),
   ),
 );
+
+/// 写真を置くフォルダー（端末のアプリ用フォルダーの下）。テストでは一時フォルダーに差し替える
+final photoDirectoryProvider = Provider<Future<Directory> Function()>(
+  (ref) =>
+      () async =>
+          Directory('${(await getApplicationSupportDirectory()).path}/photos'),
+);
+
+final photoRepositoryProvider = Provider<PhotoRepository>(
+  (ref) => PhotoRepository(
+    ref.watch(databaseProvider),
+    ref.watch(photoDirectoryProvider),
+  ),
+);
+
+/// 写真を選ぶ部品。テストでは決めた画像を返す版に差し替える
+final photoPickerProvider = Provider<PhotoPicker>((ref) => DevicePhotoPicker());

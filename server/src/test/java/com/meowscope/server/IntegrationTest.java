@@ -12,7 +12,11 @@ import org.springframework.context.annotation.Import;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 // 署名鍵はテスト専用の値をテストの側から渡す（本物の鍵は秘密の置き場にだけ置く）
-@SpringBootTest(properties = "meowscope.auth.jwt-secret=" + IntegrationTest.TEST_JWT_SECRET)
+// 写真はテスト用の一時フォルダーに置く
+@SpringBootTest(properties = {
+    "meowscope.auth.jwt-secret=" + IntegrationTest.TEST_JWT_SECRET,
+    "meowscope.photos.dir=${java.io.tmpdir}/meowscope-test-photos",
+})
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 public @interface IntegrationTest {

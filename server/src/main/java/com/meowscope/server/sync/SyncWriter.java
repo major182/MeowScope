@@ -1,6 +1,7 @@
 package com.meowscope.server.sync;
 
 import com.meowscope.server.household.HouseholdAccess;
+import com.meowscope.server.photo.PhotoStorage;
 import com.meowscope.server.sync.Fields.Rejected;
 import com.meowscope.server.sync.SyncDtos.ChangeIn;
 import java.sql.Timestamp;
@@ -39,11 +40,13 @@ class SyncWriter {
     private final JdbcClient jdbc;
     private final HouseholdAccess access;
     private final JsonMapper json;
+    private final PhotoStorage storage;
 
-    SyncWriter(JdbcClient jdbc, HouseholdAccess access, JsonMapper json) {
+    SyncWriter(JdbcClient jdbc, HouseholdAccess access, JsonMapper json, PhotoStorage storage) {
         this.jdbc = jdbc;
         this.access = access;
         this.json = json;
+        this.storage = storage;
     }
 
     /** 表ごとに反映する。表の名前が知らないものなら受け付けない。 */
@@ -57,6 +60,7 @@ class SyncWriter {
             case "cats" -> cat(userId, change.id(), f, updatedAt, deletedAt);
             case "record_types" -> recordType(userId, change.id(), f, updatedAt, deletedAt);
             case "records" -> record(userId, change.id(), f, updatedAt, deletedAt);
+            case "record_photos" -> photo(userId, change.id(), f, updatedAt, deletedAt);
             case "user_settings" -> userSettings(userId, f, updatedAt);
             default -> throw new Rejected("unknown_table", null);
         };
@@ -68,7 +72,8 @@ class SyncWriter {
             case "households" -> 0;
             case "cats", "record_types" -> 1;
             case "records" -> 2;
-            default -> 3;
+            case "record_photos" -> 3;
+            default -> 4;
         };
     }
 
@@ -208,6 +213,54 @@ class SyncWriter {
                 .param("id", id).param("cat", catId).param("type", typeId).param("recordedAt", v[0])
                 .param("author", userId).param("authorName", v[1]).param("value", v[2]).param("level", v[3])
                 .param("detail", v[4]).param("memo", v[5]).param("deletedAt", deletedAt)
+                .param("updatedAt", updatedAt).update();
+        return APPLIED;
+    }
+
+    /** 1つの記録に付けられる写真の数（データ要件、AC-03）。 */
+    static final int MAX_PHOTOS = 3;
+
+    /**
+     * 写真の情報（どの記録の何枚目か）。画像の本体は PUT /photos で後から届く。
+     * 削除の印が付いたら、サーバーの画像のファイルも消す（DB 設計書 7章）。
+     */
+    private String photo(UUID userId, UUID id, Fields f, Timestamp updatedAt, Timestamp deletedAt) {
+        UUID recordId = f.uuid("recordId");
+        Integer sort = f.integer("sortOrder", 1, MAX_PHOTOS);
+        if (sort == null) {
+            throw new Rejected("invalid", "sortOrder");
+        }
+        UUID household = access.householdOfRecord(recordId).orElseThrow(() -> new Rejected("not_found", "recordId"));
+        requireMember(userId, household);
+        if (deletedAt == null) {
+            long others = jdbc.sql("""
+                    SELECT count(*) FROM record_photos
+                    WHERE record_id = :record AND deleted_at IS NULL AND id <> :id
+                    """).param("record", recordId).param("id", id).query(Long.class).single();
+            if (others >= MAX_PHOTOS) {
+                throw new Rejected("too_many", null);
+            }
+        }
+        if (checkExisting(userId, access.householdOfPhoto(id), household)) {
+            String path = jdbc.sql("SELECT file_path FROM record_photos WHERE id = :id").param("id", id)
+                    .query(String.class).optional().orElse(null);
+            String status = result(jdbc.sql("""
+                    UPDATE record_photos SET record_id = :record, sort_order = :sort, deleted_at = :deletedAt,
+                      updated_at = :updatedAt, server_seq = nextval('sync_seq')
+                    WHERE id = :id AND ROW(record_id, sort_order, deleted_at)
+                      IS DISTINCT FROM ROW(CAST(:record AS uuid), CAST(:sort AS integer),
+                        CAST(:deletedAt AS timestamptz))
+                    """).param("id", id).param("record", recordId).param("sort", sort)
+                    .param("deletedAt", deletedAt).param("updatedAt", updatedAt).update());
+            if (deletedAt != null && APPLIED.equals(status)) {
+                storage.delete(path);
+            }
+            return status;
+        }
+        jdbc.sql("""
+                INSERT INTO record_photos (id, record_id, sort_order, deleted_at, updated_at)
+                VALUES (:id, :record, :sort, :deletedAt, :updatedAt)
+                """).param("id", id).param("record", recordId).param("sort", sort).param("deletedAt", deletedAt)
                 .param("updatedAt", updatedAt).update();
         return APPLIED;
     }

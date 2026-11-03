@@ -123,6 +123,8 @@ class _SyncSchedulerState extends ConsumerState<SyncScheduler> {
     super.initState();
     // 最初の表示が終わってから始める（表示の途中で状態を変えないため）
     WidgetsBinding.instance.addPostFrameCallback((_) => _sync());
+    // 30日を過ぎた写真を端末から消す（AC-14）。起動のたびに確かめる
+    ref.read(photoRepositoryProvider).cleanupOld();
     _timer = Timer.periodic(SyncScheduler.interval, (_) => _sync());
     _lifecycle = AppLifecycleListener(onHide: _sync);
   }

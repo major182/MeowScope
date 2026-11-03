@@ -47,4 +47,11 @@ public class HouseholdAccess {
         return jdbc.sql("SELECT c.household_id FROM records r JOIN cats c ON c.id = r.cat_id WHERE r.id = :id")
                 .param("id", recordId).query(UUID.class).optional();
     }
+
+    public Optional<UUID> householdOfPhoto(UUID photoId) {
+        return jdbc.sql("""
+                SELECT c.household_id FROM record_photos p JOIN records r ON r.id = p.record_id
+                JOIN cats c ON c.id = r.cat_id WHERE p.id = :id
+                """).param("id", photoId).query(UUID.class).optional();
+    }
 }
