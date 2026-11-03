@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 05 |
-| 版数 | 0.3 |
+| 版数 | 0.4 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md) |
@@ -102,11 +102,11 @@ erDiagram
 |---|---|---|---|
 | `household_id` | uuid | 外部キー | おうち |
 | `name` | text | 必須 | 項目の名前 |
-| `icon` | text | | アイコン |
-| `kind` | text | 必須 | `food` `water` `medicine` `urine` `stool` `vomit` `weight` `custom` |
+| `icon` | text | | アイコンのイラストの名前。標準の項目は種類で決まり、独自の項目は用意した一覧から選ぶ |
+| `kind` | text | 必須 | `food` `water` `medicine` `urine` `stool` `vomit` `weight` `brushing` `custom` |
 | `sort_order` | integer | | 並び順 |
 
-おうちを作るときに標準の7項目を登録する。
+おうちを作るときに標準の8項目を登録する。
 
 ### records（記録）
 
@@ -193,3 +193,4 @@ erDiagram
 | 0.1 | 2026-11-02 | 初版 |
 | 0.2 | 2026-11-02 | 未送信の表にユーザーの ID を追加 |
 | 0.3 | 2026-11-02 | しきい値を猫の表へ移動 |
+| 0.4 | 2026-11-03 | 標準の項目にブラッシングを追加、アイコンの持ち方を記入 |
