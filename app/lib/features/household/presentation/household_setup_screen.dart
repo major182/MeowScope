@@ -62,6 +62,11 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
               onPressed: _saving ? null : _create,
               child: const Text('新しいおうちを作る'),
             ),
+            const SizedBox(height: 24),
+            OutlinedButton(
+              onPressed: () => context.push('/join'),
+              child: const Text('招待されたおうちに参加'),
+            ),
           ],
         ),
       ),

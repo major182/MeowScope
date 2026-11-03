@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -53,6 +54,42 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('おうちの名前を保存しました')));
+    }
+  }
+
+  /// 招待の文を作ってコピーし、LINE などに貼り付けて送ってもらう
+  Future<void> _invite(String householdId, String householdName) async {
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _busy = true);
+    try {
+      final message = await ref
+          .read(accountRepositoryProvider)
+          .createInvitation(
+            householdId: householdId,
+            householdName: householdName,
+          );
+      await Clipboard.setData(ClipboardData(text: message));
+      if (mounted) {
+        await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('招待の文をコピーしました'),
+            content: Text('LINE などに貼り付けて送ってください。1時間以内に、1回だけ使えます。\n\n$message'),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('閉じる'),
+              ),
+            ],
+          ),
+        );
+      }
+    } on ApiError catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message())));
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
     }
   }
 
@@ -144,6 +181,11 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
               title: Text(m.name),
             ),
           const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: _busy ? null : () => _invite(id, name ?? ''),
+            icon: const Icon(Icons.link),
+            label: const Text('リンクで招待する'),
+          ),
           const ListTile(
             enabled: false,
             leading: Icon(Icons.mail_outline),

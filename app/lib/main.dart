@@ -1,4 +1,8 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:ui';
+
+import 'package:app_links/app_links.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,13 +32,19 @@ void main() {
   runApp(
     UncontrolledProviderScope(
       container: container,
-      child: const MeowScopeApp(),
+      // Android は招待のリンク（meowscope://invite?token=...）を押すとアプリが開く
+      child: MeowScopeApp(
+        links: Platform.isAndroid ? AppLinks().uriLinkStream : null,
+      ),
     ),
   );
 }
 
 class MeowScopeApp extends StatefulWidget {
-  const MeowScopeApp({super.key});
+  const MeowScopeApp({super.key, this.links});
+
+  /// 開かれたリンク。テストでは決めた値を流す
+  final Stream<Uri>? links;
 
   @override
   State<MeowScopeApp> createState() => _MeowScopeAppState();
@@ -42,9 +52,27 @@ class MeowScopeApp extends StatefulWidget {
 
 class _MeowScopeAppState extends State<MeowScopeApp> {
   final GoRouter _router = createRouter();
+  StreamSubscription<Uri>? _links;
+
+  @override
+  void initState() {
+    super.initState();
+    _links = widget.links?.listen(_open);
+  }
+
+  /// 招待のリンクなら、参加の画面を開く
+  void _open(Uri uri) {
+    final token = uri.queryParameters['token'];
+    if (uri.scheme == 'meowscope' && uri.host == 'invite' && token != null) {
+      _router.push(
+        Uri(path: '/join', queryParameters: {'token': token}).toString(),
+      );
+    }
+  }
 
   @override
   void dispose() {
+    _links?.cancel();
     _router.dispose();
     super.dispose();
   }
