@@ -6,19 +6,29 @@ import 'package:uuid/uuid.dart';
 import '../../../core/db/app_database.dart';
 import '../domain/record_kind.dart';
 
-/// 今日の記録の一覧に出す1行
+/// 記録の一覧（今日の記録・カレンダー・日別一覧）に出す1行
 class RecordEntry {
   const RecordEntry({
     required this.id,
     required this.recordedAt,
     required this.catName,
     required this.typeName,
+    required this.catId,
+    required this.kind,
+    required this.hasMemo,
   });
 
   final String id;
   final DateTime recordedAt;
   final String catName;
   final String typeName;
+  final String catId;
+
+  /// 項目の種類（RecordKind の名前または custom）
+  final String kind;
+
+  /// メモがあるか
+  final bool hasMemo;
 }
 
 /// 記録の詳細の画面に出す内容
@@ -149,24 +159,45 @@ class RecordRepository {
   }
 
   /// 端末の時刻で、指定した日の記録を新しい順に見張る
-  Stream<List<RecordEntry>> watchDay(String householdId, DateTime day) {
-    final start = DateTime(day.year, day.month, day.day).toUtc();
-    final end = DateTime(day.year, day.month, day.day + 1).toUtc();
+  Stream<List<RecordEntry>> watchDay(String householdId, DateTime day) =>
+      watchRange(
+        householdId,
+        from: DateTime(day.year, day.month, day.day),
+        to: DateTime(day.year, day.month, day.day + 1),
+        newestFirst: true,
+      );
+
+  /// 期間（from 以上 to 未満）の記録を見張る。catId を渡すとその猫だけにする
+  Stream<List<RecordEntry>> watchRange(
+    String householdId, {
+    required DateTime from,
+    required DateTime to,
+    String? catId,
+    bool newestFirst = false,
+  }) {
     final r = _db.records;
     final c = _db.cats;
     final t = _db.recordTypes;
+    var where =
+        c.householdId.equals(householdId) &
+        c.deletedAt.isNull() &
+        r.deletedAt.isNull() &
+        r.recordedAt.isBiggerOrEqualValue(from.toUtc()) &
+        r.recordedAt.isSmallerThanValue(to.toUtc());
+    if (catId != null) {
+      where = where & r.catId.equals(catId);
+    }
     final q =
         _db.select(r).join([
             innerJoin(c, c.id.equalsExp(r.catId)),
             innerJoin(t, t.id.equalsExp(r.recordTypeId)),
           ])
-          ..where(
-            c.householdId.equals(householdId) &
-                r.deletedAt.isNull() &
-                r.recordedAt.isBiggerOrEqualValue(start) &
-                r.recordedAt.isSmallerThanValue(end),
-          )
-          ..orderBy([OrderingTerm.desc(r.recordedAt)]);
+          ..where(where)
+          ..orderBy([
+            newestFirst
+                ? OrderingTerm.desc(r.recordedAt)
+                : OrderingTerm.asc(r.recordedAt),
+          ]);
     return q.watch().map(
       (rows) => [
         for (final row in rows)
@@ -175,9 +206,20 @@ class RecordRepository {
             recordedAt: row.readTable(r).recordedAt.toLocal(),
             catName: row.readTable(c).name,
             typeName: row.readTable(t).name,
+            catId: row.readTable(r).catId,
+            kind: row.readTable(t).kind,
+            hasMemo: row.readTable(r).memo != null,
           ),
       ],
     );
+  }
+
+  /// 絞り込みに出す猫（お別れを含み、削除済みを除く）を登録順に見張る
+  Stream<List<CatRow>> watchCats(String householdId) {
+    final q = _db.select(_db.cats)
+      ..where((c) => c.householdId.equals(householdId) & c.deletedAt.isNull())
+      ..orderBy([(c) => OrderingTerm(expression: c.createdAt)]);
+    return q.watch();
   }
 
   /// 記録1件を、猫と項目の名前つきで見張る。削除済みや存在しなければ null

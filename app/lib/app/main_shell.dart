@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/calendar/presentation/calendar_screen.dart';
 import '../features/records/presentation/home_screen.dart';
 
 /// この幅以上なら左にメニューを置く（Windows 向け。04 画面設計書 1章）
@@ -42,7 +43,7 @@ class _MainShellState extends State<MainShell> {
       index: _index,
       children: const [
         HomeScreen(),
-        PlaceholderScreen(title: 'カレンダー'),
+        CalendarScreen(),
         PlaceholderScreen(title: '統計'),
         PlaceholderScreen(title: '設定'),
       ],
