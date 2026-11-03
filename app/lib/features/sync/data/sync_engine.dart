@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/api/api_error.dart';
 import '../../../core/db/app_database.dart';
+import '../../../core/db/local_cleanup.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/data/token_store.dart';
 import '../../settings/data/settings_repository.dart';
@@ -401,7 +402,7 @@ class SyncEngine {
                     ),
                   );
             case 'household_members':
-              final member = data['userId'] as String;
+              final member = data['userId'] as String?;
               await _db
                   .into(_db.householdMembers)
                   .insertOnConflictUpdate(
@@ -412,7 +413,7 @@ class SyncEngine {
                       deletedAt: Value(deletedAt),
                       serverSeq: Value(seq),
                       householdId: data['householdId'] as String,
-                      userId: member,
+                      userId: Value(member),
                       displayName: Value(data['displayName'] as String?),
                     ),
                   );
@@ -518,45 +519,11 @@ class SyncEngine {
           }
         }
         for (final household in left) {
-          await _removeHousehold(userId, household);
+          await removeHouseholdLocally(_db, userId, household);
         }
       });
     } finally {
       await _db.customStatement('PRAGMA foreign_keys = ON');
-    }
-  }
-
-  /// 別の端末でおうちを抜けた・退会した。端末からそのおうちのデータを消す（API 設計書 5章）
-  Future<void> _removeHousehold(String userId, String householdId) async {
-    final cats = _db.selectOnly(_db.cats)
-      ..addColumns([_db.cats.id])
-      ..where(_db.cats.householdId.equals(householdId));
-    final records = _db.selectOnly(_db.records)
-      ..addColumns([_db.records.id])
-      ..where(_db.records.catId.isInQuery(cats));
-    await (_db.delete(
-      _db.recordPhotos,
-    )..where((p) => p.recordId.isInQuery(records))).go();
-    await (_db.delete(_db.records)..where((r) => r.catId.isInQuery(cats))).go();
-    await (_db.delete(
-      _db.cats,
-    )..where((c) => c.householdId.equals(householdId))).go();
-    await (_db.delete(
-      _db.recordTypes,
-    )..where((t) => t.householdId.equals(householdId))).go();
-    await (_db.delete(
-      _db.householdMembers,
-    )..where((m) => m.householdId.equals(householdId))).go();
-    await (_db.delete(
-      _db.households,
-    )..where((h) => h.id.equals(householdId))).go();
-    for (final key in [
-      SessionKeys.householdId,
-      SessionKeys.householdOf(userId),
-    ]) {
-      await (_db.delete(
-        _db.appStates,
-      )..where((s) => s.key.equals(key) & s.value.equals(householdId))).go();
     }
   }
 

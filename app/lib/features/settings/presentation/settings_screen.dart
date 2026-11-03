@@ -21,7 +21,7 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         children: [
           _Link(label: '猫の一覧とプロフィール', path: '/cats'),
-          const _Pending(label: 'おうちの管理'),
+          _Link(label: 'おうちの管理', path: '/household'),
           _Link(label: '記録項目の設定', path: '/record-types'),
           if (android) const _Pending(label: 'ウィジェットのボタン'),
           _Link(label: 'アカウント', path: '/account'),

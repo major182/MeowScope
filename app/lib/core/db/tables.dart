@@ -24,7 +24,9 @@ class Households extends Table with SyncColumns {
 @DataClassName('HouseholdMemberRow')
 class HouseholdMembers extends Table with SyncColumns {
   TextColumn get householdId => text()();
-  TextColumn get userId => text()();
+
+  /// 退会した人の行は空になる（サーバーで消えたユーザー）
+  TextColumn get userId => text().nullable()();
 
   /// メンバーの表示名。サーバーの users の表から受け取る
   TextColumn get displayName => text().nullable()();
