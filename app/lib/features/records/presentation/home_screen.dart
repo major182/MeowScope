@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
+import '../../household/data/household_repository.dart';
 import '../data/record_repository.dart';
 import '../domain/record_kind.dart';
 
 final _typesProvider = StreamProvider.autoDispose<List<RecordTypeRow>>((ref) {
-  final session = ref.watch(sessionProvider);
+  final session = ref.watch(sessionProvider).value;
   if (session == null) {
     return Stream.value(const []);
   }
@@ -15,7 +17,7 @@ final _typesProvider = StreamProvider.autoDispose<List<RecordTypeRow>>((ref) {
 });
 
 final _catsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
-  final session = ref.watch(sessionProvider);
+  final session = ref.watch(sessionProvider).value;
   if (session == null) {
     return Stream.value(const []);
   }
@@ -25,7 +27,7 @@ final _catsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
 });
 
 final _todayProvider = StreamProvider.autoDispose<List<RecordEntry>>((ref) {
-  final session = ref.watch(sessionProvider);
+  final session = ref.watch(sessionProvider).value;
   if (session == null) {
     return Stream.value(const []);
   }
@@ -40,19 +42,40 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final session = ref.watch(sessionProvider);
+    final session = ref.watch(sessionProvider).value;
+    // おうちがないときは StartScreen がおうちの作成を出すので、ここでは待つだけ
     if (session == null) {
-      return const Scaffold(body: Center(child: Text('おうちがまだありません')));
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     final types = ref.watch(_typesProvider).value ?? const [];
     final today = ref.watch(_todayProvider).value ?? const [];
     // ボタンを押す前に猫の一覧を読み込んでおく
     final cats = ref.watch(_catsProvider).value ?? const [];
     return Scaffold(
-      appBar: AppBar(title: const Text('ホーム')),
+      appBar: AppBar(
+        title: const Text('ホーム'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => context.push('/cats/new'),
+            icon: const Icon(Icons.add),
+            label: const Text('猫を追加'),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
+          if (cats.isEmpty)
+            Card(
+              child: ListTile(
+                title: const Text('猫が登録されていません'),
+                subtitle: const Text('記録の前に、猫を登録してください'),
+                trailing: FilledButton(
+                  onPressed: () => context.push('/cats/new'),
+                  child: const Text('登録する'),
+                ),
+              ),
+            ),
           GridView.count(
             crossAxisCount: 4,
             shrinkWrap: true,
@@ -142,7 +165,11 @@ class _TypeButton extends StatelessWidget {
     final asset = iconAsset(type.icon);
     return OutlinedButton(
       onPressed: onPressed,
-      style: OutlinedButton.styleFrom(padding: const EdgeInsets.all(4)),
+      // 既定の丸い形では名前が枠に重なるので、角丸の四角にする
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.all(4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -151,7 +178,8 @@ class _TypeButton extends StatelessWidget {
                 ? const Icon(Icons.star_outline)
                 : Image.asset(asset, semanticLabel: type.name),
           ),
-          Text(type.name, maxLines: 1, overflow: TextOverflow.ellipsis),
+          // 「ブラッシング」が収まるよう、幅に合わせて文字を縮める
+          FittedBox(fit: BoxFit.scaleDown, child: Text(type.name, maxLines: 1)),
         ],
       ),
     );

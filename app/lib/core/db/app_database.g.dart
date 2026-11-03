@@ -2561,6 +2561,214 @@ class RecordsCompanion extends UpdateCompanion<RecordRow> {
   }
 }
 
+class $AppStatesTable extends AppStates
+    with TableInfo<$AppStatesTable, AppStateRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AppStatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [key, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'app_states';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AppStateRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  AppStateRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AppStateRow(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+    );
+  }
+
+  @override
+  $AppStatesTable createAlias(String alias) {
+    return $AppStatesTable(attachedDatabase, alias);
+  }
+}
+
+class AppStateRow extends DataClass implements Insertable<AppStateRow> {
+  final String key;
+  final String value;
+  const AppStateRow({required this.key, required this.value});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<String>(value);
+    return map;
+  }
+
+  AppStatesCompanion toCompanion(bool nullToAbsent) {
+    return AppStatesCompanion(key: Value(key), value: Value(value));
+  }
+
+  factory AppStateRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AppStateRow(
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String>(value),
+    };
+  }
+
+  AppStateRow copyWith({String? key, String? value}) =>
+      AppStateRow(key: key ?? this.key, value: value ?? this.value);
+  AppStateRow copyWithCompanion(AppStatesCompanion data) {
+    return AppStateRow(
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppStateRow(')
+          ..write('key: $key, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AppStateRow &&
+          other.key == this.key &&
+          other.value == this.value);
+}
+
+class AppStatesCompanion extends UpdateCompanion<AppStateRow> {
+  final Value<String> key;
+  final Value<String> value;
+  final Value<int> rowid;
+  const AppStatesCompanion({
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AppStatesCompanion.insert({
+    required String key,
+    required String value,
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       value = Value(value);
+  static Insertable<AppStateRow> custom({
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AppStatesCompanion copyWith({
+    Value<String>? key,
+    Value<String>? value,
+    Value<int>? rowid,
+  }) {
+    return AppStatesCompanion(
+      key: key ?? this.key,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AppStatesCompanion(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $PendingChangesTable extends PendingChanges
     with TableInfo<$PendingChangesTable, PendingChangeRow> {
   @override
@@ -3029,6 +3237,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CatsTable cats = $CatsTable(this);
   late final $RecordTypesTable recordTypes = $RecordTypesTable(this);
   late final $RecordsTable records = $RecordsTable(this);
+  late final $AppStatesTable appStates = $AppStatesTable(this);
   late final $PendingChangesTable pendingChanges = $PendingChangesTable(this);
   late final Index recordsCatRecordedAt = Index(
     'records_cat_recorded_at',
@@ -3043,6 +3252,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     cats,
     recordTypes,
     records,
+    appStates,
     pendingChanges,
     recordsCatRecordedAt,
   ];
@@ -5063,6 +5273,146 @@ typedef $$RecordsTableProcessedTableManager =
       RecordRow,
       PrefetchHooks Function({bool catId, bool recordTypeId})
     >;
+typedef $$AppStatesTableCreateCompanionBuilder = AppStatesCompanion Function({
+  required String key,
+  required String value,
+  Value<int> rowid,
+});
+typedef $$AppStatesTableUpdateCompanionBuilder = AppStatesCompanion Function({
+  Value<String> key,
+  Value<String> value,
+  Value<int> rowid,
+});
+
+class $$AppStatesTableFilterComposer
+    extends Composer<_$AppDatabase, $AppStatesTable> {
+  $$AppStatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AppStatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $AppStatesTable> {
+  $$AppStatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AppStatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AppStatesTable> {
+  $$AppStatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$AppStatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AppStatesTable,
+          AppStateRow,
+          $$AppStatesTableFilterComposer,
+          $$AppStatesTableOrderingComposer,
+          $$AppStatesTableAnnotationComposer,
+          $$AppStatesTableCreateCompanionBuilder,
+          $$AppStatesTableUpdateCompanionBuilder,
+          (
+            AppStateRow,
+            BaseReferences<_$AppDatabase, $AppStatesTable, AppStateRow>,
+          ),
+          AppStateRow,
+          PrefetchHooks Function()
+        > {
+  $$AppStatesTableTableManager(_$AppDatabase db, $AppStatesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AppStatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AppStatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AppStatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> key = const Value.absent(),
+            Value<String> value = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) => AppStatesCompanion(key: key, value: value, rowid: rowid),
+          createCompanionCallback: ({
+            required String key,
+            required String value,
+            Value<int> rowid = const Value.absent(),
+          }) => AppStatesCompanion.insert(key: key, value: value, rowid: rowid),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AppStatesTable, AppStateRow>(table),
+                  BaseReferences<_$AppDatabase, $AppStatesTable, AppStateRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AppStatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AppStatesTable,
+      AppStateRow,
+      $$AppStatesTableFilterComposer,
+      $$AppStatesTableOrderingComposer,
+      $$AppStatesTableAnnotationComposer,
+      $$AppStatesTableCreateCompanionBuilder,
+      $$AppStatesTableUpdateCompanionBuilder,
+      (
+        AppStateRow,
+        BaseReferences<_$AppDatabase, $AppStatesTable, AppStateRow>,
+      ),
+      AppStateRow,
+      PrefetchHooks Function()
+    >;
 typedef $$PendingChangesTableCreateCompanionBuilder =
     PendingChangesCompanion Function({
       Value<int> seq,
@@ -5323,6 +5673,8 @@ class $AppDatabaseManager {
       $$RecordTypesTableTableManager(_db, _db.recordTypes);
   $$RecordsTableTableManager get records =>
       $$RecordsTableTableManager(_db, _db.records);
+  $$AppStatesTableTableManager get appStates =>
+      $$AppStatesTableTableManager(_db, _db.appStates);
   $$PendingChangesTableTableManager get pendingChanges =>
       $$PendingChangesTableTableManager(_db, _db.pendingChanges);
 }

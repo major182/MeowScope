@@ -60,6 +60,16 @@ class Records extends Table with SyncColumns {
   TextColumn get memo => text().nullable()();
 }
 
+/// 端末の状態（端末だけの表）。ログイン中のユーザーと選んでいるおうちなどを、キーと値で持つ
+@DataClassName('AppStateRow')
+class AppStates extends Table {
+  TextColumn get key => text()();
+  TextColumn get value => text()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {key};
+}
+
 /// 同期待ちの変更（端末だけの表）
 @DataClassName('PendingChangeRow')
 class PendingChanges extends Table {

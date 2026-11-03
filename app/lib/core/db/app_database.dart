@@ -5,7 +5,9 @@ import 'tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Households, Cats, RecordTypes, Records, PendingChanges])
+@DriftDatabase(
+  tables: [Households, Cats, RecordTypes, Records, AppStates, PendingChanges],
+)
 class AppDatabase extends _$AppDatabase {
   /// テストでは、メモリー上の DB などを渡す
   AppDatabase(super.executor);
