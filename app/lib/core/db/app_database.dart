@@ -16,8 +16,8 @@ class AppDatabase extends _$AppDatabase {
   factory AppDatabase.open() => AppDatabase(driftDatabase(name: 'meowscope'));
 
   @override
-  // 1：最初の版　2：記録項目に hidden（非表示）を追加
-  int get schemaVersion => 2;
+  // 1：最初の版　2：記録項目に hidden（非表示）を追加　3：認証の前に作ったデータを消す
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -25,6 +25,18 @@ class AppDatabase extends _$AppDatabase {
     onUpgrade: (m, from, to) async {
       if (from < 2) {
         await m.addColumn(recordTypes, recordTypes.hidden);
+      }
+      if (from < 3) {
+        // 認証の前に端末だけで作ったデータは試しのデータとして扱い、アカウントへ引き継がない
+        // （画面設計書 S-04）。週の始まりなどの端末の設定は残す
+        await batch((b) {
+          b.deleteAll(records);
+          b.deleteAll(recordTypes);
+          b.deleteAll(cats);
+          b.deleteAll(households);
+          b.deleteAll(pendingChanges);
+          b.deleteWhere(appStates, (s) => s.key.like('session.%'));
+        });
       }
     },
     beforeOpen: (details) async {

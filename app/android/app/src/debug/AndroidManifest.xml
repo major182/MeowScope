@@ -4,4 +4,6 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 開発のときだけ、手元のサーバー（http://10.0.2.2:8080）へ暗号化なしでつなげる。配布する版は HTTPS だけ（NF-SC-01） -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

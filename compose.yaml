@@ -39,6 +39,7 @@ services:
       DB_URL: jdbc:postgresql://db:5432/meowscope
       DB_USER: ${DB_USER:-meowscope}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD を .env に書いてください}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET を .env に書いてください}
       MEOWSCOPE_ENV: ${MEOWSCOPE_ENV:-local}
       MEOWSCOPE_VERSION: ${MEOWSCOPE_VERSION:-dev}
     ports:

@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show DatabaseConnection;
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/features/records/data/record_repository.dart';
@@ -76,41 +74,5 @@ void main() {
       expect(await repo.watchTypes('h1').first, hasLength(9));
       expect(await db.select(db.pendingChanges).get(), isEmpty);
     });
-  });
-
-  test('UT-HD-05 版 1 の DB を開くと非表示の列が足され、既存の項目は表示のまま', () async {
-    final db = AppDatabase(
-      DatabaseConnection(
-        NativeDatabase.memory(
-          setup: (raw) {
-            // 版 1 の記録項目の表（hidden の列がない）
-            raw.execute('''
-              CREATE TABLE record_types (
-                id TEXT NOT NULL PRIMARY KEY,
-                created_at INTEGER NOT NULL,
-                updated_at INTEGER NOT NULL,
-                deleted_at INTEGER NULL,
-                server_seq INTEGER NULL,
-                household_id TEXT NOT NULL,
-                name TEXT NOT NULL,
-                icon TEXT NULL,
-                kind TEXT NOT NULL,
-                sort_order INTEGER NOT NULL DEFAULT 0
-              )
-            ''');
-            raw.execute(
-              "INSERT INTO record_types (id, created_at, updated_at, household_id, name, kind) VALUES ('t1', 0, 0, 'h1', '通院', 'custom')",
-            );
-            raw.execute('PRAGMA user_version = 1');
-          },
-        ),
-        closeStreamsSynchronously: true,
-      ),
-    );
-    addTearDown(db.close);
-
-    final type = await db.select(db.recordTypes).getSingle();
-    expect(type.name, '通院');
-    expect(type.hidden, isFalse);
   });
 }
