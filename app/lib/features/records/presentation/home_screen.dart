@@ -6,9 +6,9 @@ import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../../household/data/household_repository.dart';
 import '../data/record_repository.dart';
-import '../domain/record_kind.dart';
 import 'record_format.dart';
 import 'record_providers.dart';
+import 'type_icon.dart';
 
 final _catsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
   final session = ref.watch(sessionProvider).value;
@@ -162,7 +162,6 @@ class _TypeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final asset = iconAsset(type.icon);
     return OutlinedButton(
       onPressed: onPressed,
       // 既定の丸い形では名前が枠に重なるので、角丸の四角にする
@@ -174,9 +173,7 @@ class _TypeButton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Expanded(
-            child: asset == null
-                ? const Icon(Icons.star_outline)
-                : Image.asset(asset, semanticLabel: type.name),
+            child: TypeIcon(icon: type.icon, name: type.name),
           ),
           // 「ブラッシング」が収まるよう、幅に合わせて文字を縮める
           FittedBox(fit: BoxFit.scaleDown, child: Text(type.name, maxLines: 1)),

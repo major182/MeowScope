@@ -101,6 +101,98 @@ class RecordRepository {
     });
   }
 
+  /// 独自の項目を追加する（F-RC-05、BR-22）。並び順は最後。追加した項目の ID を返す
+  Future<String> addCustomType({
+    required String householdId,
+    required String userId,
+    required String name,
+    required String icon,
+  }) {
+    final id = _uuid.v4();
+    final now = _clock().toUtc();
+    final trimmed = name.trim();
+    return _db.transaction(() async {
+      final types = await (_db.select(
+        _db.recordTypes,
+      )..where((t) => t.householdId.equals(householdId))).get();
+      final order =
+          types.fold(-1, (m, t) => t.sortOrder > m ? t.sortOrder : m) + 1;
+      await _db
+          .into(_db.recordTypes)
+          .insert(
+            RecordTypesCompanion.insert(
+              id: id,
+              createdAt: now,
+              updatedAt: now,
+              householdId: householdId,
+              name: trimmed,
+              icon: Value(icon),
+              kind: RecordKind.custom,
+              sortOrder: Value(order),
+            ),
+          );
+      await _addTypePending(userId, id, {
+        'householdId': householdId,
+        'name': trimmed,
+        'icon': icon,
+        'kind': RecordKind.custom,
+        'sortOrder': order,
+      });
+      return id;
+    });
+  }
+
+  /// 独自の項目の名前とアイコンを変える。標準の項目は変えられない
+  Future<void> updateCustomType({
+    required String id,
+    required String userId,
+    required String name,
+    required String icon,
+  }) {
+    final now = _clock().toUtc();
+    final trimmed = name.trim();
+    return _db.transaction(() async {
+      final count =
+          await (_db.update(_db.recordTypes)..where(
+                (t) =>
+                    t.id.equals(id) &
+                    t.kind.equals(RecordKind.custom) &
+                    t.deletedAt.isNull(),
+              ))
+              .write(
+                RecordTypesCompanion(
+                  updatedAt: Value(now),
+                  name: Value(trimmed),
+                  icon: Value(icon),
+                ),
+              );
+      if (count == 0) {
+        throw StateError('独自の項目が見つかりません: $id');
+      }
+      await _addTypePending(userId, id, {
+        'name': trimmed,
+        'icon': icon,
+        'updatedAt': now.toIso8601String(),
+      });
+    });
+  }
+
+  Future<void> _addTypePending(
+    String userId,
+    String id,
+    Map<String, Object?> payload,
+  ) => _db
+      .into(_db.pendingChanges)
+      .insert(
+        PendingChangesCompanion.insert(
+          userId: userId,
+          targetTable: 'record_types',
+          rowId: id,
+          operation: 'upsert',
+          payload: jsonEncode(payload),
+        ),
+      );
+
   /// おうちの記録項目を並び順で見張る（削除済みを除く）
   Stream<List<RecordTypeRow>> watchTypes(String householdId) {
     final q = _db.select(_db.recordTypes)

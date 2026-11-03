@@ -5,6 +5,7 @@ import '../features/cats/presentation/cat_form_screen.dart';
 import '../features/cats/presentation/cat_list_screen.dart';
 import '../features/records/presentation/record_detail_screen.dart';
 import '../features/records/presentation/record_edit_screen.dart';
+import '../features/records/presentation/record_types_screen.dart';
 import 'start_screen.dart';
 
 /// 画面の一覧（04 画面設計書）。画面を作るたびに足す
@@ -36,6 +37,21 @@ GoRouter createRouter() => GoRouter(
           path: 'edit',
           builder: (context, state) =>
               RecordEditScreen(recordId: state.pathParameters['id']!),
+        ),
+      ],
+    ),
+    GoRoute(
+      path: '/record-types',
+      builder: (context, state) => const RecordTypesScreen(),
+      routes: [
+        GoRoute(
+          path: 'new',
+          builder: (context, state) => const RecordTypeFormScreen(),
+        ),
+        GoRoute(
+          path: ':id',
+          builder: (context, state) =>
+              RecordTypeFormScreen(typeId: state.pathParameters['id']),
         ),
       ],
     ),
