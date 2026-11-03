@@ -28,9 +28,17 @@ public class PhotoStorage {
         this.root = Path.of(dir).toAbsolutePath().normalize();
     }
 
+    /** アイコンなど、場所を決めて保存する（相対の場所は呼ぶ側が ID だけで作る）。 */
+    public String saveAt(String relative, byte[] bytes) {
+        return write(relative, UUID.nameUUIDFromBytes(relative.getBytes()), bytes);
+    }
+
     /** 保存して、保存先からの相対の場所を返す。いったん別名で書いてから置き換え、書きかけのファイルを残さない。 */
     String save(UUID householdId, UUID photoId, byte[] bytes) {
-        String relative = householdId + "/" + photoId;
+        return write(householdId + "/" + photoId, photoId, bytes);
+    }
+
+    private String write(String relative, UUID photoId, byte[] bytes) {
         Path target = root.resolve(relative);
         try {
             Files.createDirectories(target.getParent());
@@ -45,7 +53,7 @@ public class PhotoStorage {
         return relative;
     }
 
-    byte[] load(String relative) throws IOException {
+    public byte[] load(String relative) throws IOException {
         return Files.readAllBytes(root.resolve(relative));
     }
 

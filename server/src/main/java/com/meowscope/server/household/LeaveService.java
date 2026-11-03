@@ -102,6 +102,9 @@ public class LeaveService {
                 SELECT p.file_path FROM record_photos p JOIN records r ON r.id = p.record_id
                 JOIN cats c ON c.id = r.cat_id WHERE c.household_id = :h AND p.file_path IS NOT NULL
                 """).param("h", householdId).query(String.class).list();
+        files = new java.util.ArrayList<>(files);
+        files.addAll(jdbc.sql("SELECT icon_path FROM cats WHERE household_id = :h AND icon_path IS NOT NULL")
+                .param("h", householdId).query(String.class).list());
         // 表の外部キーは ON DELETE CASCADE なので、おうちを消せば中のデータもすべて消える
         jdbc.sql("DELETE FROM households WHERE id = :h").param("h", householdId).update();
         files.forEach(storage::delete);

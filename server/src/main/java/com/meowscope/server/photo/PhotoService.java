@@ -76,7 +76,7 @@ public class PhotoService {
     }
 
     /** ファイルの先頭の印で形式を見分ける。JPEG・PNG・WebP 以外は null（Content-Type は端末の申告なので信用しない）。 */
-    static MediaType typeOf(byte[] b) {
+    public static MediaType typeOf(byte[] b) {
         if (b.length >= 3 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) {
             return MediaType.IMAGE_JPEG;
         }

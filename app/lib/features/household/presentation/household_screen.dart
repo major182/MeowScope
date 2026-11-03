@@ -7,6 +7,8 @@ import '../../../core/providers.dart';
 import '../../../core/widgets/confirm_delete.dart';
 import '../../../core/widgets/keep_records_dialog.dart';
 import '../../auth/data/account_repository.dart';
+import '../../icons/icon_avatar.dart';
+import '../../icons/icon_repository.dart';
 
 final _householdNameProvider = StreamProvider.family<String?, String>(
   (ref, id) => ref.watch(accountRepositoryProvider).watchHouseholdName(id),
@@ -126,12 +128,19 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
           const SizedBox(height: 8),
           Text('メンバー', style: Theme.of(context).textTheme.titleSmall),
           ListTile(
-            leading: const Icon(Icons.person),
+            leading: IconAvatar(
+              icon:
+                  members
+                      .where((m) => m.userId == session.author.id)
+                      .firstOrNull
+                      ?.icon ??
+                  IconRef(IconOwner.user, session.author.id),
+            ),
             title: Text(session.author.name),
           ),
           for (final m in others)
             ListTile(
-              leading: const Icon(Icons.person_outline),
+              leading: IconAvatar(icon: m.icon),
               title: Text(m.name),
             ),
           const SizedBox(height: 16),

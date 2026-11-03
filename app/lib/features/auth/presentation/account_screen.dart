@@ -6,10 +6,16 @@ import '../../../core/api/api_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/widgets/confirm_delete.dart';
 import '../../../core/widgets/keep_records_dialog.dart';
+import '../../icons/icon_avatar.dart';
+import '../../icons/icon_repository.dart';
 import '../domain/credentials.dart';
 import 'credential_field.dart';
 
-/// アカウント設定（S-45）。名前とパスワードの変更、ログアウト、退会。アイコンは No.14 で足す
+final _myIconProvider = StreamProvider.family<IconRef, String>(
+  (ref, userId) => ref.watch(accountRepositoryProvider).watchMyIcon(userId),
+);
+
+/// アカウント設定（S-45）。名前とパスワードの変更、ログアウト、退会
 class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
 
@@ -121,6 +127,15 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (user != null)
+              Consumer(
+                builder: (context, ref, _) => EditableIcon(
+                  icon:
+                      ref.watch(_myIconProvider(user.id)).value ??
+                      IconRef(IconOwner.user, user.id),
+                ),
+              ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _name,
               decoration: InputDecoration(

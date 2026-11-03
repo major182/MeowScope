@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../icons/icon_avatar.dart';
+import '../../icons/icon_repository.dart';
 import '../data/cat_repository.dart';
 import 'cat_filter.dart';
 
@@ -32,6 +34,14 @@ class CatListScreen extends ConsumerWidget {
               children: [
                 for (final c in cats)
                   ListTile(
+                    leading: IconAvatar(
+                      icon: IconRef(
+                        IconOwner.cat,
+                        c.id,
+                        hasIcon: c.hasIcon,
+                        version: c.serverSeq,
+                      ),
+                    ),
                     title: Text(c.name),
                     subtitle: Text(
                       c.status == 'farewell'

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
+import '../../icons/icon_avatar.dart';
+import '../../icons/icon_repository.dart';
 import '../../../core/widgets/confirm_delete.dart';
 import '../../household/data/household_repository.dart';
 import '../data/cat_repository.dart';
@@ -172,6 +174,18 @@ class _CatFormScreenState extends ConsumerState<CatFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // アイコンは登録した後（プロフィール）で設定する。サーバーへ送るので通信が要る
+            if (_editing) ...[
+              EditableIcon(
+                icon: IconRef(
+                  IconOwner.cat,
+                  widget.initial!.id,
+                  hasIcon: widget.initial!.hasIcon,
+                  version: widget.initial!.serverSeq,
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             TextFormField(
               controller: _name,
               decoration: const InputDecoration(labelText: '名前'),
