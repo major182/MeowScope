@@ -37,3 +37,14 @@ jobs:
           java-version: 25
       - uses: gradle/actions/setup-gradle@v6
       - run: ./gradlew check
+
+  # 依存ライブラリの脆弱性を検査する（NF-SC-06）。見つかったら失敗する
+  vulnerability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: google/osv-scanner-action/osv-scanner-action@v2.7.0
+        with:
+          scan-args: |-
+            --lockfile=app/pubspec.lock
+            --lockfile=server/gradle.lockfile
