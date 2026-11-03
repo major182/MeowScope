@@ -9,6 +9,7 @@ import '../features/cats/presentation/cat_list_screen.dart';
 import '../features/records/presentation/record_detail_screen.dart';
 import '../features/records/presentation/record_edit_screen.dart';
 import '../features/records/presentation/record_types_screen.dart';
+import '../features/sync/presentation/sync_status_screen.dart';
 import 'start_screen.dart';
 
 /// 画面の一覧（04 画面設計書）。画面を作るたびに足す
@@ -26,6 +27,10 @@ GoRouter createRouter() => GoRouter(
     GoRoute(
       path: '/account',
       builder: (context, state) => const AccountScreen(),
+    ),
+    GoRoute(
+      path: '/sync',
+      builder: (context, state) => const SyncStatusScreen(),
     ),
     GoRoute(
       path: '/cats',

@@ -75,6 +75,9 @@ void main() {
         AppStatesCompanion.insert(key: 'settings.weekStart', value: 'monday'),
       ]),
     );
+    if (version < 4) {
+      await db.customStatement('DROP TABLE household_members');
+    }
     if (version < 2) {
       await db.customStatement('ALTER TABLE record_types DROP COLUMN hidden');
     }

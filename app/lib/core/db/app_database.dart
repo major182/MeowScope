@@ -6,7 +6,15 @@ import 'tables.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [Households, Cats, RecordTypes, Records, AppStates, PendingChanges],
+  tables: [
+    Households,
+    HouseholdMembers,
+    Cats,
+    RecordTypes,
+    Records,
+    AppStates,
+    PendingChanges,
+  ],
 )
 class AppDatabase extends _$AppDatabase {
   /// テストでは、メモリー上の DB などを渡す
@@ -17,7 +25,8 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   // 1：最初の版　2：記録項目に hidden（非表示）を追加　3：認証の前に作ったデータを消す
-  int get schemaVersion => 3;
+  // 4：おうちのメンバーの表を追加（同期）
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -37,6 +46,9 @@ class AppDatabase extends _$AppDatabase {
           b.deleteAll(pendingChanges);
           b.deleteWhere(appStates, (s) => s.key.like('session.%'));
         });
+      }
+      if (from < 4) {
+        await m.createTable(householdMembers);
       }
     },
     beforeOpen: (details) async {

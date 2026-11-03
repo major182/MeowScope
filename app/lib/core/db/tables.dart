@@ -20,6 +20,16 @@ class Households extends Table with SyncColumns {
   TextColumn get name => text()();
 }
 
+/// おうちのメンバー（DB 設計書 4章）。同期で受け取り、表示名も一緒に持つ
+@DataClassName('HouseholdMemberRow')
+class HouseholdMembers extends Table with SyncColumns {
+  TextColumn get householdId => text()();
+  TextColumn get userId => text()();
+
+  /// メンバーの表示名。サーバーの users の表から受け取る
+  TextColumn get displayName => text().nullable()();
+}
+
 @DataClassName('CatRow')
 class Cats extends Table with SyncColumns {
   TextColumn get householdId => text().references(Households, #id)();

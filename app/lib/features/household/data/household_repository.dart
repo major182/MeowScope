@@ -76,7 +76,8 @@ class HouseholdRepository {
               userId: userId,
               targetTable: 'households',
               rowId: householdId,
-              operation: 'upsert',
+              // 作成は POST /households で送る（同期の処理が見分ける）
+              operation: 'create',
               payload: jsonEncode({'name': name}),
             ),
           );

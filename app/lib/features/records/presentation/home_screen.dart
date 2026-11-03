@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
+import '../../sync/presentation/sync_status_screen.dart';
 import '../../household/data/household_repository.dart';
 import '../data/record_repository.dart';
 import 'record_format.dart';
@@ -49,6 +50,7 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('ホーム'),
         actions: [
+          const SyncIndicator(),
           TextButton.icon(
             onPressed: () => context.push('/cats/new'),
             icon: const Icon(Icons.add),
