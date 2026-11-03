@@ -44,6 +44,9 @@ class RecordTypes extends Table with SyncColumns {
   /// 標準の8種類（RecordKind）または `custom`
   TextColumn get kind => text()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+
+  /// 非表示（独自の項目だけ）。記録のボタンと選択に出さず、過去の記録は残す
+  BoolColumn get hidden => boolean().withDefault(const Constant(false))();
 }
 
 @DataClassName('RecordRow')

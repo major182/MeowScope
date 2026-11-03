@@ -170,4 +170,43 @@ void main() {
     expect(find.text('この項目は見つかりません'), findsOneWidget);
     await close(tester);
   });
+
+  testWidgets('UT-HD-06 非表示にするとホームのボタンから消え、表示に戻すと出る。削除のボタンはない', (tester) async {
+    await addCustom('通院');
+    await show(tester, '/record-types');
+    expect(find.text('削除'), findsNothing);
+    // 標準の項目には非表示のボタンを出さない
+    expect(find.widgetWithText(TextButton, '非表示にする'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, '非表示にする'));
+    await tester.pumpAndSettle();
+    expect((await customTypes()).single.hidden, isTrue);
+    expect(find.text('非表示（過去の記録は残ります）'), findsOneWidget);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(OutlinedButton, '通院'), findsNothing);
+    await close(tester);
+    await show(tester, '/record-types');
+    await tester.tap(find.widgetWithText(TextButton, '表示に戻す'));
+    await tester.pumpAndSettle();
+    expect((await customTypes()).single.hidden, isFalse);
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(OutlinedButton, '通院'), findsOneWidget);
+    await close(tester);
+  });
+
+  testWidgets('UT-HD-07 異常系：非表示の項目と同じ名前では追加できない', (tester) async {
+    final id = await addCustom('通院');
+    await repo.setTypeHidden(id: id, userId: 'u1', hidden: true);
+    await show(tester, '/record-types/new');
+
+    await tester.enterText(find.widgetWithText(TextFormField, '名前'), '通院');
+    await tester.tap(find.widgetWithText(TextButton, '保存'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('同じ名前の項目があります'), findsOneWidget);
+    expect(await customTypes(), hasLength(1));
+    await close(tester);
+  });
 }

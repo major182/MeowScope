@@ -198,11 +198,52 @@ class RecordRepository {
       );
 
   /// おうちの記録項目を並び順で見張る（削除済みを除く）
-  Stream<List<RecordTypeRow>> watchTypes(String householdId) {
+  /// includeHidden が false なら、非表示の項目も除く（記録のボタンと選択に使う）
+  Stream<List<RecordTypeRow>> watchTypes(
+    String householdId, {
+    bool includeHidden = false,
+  }) {
     final q = _db.select(_db.recordTypes)
-      ..where((t) => t.householdId.equals(householdId) & t.deletedAt.isNull())
+      ..where(
+        (t) =>
+            t.householdId.equals(householdId) &
+            t.deletedAt.isNull() &
+            (includeHidden ? const Constant(true) : t.hidden.not()),
+      )
       ..orderBy([(t) => OrderingTerm(expression: t.sortOrder)]);
     return q.watch();
+  }
+
+  /// 独自の項目を非表示にする、または表示に戻す。標準の項目は変えられない。
+  /// 削除はできない（過去の記録とのつながりを残すため）
+  Future<void> setTypeHidden({
+    required String id,
+    required String userId,
+    required bool hidden,
+  }) {
+    final now = _clock().toUtc();
+    return _db.transaction(() async {
+      final count =
+          await (_db.update(_db.recordTypes)..where(
+                (t) =>
+                    t.id.equals(id) &
+                    t.kind.equals(RecordKind.custom) &
+                    t.deletedAt.isNull(),
+              ))
+              .write(
+                RecordTypesCompanion(
+                  updatedAt: Value(now),
+                  hidden: Value(hidden),
+                ),
+              );
+      if (count == 0) {
+        throw StateError('独自の項目が見つかりません: $id');
+      }
+      await _addTypePending(userId, id, {
+        'hidden': hidden,
+        'updatedAt': now.toIso8601String(),
+      });
+    });
   }
 
   /// 記録できる猫（お別れと削除済みを除く）を見張る

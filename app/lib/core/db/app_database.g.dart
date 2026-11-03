@@ -1240,6 +1240,19 @@ class $RecordTypesTable extends RecordTypes
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _hiddenMeta = const VerificationMeta('hidden');
+  @override
+  late final GeneratedColumn<bool> hidden = GeneratedColumn<bool>(
+    'hidden',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("hidden" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1252,6 +1265,7 @@ class $RecordTypesTable extends RecordTypes
     icon,
     kind,
     sortOrder,
+    hidden,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1337,6 +1351,12 @@ class $RecordTypesTable extends RecordTypes
         sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
       );
     }
+    if (data.containsKey('hidden')) {
+      context.handle(
+        _hiddenMeta,
+        hidden.isAcceptableOrUnknown(data['hidden']!, _hiddenMeta),
+      );
+    }
     return context;
   }
 
@@ -1386,6 +1406,10 @@ class $RecordTypesTable extends RecordTypes
         DriftSqlType.int,
         data['${effectivePrefix}sort_order'],
       )!,
+      hidden: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}hidden'],
+      )!,
     );
   }
 
@@ -1412,6 +1436,9 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
   /// 標準の8種類（RecordKind）または `custom`
   final String kind;
   final int sortOrder;
+
+  /// 非表示（独自の項目だけ）。記録のボタンと選択に出さず、過去の記録は残す
+  final bool hidden;
   const RecordTypeRow({
     required this.id,
     required this.createdAt,
@@ -1423,6 +1450,7 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
     this.icon,
     required this.kind,
     required this.sortOrder,
+    required this.hidden,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1443,6 +1471,7 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
     }
     map['kind'] = Variable<String>(kind);
     map['sort_order'] = Variable<int>(sortOrder);
+    map['hidden'] = Variable<bool>(hidden);
     return map;
   }
 
@@ -1462,6 +1491,7 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
       icon: icon == null && nullToAbsent ? const Value.absent() : Value(icon),
       kind: Value(kind),
       sortOrder: Value(sortOrder),
+      hidden: Value(hidden),
     );
   }
 
@@ -1481,6 +1511,7 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
       icon: serializer.fromJson<String?>(json['icon']),
       kind: serializer.fromJson<String>(json['kind']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      hidden: serializer.fromJson<bool>(json['hidden']),
     );
   }
   @override
@@ -1497,6 +1528,7 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
       'icon': serializer.toJson<String?>(icon),
       'kind': serializer.toJson<String>(kind),
       'sortOrder': serializer.toJson<int>(sortOrder),
+      'hidden': serializer.toJson<bool>(hidden),
     };
   }
 
@@ -1511,6 +1543,7 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
     Value<String?> icon = const Value.absent(),
     String? kind,
     int? sortOrder,
+    bool? hidden,
   }) => RecordTypeRow(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -1522,6 +1555,7 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
     icon: icon.present ? icon.value : this.icon,
     kind: kind ?? this.kind,
     sortOrder: sortOrder ?? this.sortOrder,
+    hidden: hidden ?? this.hidden,
   );
   RecordTypeRow copyWithCompanion(RecordTypesCompanion data) {
     return RecordTypeRow(
@@ -1537,6 +1571,7 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
       icon: data.icon.present ? data.icon.value : this.icon,
       kind: data.kind.present ? data.kind.value : this.kind,
       sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      hidden: data.hidden.present ? data.hidden.value : this.hidden,
     );
   }
 
@@ -1552,7 +1587,8 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
           ..write('name: $name, ')
           ..write('icon: $icon, ')
           ..write('kind: $kind, ')
-          ..write('sortOrder: $sortOrder')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('hidden: $hidden')
           ..write(')'))
         .toString();
   }
@@ -1569,6 +1605,7 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
     icon,
     kind,
     sortOrder,
+    hidden,
   );
   @override
   bool operator ==(Object other) =>
@@ -1583,7 +1620,8 @@ class RecordTypeRow extends DataClass implements Insertable<RecordTypeRow> {
           other.name == this.name &&
           other.icon == this.icon &&
           other.kind == this.kind &&
-          other.sortOrder == this.sortOrder);
+          other.sortOrder == this.sortOrder &&
+          other.hidden == this.hidden);
 }
 
 class RecordTypesCompanion extends UpdateCompanion<RecordTypeRow> {
@@ -1597,6 +1635,7 @@ class RecordTypesCompanion extends UpdateCompanion<RecordTypeRow> {
   final Value<String?> icon;
   final Value<String> kind;
   final Value<int> sortOrder;
+  final Value<bool> hidden;
   final Value<int> rowid;
   const RecordTypesCompanion({
     this.id = const Value.absent(),
@@ -1609,6 +1648,7 @@ class RecordTypesCompanion extends UpdateCompanion<RecordTypeRow> {
     this.icon = const Value.absent(),
     this.kind = const Value.absent(),
     this.sortOrder = const Value.absent(),
+    this.hidden = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RecordTypesCompanion.insert({
@@ -1622,6 +1662,7 @@ class RecordTypesCompanion extends UpdateCompanion<RecordTypeRow> {
     this.icon = const Value.absent(),
     required String kind,
     this.sortOrder = const Value.absent(),
+    this.hidden = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        createdAt = Value(createdAt),
@@ -1640,6 +1681,7 @@ class RecordTypesCompanion extends UpdateCompanion<RecordTypeRow> {
     Expression<String>? icon,
     Expression<String>? kind,
     Expression<int>? sortOrder,
+    Expression<bool>? hidden,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1653,6 +1695,7 @@ class RecordTypesCompanion extends UpdateCompanion<RecordTypeRow> {
       if (icon != null) 'icon': icon,
       if (kind != null) 'kind': kind,
       if (sortOrder != null) 'sort_order': sortOrder,
+      if (hidden != null) 'hidden': hidden,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1668,6 +1711,7 @@ class RecordTypesCompanion extends UpdateCompanion<RecordTypeRow> {
     Value<String?>? icon,
     Value<String>? kind,
     Value<int>? sortOrder,
+    Value<bool>? hidden,
     Value<int>? rowid,
   }) {
     return RecordTypesCompanion(
@@ -1681,6 +1725,7 @@ class RecordTypesCompanion extends UpdateCompanion<RecordTypeRow> {
       icon: icon ?? this.icon,
       kind: kind ?? this.kind,
       sortOrder: sortOrder ?? this.sortOrder,
+      hidden: hidden ?? this.hidden,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1718,6 +1763,9 @@ class RecordTypesCompanion extends UpdateCompanion<RecordTypeRow> {
     if (sortOrder.present) {
       map['sort_order'] = Variable<int>(sortOrder.value);
     }
+    if (hidden.present) {
+      map['hidden'] = Variable<bool>(hidden.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1737,6 +1785,7 @@ class RecordTypesCompanion extends UpdateCompanion<RecordTypeRow> {
           ..write('icon: $icon, ')
           ..write('kind: $kind, ')
           ..write('sortOrder: $sortOrder, ')
+          ..write('hidden: $hidden, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4210,6 +4259,7 @@ typedef $$RecordTypesTableCreateCompanionBuilder =
       Value<String?> icon,
       required String kind,
       Value<int> sortOrder,
+      Value<bool> hidden,
       Value<int> rowid,
     });
 typedef $$RecordTypesTableUpdateCompanionBuilder =
@@ -4224,6 +4274,7 @@ typedef $$RecordTypesTableUpdateCompanionBuilder =
       Value<String?> icon,
       Value<String> kind,
       Value<int> sortOrder,
+      Value<bool> hidden,
       Value<int> rowid,
     });
 
@@ -4319,6 +4370,11 @@ class $$RecordTypesTableFilterComposer
 
   ColumnFilters<int> get sortOrder => $composableBuilder(
     column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get hidden => $composableBuilder(
+    column: $table.hidden,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4425,6 +4481,11 @@ class $$RecordTypesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get hidden => $composableBuilder(
+    column: $table.hidden,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$HouseholdsTableOrderingComposer get householdId {
     final $$HouseholdsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -4484,6 +4545,9 @@ class $$RecordTypesTableAnnotationComposer
 
   GeneratedColumn<int> get sortOrder =>
       $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<bool> get hidden =>
+      $composableBuilder(column: $table.hidden, builder: (column) => column);
 
   $$HouseholdsTableAnnotationComposer get householdId {
     final $$HouseholdsTableAnnotationComposer composer = $composerBuilder(
@@ -4572,6 +4636,7 @@ class $$RecordTypesTableTableManager
                 Value<String?> icon = const Value.absent(),
                 Value<String> kind = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
+                Value<bool> hidden = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecordTypesCompanion(
                 id: id,
@@ -4584,6 +4649,7 @@ class $$RecordTypesTableTableManager
                 icon: icon,
                 kind: kind,
                 sortOrder: sortOrder,
+                hidden: hidden,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4598,6 +4664,7 @@ class $$RecordTypesTableTableManager
                 Value<String?> icon = const Value.absent(),
                 required String kind,
                 Value<int> sortOrder = const Value.absent(),
+                Value<bool> hidden = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RecordTypesCompanion.insert(
                 id: id,
@@ -4610,6 +4677,7 @@ class $$RecordTypesTableTableManager
                 icon: icon,
                 kind: kind,
                 sortOrder: sortOrder,
+                hidden: hidden,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
