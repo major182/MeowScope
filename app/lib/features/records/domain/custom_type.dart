@@ -1,11 +1,12 @@
 /// 独自の項目に選べるアイコン（F-RC-05）。
-/// 保存する値は name で、イラストが届いたら assets/icons/{name}.png に差し替える
+/// イラストは assets/icons/{value}.png。カレンダーでも同じイラストを使う
 enum CustomIcon {
-  hospital('custom_hospital', '通院'),
-  toy('custom_toy', 'おもちゃ'),
+  vet('custom_vet', '通院'),
+  play('custom_play', '遊び'),
   nail('custom_nail', '爪切り'),
-  bath('custom_bath', 'お風呂'),
-  star('custom_star', '星');
+  teeth('custom_teeth', '歯みがき'),
+  treat('custom_treat', 'おやつ'),
+  other('custom_other', 'その他');
 
   const CustomIcon(this.value, this.label);
 

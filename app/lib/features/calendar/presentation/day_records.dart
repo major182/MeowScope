@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../records/presentation/record_format.dart';
+import '../../records/domain/record_kind.dart';
 import '../domain/calendar_month.dart';
 import 'calendar_providers.dart';
 
@@ -67,7 +68,12 @@ class DayRecordList extends ConsumerWidget {
             leading: Text(formatTime(e.recordedAt)),
             title: Text('${e.catName}　${e.typeName}'),
             trailing: e.hasMemo
-                ? const Tooltip(message: 'メモあり', child: Text('[$memoMark]'))
+                ? const Image(
+                    image: AssetImage(memoAsset),
+                    width: 24,
+                    height: 24,
+                    semanticLabel: 'メモあり',
+                  )
                 : null,
             onTap: () => context.push('/records/${e.id}'),
           ),

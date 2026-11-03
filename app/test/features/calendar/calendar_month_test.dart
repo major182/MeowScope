@@ -14,7 +14,10 @@ RecordEntry _entry(DateTime at, String kind, {bool memo = false}) =>
       kind: kind,
       hasMemo: memo,
       recordTypeId: kind,
+      typeIcon: kind == 'custom' ? 'custom_vet' : null,
     );
+
+String _cal(String name) => 'assets/icons/cal_$name.png';
 
 void main() {
   test('UT-CL-01 週の始まりの値：monday／sunday／空／知らない値（同値分割）', () {
@@ -66,13 +69,29 @@ void main() {
     });
   });
 
-  test('UT-CL-07 項目の印：標準の8項目／独自の項目は名前の1文字目／名前が空', () {
+  test('UT-CL-07 印のイラスト：標準の8項目はカレンダー用／独自の項目は選んだイラスト／見つからなければ「その他」', () {
     expect(
-      [for (final k in RecordKind.values) kindMark(k.name, k.label)].join(),
-      '食水薬尿便吐体ブ',
+      [for (final k in RecordKind.values) calendarAsset(k.name, k.icon)],
+      [
+        for (final n in [
+          'food',
+          'water',
+          'medicine',
+          'pee',
+          'poop',
+          'vomit',
+          'weight',
+          'brushing',
+        ])
+          _cal(n),
+      ],
     );
-    expect(kindMark('custom', '通院'), '通');
-    expect(kindMark('custom', ''), '？');
+    expect(
+      calendarAsset('custom', 'custom_vet'),
+      'assets/icons/custom_vet.png',
+    );
+    expect(calendarAsset('custom', 'custom_hospital'), fallbackIconAsset);
+    expect(calendarAsset('custom', null), fallbackIconAsset);
   });
 
   test('UT-CL-08 印の並び：標準の順で、独自の項目は後ろ', () {
@@ -91,8 +110,14 @@ void main() {
       _entry(DateTime(2026, 11, 3, 1), 'water'),
     ]);
 
-    expect(marks[day], ['食', '便', '通', 'メ']);
-    expect(marks[DateTime(2026, 11, 3)], ['水']);
+    expect(marks[day]!.map((m) => m.asset), [
+      _cal('food'),
+      _cal('poop'),
+      'assets/icons/custom_vet.png',
+      memoAsset,
+    ]);
+    expect(marks[day]!.map((m) => m.label), ['food', 'stool', '通院', 'メモあり']);
+    expect(marks[DateTime(2026, 11, 3)]!.map((m) => m.asset), [_cal('water')]);
     expect(marks[DateTime(2026, 11, 4)], isNull);
   });
 

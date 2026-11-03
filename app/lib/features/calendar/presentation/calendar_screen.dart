@@ -6,6 +6,7 @@ import '../../../app/main_shell.dart';
 import '../../../core/providers.dart';
 import '../../cats/presentation/cat_filter.dart';
 import '../../records/data/record_repository.dart';
+import '../../records/domain/record_kind.dart';
 import '../domain/calendar_month.dart';
 import 'calendar_providers.dart';
 import 'day_records.dart';
@@ -138,8 +139,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 }
 
-/// 日ごとに出す印（項目の印を標準の順に、メモがあれば最後にメモの印）
-Map<DateTime, List<String>> dayMarks(List<RecordEntry> entries) {
+/// 日ごとに出す印。項目ごとに1つを標準の順に並べ（独自の項目は後ろ）、
+/// メモがあれば最後にメモの印を付ける
+Map<DateTime, List<CalendarMark>> dayMarks(List<RecordEntry> entries) {
   final byDay = <DateTime, List<RecordEntry>>{};
   for (final e in entries) {
     byDay.putIfAbsent(dateOnly(e.recordedAt), () => []).add(e);
@@ -147,13 +149,17 @@ Map<DateTime, List<String>> dayMarks(List<RecordEntry> entries) {
   return {
     for (final MapEntry(key: day, value: list) in byDay.entries)
       day: [
+        // 同じ項目は1つにまとめる（sort は同じ順位なら元の順を保つ）
         ...{
           for (final e in [
             ...list,
           ]..sort((a, b) => kindOrder(a.kind).compareTo(kindOrder(b.kind))))
-            kindMark(e.kind, e.typeName),
-        },
-        if (list.any((e) => e.hasMemo)) memoMark,
+            e.recordTypeId: (
+              asset: calendarAsset(e.kind, e.typeIcon),
+              label: e.typeName,
+            ),
+        }.values,
+        if (list.any((e) => e.hasMemo)) (asset: memoAsset, label: 'メモあり'),
       ],
   };
 }
@@ -172,7 +178,7 @@ class _MonthGrid extends StatelessWidget {
   final DateTime month;
   final DateTime today;
   final DateTime? selected;
-  final Map<DateTime, List<String>> marks;
+  final Map<DateTime, List<CalendarMark>> marks;
   final ValueChanged<DateTime> onTap;
 
   @override
@@ -215,11 +221,15 @@ class _MonthGrid extends StatelessWidget {
                             Expanded(
                               child: ClipRect(
                                 child: Wrap(
+                                  spacing: 1,
+                                  runSpacing: 1,
                                   children: [
                                     for (final m in marks[day] ?? const [])
-                                      Text(
-                                        m,
-                                        style: const TextStyle(fontSize: 11),
+                                      Image.asset(
+                                        m.asset,
+                                        width: 14,
+                                        height: 14,
+                                        semanticLabel: m.label,
                                       ),
                                   ],
                                 ),

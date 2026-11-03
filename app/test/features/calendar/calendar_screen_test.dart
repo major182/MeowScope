@@ -86,8 +86,11 @@ void main() {
 
   Finder cell(int month, int day) => find.byKey(ValueKey('day-$month-$day'));
 
-  Finder inCell(int month, int day, String text) =>
-      find.descendant(of: cell(month, day), matching: find.text(text));
+  /// セルの中のイラスト（name は assets/icons のファイル名）
+  Finder inCell(int month, int day, String name) => find.descendant(
+    of: cell(month, day),
+    matching: find.image(AssetImage('assets/icons/$name.png')),
+  );
 
   group('カレンダー（S-20）', () {
     testWidgets('UT-CS-01 今月を日曜始まりの6行7列で出す', (tester) async {
@@ -114,10 +117,10 @@ void main() {
       );
       await show(tester, CalendarScreen(today: _today));
 
-      expect(inCell(11, 2, '食'), findsOneWidget);
-      expect(inCell(11, 2, '吐'), findsOneWidget);
-      expect(inCell(11, 2, 'メ'), findsOneWidget);
-      expect(inCell(11, 3, '食'), findsNothing);
+      expect(inCell(11, 2, 'cal_food'), findsOneWidget);
+      expect(inCell(11, 2, 'cal_vomit'), findsOneWidget);
+      expect(inCell(11, 2, 'cal_memo'), findsOneWidget);
+      expect(inCell(11, 3, 'cal_food'), findsNothing);
       await close(tester);
     });
 
@@ -131,8 +134,8 @@ void main() {
       await tester.tap(find.text('タマ').last);
       await tester.pumpAndSettle();
 
-      expect(inCell(11, 2, '吐'), findsOneWidget);
-      expect(inCell(11, 2, '食'), findsNothing);
+      expect(inCell(11, 2, 'cal_vomit'), findsOneWidget);
+      expect(inCell(11, 2, 'cal_food'), findsNothing);
       await close(tester);
     });
 
@@ -231,7 +234,10 @@ void main() {
       expect((tiles[0].title! as Text).data, 'タマ　おしっこ');
       expect((tiles[1].title! as Text).data, 'ミケ　吐いた');
       expect(tiles[0].trailing, isNull);
-      expect(find.text('[メ]'), findsOneWidget);
+      expect(
+        find.image(const AssetImage('assets/icons/cal_memo.png')),
+        findsOneWidget,
+      );
       await close(tester);
     });
 

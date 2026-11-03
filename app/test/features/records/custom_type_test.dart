@@ -10,7 +10,7 @@ import '../../helpers/test_db.dart';
 void main() {
   group('入力の決まり', () {
     test('UT-TY-01 アイコンの値：知っている値／空／知らない値（同値分割）', () {
-      expect(CustomIcon.parse('custom_bath'), CustomIcon.bath);
+      expect(CustomIcon.parse('custom_treat'), CustomIcon.treat);
       expect(CustomIcon.parse(null), isNull);
       expect(CustomIcon.parse('food'), isNull);
     });
@@ -51,7 +51,7 @@ void main() {
           householdId: householdId,
           userId: 'u1',
           name: name,
-          icon: CustomIcon.hospital.value,
+          icon: CustomIcon.vet.value,
         );
 
     test('UT-TY-05 独自の項目を標準の後ろに追加し、同期待ちに残す。名前の前後の空白を除く', () async {
@@ -62,7 +62,7 @@ void main() {
       expect(types, hasLength(10));
       expect(types[8].name, '通院');
       expect(types[8].kind, 'custom');
-      expect(types[8].icon, 'custom_hospital');
+      expect(types[8].icon, 'custom_vet');
       expect(types.map((t) => t.sortOrder).skip(8), [8, 9]);
       final changes = await db.select(db.pendingChanges).get();
       expect(changes.map((c) => c.targetTable), [
@@ -85,12 +85,12 @@ void main() {
         id: id,
         userId: 'u1',
         name: '病院',
-        icon: CustomIcon.star.value,
+        icon: CustomIcon.other.value,
       );
 
       final type = (await repo.watchTypes('h1').first).last;
       expect(type.name, '病院');
-      expect(type.icon, 'custom_star');
+      expect(type.icon, 'custom_other');
     });
 
     test('UT-TY-08 異常系：標準の項目と存在しない項目は変えられず、同期待ちも残さない', () async {
