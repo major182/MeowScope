@@ -35,6 +35,15 @@ void main() {
           path: '/cats/new',
           builder: (context, state) => const Text('猫の登録画面'),
         ),
+        GoRoute(
+          path: '/records/:id',
+          builder: (context, state) => Text('詳細：${state.pathParameters['id']}'),
+        ),
+        GoRoute(
+          path: '/records/:id/edit',
+          builder: (context, state) =>
+              Text('詳細入力：${state.pathParameters['id']}'),
+        ),
       ],
     );
     addTearDown(router.dispose);
@@ -158,6 +167,34 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('猫の登録画面'), findsOneWidget);
+    await close(tester);
+  });
+
+  testWidgets('UT-HM-09 保存の後の「詳細を追加」で、その記録の詳細入力へ進む', (tester) async {
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    await show(tester);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'ご飯'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(SnackBarAction, '詳細を追加'));
+    await tester.pumpAndSettle();
+
+    final id = (await records()).single.id;
+    expect(find.text('詳細入力：$id'), findsOneWidget);
+    await close(tester);
+  });
+
+  testWidgets('UT-HM-10 今日の記録を押すと、その記録の詳細へ進む', (tester) async {
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    await show(tester);
+    await tester.tap(find.widgetWithText(OutlinedButton, '水'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('ミケ　水'));
+    await tester.pumpAndSettle();
+
+    final id = (await records()).single.id;
+    expect(find.text('詳細：$id'), findsOneWidget);
     await close(tester);
   });
 }
