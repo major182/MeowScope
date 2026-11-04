@@ -26,6 +26,9 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- リンクは app_links で受け取って参加の画面を開く。Flutter の既定の受け取りも動くと、
+                 道筋が空のリンクをホームへの移動として扱い、参加の画面を上書きしてしまうので切る -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
             <!-- 招待のリンク（meowscope://invite?token=...）を押すと、このアプリで開く -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>

@@ -184,6 +184,22 @@ void main() {
     await close(tester);
   });
 
+  testWidgets('UT-HM-11 保存の後の通知は4秒で消える（境界値：4秒の直前は出ている）', (tester) async {
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    await show(tester);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'ご飯'));
+    await tester.pumpAndSettle();
+    expect(find.text('ミケのご飯を記録しました'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 3900));
+    expect(find.text('ミケのご飯を記録しました'), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 200));
+    await tester.pumpAndSettle();
+    expect(find.text('ミケのご飯を記録しました'), findsNothing);
+    await close(tester);
+  });
+
   testWidgets('UT-HM-10 今日の記録を押すと、その記録の詳細へ進む', (tester) async {
     await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
     await show(tester);

@@ -147,6 +147,8 @@ class HomeScreen extends ConsumerWidget {
       SnackBar(
         content: Text('${cat.name}の${type.name}を記録しました'),
         duration: const Duration(seconds: 4),
+        // ボタン付きの SnackBar は既定では自動で消えないので、4秒で消えるようにする
+        persist: false,
         action: SnackBarAction(
           label: '詳細を追加',
           onPressed: () => router.push('/records/$id/edit'),
