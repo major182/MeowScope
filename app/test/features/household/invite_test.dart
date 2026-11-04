@@ -252,5 +252,62 @@ void main() {
       expect(find.text(token), findsOneWidget);
       await close(tester);
     });
+
+    testWidgets('UT-IV-08 S-04 の下の「ログアウト」で、ログアウトしてログインの画面を出す', (tester) async {
+      server.on('POST', '/auth/logout', (r) => const FakeResponse(204));
+      await start(tester);
+      expect(find.text('おうちを準備します'), findsOneWidget);
+
+      await tester.tap(find.text('ログアウト'));
+      await tester.pumpAndSettle();
+
+      expect(server.sentTo('/auth/logout'), hasLength(1));
+      expect(tokens.tokens, isNull);
+      expect(find.widgetWithText(FilledButton, 'ログイン'), findsOneWidget);
+      await close(tester);
+    });
+
+    testWidgets(
+      'UT-IV-09 S-04 の「アカウントを削除」：キャンセルなら何もしない。削除を選ぶと記録を残す側で送り、ログインの画面を出す',
+      (tester) async {
+        server.on('DELETE', '/me', (r) => const FakeResponse(204));
+        await start(tester);
+
+        await tester.tap(find.text('アカウントを削除'));
+        await tester.pumpAndSettle();
+        // おうちがないので、記録を残すかは聞かない
+        expect(findBalancedText('おうちの記録を残しますか？'), findsNothing);
+        expect(findBalancedText('アカウントを削除しますか？'), findsOneWidget);
+        await tester.tap(find.text('キャンセル'));
+        await tester.pumpAndSettle();
+        expect(server.sentTo('/me'), isEmpty);
+        expect(find.text('おうちを準備します'), findsOneWidget);
+
+        await tester.tap(find.text('アカウントを削除'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.widgetWithText(TextButton, '削除'));
+        await tester.pumpAndSettle();
+
+        expect(server.sentTo('/me').single.data, {'keepRecords': true});
+        expect(tokens.tokens, isNull);
+        expect(find.widgetWithText(FilledButton, 'ログイン'), findsOneWidget);
+        await close(tester);
+      },
+    );
+
+    testWidgets('UT-IV-10 異常系：アカウントの削除に失敗したら理由を出し、S-04 のまま', (tester) async {
+      server.on('DELETE', '/me', (r) => const FakeResponse.offline());
+      await start(tester);
+
+      await tester.tap(find.text('アカウントを削除'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(TextButton, '削除'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.text('おうちを準備します'), findsOneWidget);
+      expect(tokens.tokens, isNotNull);
+      await close(tester);
+    });
   });
 }

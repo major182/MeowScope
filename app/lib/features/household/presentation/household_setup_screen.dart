@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/api/api_error.dart';
 import '../../../core/providers.dart';
+import '../../../core/widgets/confirm_delete.dart';
 import '../../../core/widgets/readable_width.dart';
 
-/// おうちの作成（S-04）
+/// おうちの作成または参加（S-04）
 ///
 /// 作った人はログイン中のユーザーで、投稿者名には新規登録の名前を使う（BR-17）。
-/// 招待されたおうちへの参加は、招待の実装で足す
+/// おうちのない人もログアウトと退会ができるよう、画面の下に小さく入口を置く
 class HouseholdSetupScreen extends ConsumerStatefulWidget {
   const HouseholdSetupScreen({super.key});
 
@@ -42,6 +44,43 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
     router.push('/cats/new');
   }
 
+  Future<void> _logout() async {
+    final router = GoRouter.of(context);
+    await ref.read(authRepositoryProvider).logout();
+    // 最初の画面へ戻ると、ログアウト済みなのでログイン（S-01）が出る
+    router.go('/');
+  }
+
+  /// おうちがないので、記録を残すかは聞かずに確認だけする（残す側で送る）
+  Future<void> _delete() async {
+    final user = ref.read(authUserProvider).value;
+    if (_saving || user == null) {
+      return;
+    }
+    final ok = await confirmDelete(
+      context,
+      title: 'アカウントを削除しますか？',
+      message: 'ログインできなくなり、元に戻せません',
+    );
+    if (!ok || !mounted) {
+      return;
+    }
+    final router = GoRouter.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(accountRepositoryProvider)
+          .deleteAccount(userId: user.id, keepRecords: true);
+      router.go('/');
+    } on ApiError catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(e.message())));
+      if (mounted) {
+        setState(() => _saving = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // ref.read で読めるよう、ログイン中のユーザーを見張っておく
@@ -71,6 +110,44 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
           ],
         ),
       ),
+      // 新規登録した人も見る画面なので、目立たないよう下に小さく置く
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _QuietButton(label: 'ログアウト', onPressed: _saving ? null : _logout),
+              const SizedBox(width: 16),
+              _QuietButton(
+                label: 'アカウントを削除',
+                onPressed: _saving ? null : _delete,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 目立たない小さな文字のボタン
+class _QuietButton extends StatelessWidget {
+  const _QuietButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(
+        foregroundColor: theme.colorScheme.onSurfaceVariant,
+        textStyle: theme.textTheme.bodySmall,
+      ),
+      child: Text(label),
     );
   }
 }
