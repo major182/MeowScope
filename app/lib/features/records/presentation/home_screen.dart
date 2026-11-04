@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
+import '../../../app/main_shell.dart' show wideLayoutWidth;
 import '../../sync/presentation/sync_status_screen.dart';
 import '../../household/data/household_repository.dart';
 import '../data/record_repository.dart';
@@ -30,6 +31,23 @@ final _todayProvider = StreamProvider.autoDispose<List<RecordEntry>>((ref) {
       .watch(recordRepositoryProvider)
       .watchDay(session.householdId, DateTime.now());
 });
+
+/// 広い画面での記録のボタン1つの幅の上限
+const typeButtonMaxWidth = 160.0;
+
+/// 記録のボタンの並べ方。狭い画面は4列、広い画面は幅に上限を設けて、窓が広いほど列を増やす
+SliverGridDelegate _typeGrid(BuildContext context) =>
+    MediaQuery.sizeOf(context).width >= wideLayoutWidth
+    ? const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: typeButtonMaxWidth,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+      )
+    : const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+      );
 
 /// ホーム（S-10）。項目 → 猫 → 即保存の流れで記録する
 class HomeScreen extends ConsumerWidget {
@@ -72,12 +90,10 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
             ),
-          GridView.count(
-            crossAxisCount: 4,
+          GridView(
+            gridDelegate: _typeGrid(context),
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
             children: [
               for (final t in types)
                 _TypeButton(

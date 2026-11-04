@@ -9,6 +9,7 @@ import '../../icons/icon_repository.dart';
 import '../../../core/widgets/confirm_delete.dart';
 import '../../household/data/household_repository.dart';
 import '../data/cat_repository.dart';
+import '../../../core/widgets/readable_width.dart';
 
 /// 猫1匹を見張る
 final catProvider = StreamProvider.autoDispose.family<CatRow?, String>(
@@ -172,7 +173,7 @@ class _CatFormScreenState extends ConsumerState<CatFormScreen> {
       body: Form(
         key: _form,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: readablePadding(context, 16),
           children: [
             // アイコンは登録した後（プロフィール）で設定する。サーバーへ送るので通信が要る
             if (_editing) ...[

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
+import '../../../core/widgets/readable_width.dart';
 
 /// おうちの作成（S-04）
 ///
@@ -50,7 +51,7 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
       body: Form(
         key: _form,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: readablePadding(context, 16),
           children: [
             TextFormField(
               controller: _householdName,

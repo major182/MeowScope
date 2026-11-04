@@ -11,6 +11,7 @@ import '../../auth/data/account_repository.dart';
 import '../../icons/icon_avatar.dart';
 import '../../icons/icon_repository.dart';
 import '../../sync/presentation/sync_controller.dart';
+import '../../../core/widgets/readable_width.dart';
 
 final _householdNameProvider = StreamProvider.family<String?, String>(
   (ref, id) => ref.watch(accountRepositoryProvider).watchHouseholdName(id),
@@ -152,7 +153,7 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('おうちの管理')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: readablePadding(context, 16),
         children: [
           TextField(
             controller: _name,
