@@ -134,6 +134,18 @@ class WidgetModelTest {
         assertNull(parse("other"))
     }
 
+    @Test
+    fun `UT-WG-19 境界値：記録中のまま10秒たったら失敗を出し、3秒後にボタンに戻る。直前は記録中のまま`() {
+        val s = ready(mike)
+        val busy = WidgetModel.onAction(s, Ui(), Action.Button(0), now).ui
+        val limit = now + WidgetModel.BUSY_TIMEOUT_MS
+        assertEquals(Ui.BUSY, WidgetModel.onAction(s, busy, Action.Expire, limit - 1).ui.mode)
+
+        val failed = WidgetModel.onAction(s, busy, Action.Expire, limit).ui
+        assertEquals(WidgetModel.FAILED_MESSAGE, WidgetModel.screen(s, failed, limit).message)
+        assertEquals(Ui.BUTTONS, WidgetModel.onAction(s, failed, Action.Expire, limit + WidgetModel.FAILED_MS).ui.mode)
+    }
+
     /** android.net.Uri は単体テストでは使えないので、道筋の部分だけで確かめる。 */
     private fun parse(path: String): Action? = RecordWidgetProvider.parsePath(path.split("/"))
 }

@@ -35,12 +35,10 @@ void main() {
   late AppDatabase db;
   late FakeHost host;
   final now = DateTime.utc(2026, 11, 5, 8);
-  final waited = <Duration>[];
 
   setUp(() async {
     db = memoryDatabase();
     host = FakeHost();
-    waited.clear();
     await addHousehold(db, 'h1');
     await addHousehold(db, 'h2');
     await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
@@ -83,15 +81,10 @@ void main() {
     ]),
   );
 
-  Future<void> run(String uri) => handleWidgetAction(
-    Uri.parse(uri),
-    db: db,
-    host: host,
-    clock: () => now,
-    wait: (d) async => waited.add(d),
-  );
+  Future<void> run(String uri) =>
+      handleWidgetAction(Uri.parse(uri), db: db, host: host, clock: () => now);
 
-  test('UT-WG-14 記録して結果を2秒出し、ボタンに戻す。記録は同期待ちに積み、投稿者はログイン中の人', () async {
+  test('UT-WG-14 記録して、結果を2秒の期限付きで出す。記録は同期待ちに積み、投稿者はログイン中の人', () async {
     await signIn();
 
     await run('meowscope://widget/record?type=t1&cat=c1');
@@ -108,10 +101,8 @@ void main() {
         'message': '✓ ミケのご飯を記録しました',
         'until': now.add(doneDuration).millisecondsSinceEpoch,
       },
-      {'mode': 'buttons'},
     ]);
-    expect(waited, [doneDuration]);
-    expect(host.refreshed, 2);
+    expect(host.refreshed, 1);
   });
 
   test('UT-WG-15 異常系：記録できないときは記録せず、その旨を出す', () async {

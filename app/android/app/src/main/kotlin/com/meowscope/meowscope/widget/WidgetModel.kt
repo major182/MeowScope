@@ -65,6 +65,14 @@ object WidgetModel {
     /** 選ばずに放っておいたら、ボタンに戻すまでの時間。 */
     const val SELECT_TIMEOUT_MS = 15_000L
 
+    /** 記録中のまま結果が来なければ、失敗として扱うまでの時間（アプリの更新の直後など、裏側の処理が動かないとき）。 */
+    const val BUSY_TIMEOUT_MS = 10_000L
+
+    /** 失敗の文を出す時間。 */
+    const val FAILED_MS = 3_000L
+
+    const val FAILED_MESSAGE = "記録できませんでした。アプリを開いてください"
+
     private const val READY = "ready"
     private const val NO_CATS = "noCats"
 
@@ -119,7 +127,7 @@ object WidgetModel {
                 val only = snapshot.onlyCat
                 if (only != null) {
                     // 猫が1匹なら選ばずに記録する（BR-23）
-                    Outcome(Ui(mode = Ui.BUSY), Record(type.id, only.id))
+                    Outcome(Ui(mode = Ui.BUSY, until = now + BUSY_TIMEOUT_MS), Record(type.id, only.id))
                 } else {
                     Outcome(Ui(mode = Ui.CATS, type = type, until = now + SELECT_TIMEOUT_MS))
                 }
@@ -130,7 +138,7 @@ object WidgetModel {
                 if (shown.mode != Ui.CATS || cat == null || type == null) {
                     Outcome(Ui())
                 } else {
-                    Outcome(Ui(mode = Ui.BUSY), Record(type.id, cat.id))
+                    Outcome(Ui(mode = Ui.BUSY, until = now + BUSY_TIMEOUT_MS), Record(type.id, cat.id))
                 }
             }
             Action.Next -> if (shown.mode != Ui.CATS || snapshot.pages.isEmpty()) {
@@ -140,8 +148,12 @@ object WidgetModel {
                 Outcome(shown.copy(page = (shown.page + 1) % snapshot.pages.size, until = now + SELECT_TIMEOUT_MS))
             }
             Action.Cancel -> Outcome(Ui())
-            // 期限の知らせ。期限を過ぎていれば current でボタンに戻っている
-            Action.Expire -> Outcome(shown)
+            // 期限の知らせ。記録中のまま期限を過ぎたら失敗を出す。ほかは期限を過ぎていれば current でボタンに戻っている
+            Action.Expire -> if (ui.mode == Ui.BUSY && shown.mode == Ui.BUTTONS) {
+                Outcome(Ui(mode = Ui.DONE, message = FAILED_MESSAGE, until = now + FAILED_MS))
+            } else {
+                Outcome(shown)
+            }
         }
     }
 }

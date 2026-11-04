@@ -8,6 +8,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
@@ -41,16 +43,19 @@ class RecordWidgetProvider : HomeWidgetProvider() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != ACTION_TAP) {
+        if (intent.action == ACTION_TAP) {
+            parseAction(intent.data)?.let { apply(context, it) }
+        } else {
             super.onReceive(context, intent)
-            return
         }
-        val action = parseAction(intent.data) ?: return
+        armExpire(context)
+    }
+
+    private fun apply(context: Context, action: Action) {
         val prefs = HomeWidgetPlugin.getData(context)
         val now = System.currentTimeMillis()
         val outcome = WidgetModel.onAction(snapshot(prefs), ui(prefs), action, now)
         prefs.edit().putString(KEY_UI, uiJson(outcome.ui)).apply()
-        outcome.ui.until?.let { scheduleExpire(context, it - now) }
         outcome.record?.let {
             val uri = Uri.parse("meowscope://widget/record?type=${Uri.encode(it.typeId)}&cat=${Uri.encode(it.catId)}")
             HomeWidgetBackgroundIntent.getBroadcast(context, uri).send()
@@ -62,6 +67,30 @@ class RecordWidgetProvider : HomeWidgetProvider() {
         val manager = AppWidgetManager.getInstance(context)
         val ids = manager.getAppWidgetIds(ComponentName(context, RecordWidgetProvider::class.java))
         onUpdate(context, manager, ids, HomeWidgetPlugin.getData(context))
+    }
+
+    /**
+     * 期限のある表示（猫の選択・記録の結果）を、期限ちょうどにボタンへ戻す。
+     *
+     * 結果は Dart の裏側の処理が書くが、その処理は書いた後すぐに止められるので、戻すのはこちらで行う。
+     * アラームは OS がまとめて遅らせる（1分ほど）ため、受け取りの処理を期限まで延ばして（goAsync）戻す。
+     * 延ばせるのは受け取りの制限時間の内だけなので、アラームも予備として掛けておく
+     */
+    private fun armExpire(context: Context) {
+        val now = System.currentTimeMillis()
+        val until = ui(HomeWidgetPlugin.getData(context)).until ?: return
+        if (until <= now) {
+            return
+        }
+        scheduleExpire(context, until - now)
+        val pending = goAsync()
+        Handler(Looper.getMainLooper()).postDelayed({
+            try {
+                apply(context, Action.Expire)
+            } finally {
+                pending.finish()
+            }
+        }, until - now)
     }
 
     /** 選ばずに放っておかれたら、期限で描き直してボタンに戻す。 */

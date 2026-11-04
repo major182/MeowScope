@@ -8,14 +8,14 @@ import 'widget_host.dart';
 /// ウィジェットから記録する（F-WG-01、BR-23）。アプリの画面は開かずに、裏側で動く
 ///
 /// 受け取るリンクは `meowscope://widget/record?type=<記録項目の ID>&cat=<猫の ID>`。
-/// 記録したら「✓ ミケのご飯を記録しました」を [doneDuration] だけ出して、元のボタンに戻す。
+/// 記録したら「✓ ミケのご飯を記録しました」を [doneDuration] だけ出す。元のボタンに戻すのは Android の側
+/// （この処理は書いた後すぐに止められることがあり、待ってから戻すことができないため）。
 /// 記録できなければ、その旨を出す。記録の内容は同期待ちに積まれ、次の同期でサーバーへ送られる
 Future<void> handleWidgetAction(
   Uri uri, {
   required AppDatabase db,
   required WidgetHost host,
   DateTime Function() clock = DateTime.now,
-  Future<void> Function(Duration) wait = Future<void>.delayed,
 }) async {
   if (uri.scheme != 'meowscope' ||
       uri.host != 'widget' ||
@@ -28,8 +28,6 @@ Future<void> handleWidgetAction(
     catId: uri.queryParameters['cat'],
   );
   await host.showUi('done', message: message, until: clock().add(doneDuration));
-  await wait(doneDuration);
-  await host.showUi('buttons');
 }
 
 /// 記録して、出す文を返す
