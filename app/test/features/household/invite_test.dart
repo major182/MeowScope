@@ -170,12 +170,18 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('おうちの管理'));
       await tester.pumpAndSettle();
+      server.requests.clear();
 
       await tester.tap(find.text('リンクで招待する'));
       await tester.pumpAndSettle();
 
       expect(find.text('招待の文をコピーしました'), findsOneWidget);
       expect(copied, contains('meowscope://invite?token=$token'));
+      // 先に同期して手元の猫と記録を送ってから、招待を作る
+      expect(server.requests.map((r) => r.path), [
+        '/sync',
+        '/households/h1/invitations',
+      ]);
       await close(tester);
     });
 
@@ -191,10 +197,16 @@ void main() {
         find.byType(TextField),
         invitationMessage('みけ家', 'meowscope://invite?token=$token'),
       );
+      server.requests.clear();
       await tester.tap(find.text('参加する'));
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(AppBar, 'ホーム'), findsOneWidget);
+      // 参加したらすぐに同期して、おうちの中身を受け取る
+      expect(server.requests.map((r) => r.path), [
+        '/invitations/accept',
+        '/sync',
+      ]);
       await close(tester);
     });
 

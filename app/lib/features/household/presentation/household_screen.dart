@@ -10,6 +10,7 @@ import '../../../core/widgets/keep_records_dialog.dart';
 import '../../auth/data/account_repository.dart';
 import '../../icons/icon_avatar.dart';
 import '../../icons/icon_repository.dart';
+import '../../sync/presentation/sync_controller.dart';
 
 final _householdNameProvider = StreamProvider.family<String?, String>(
   (ref, id) => ref.watch(accountRepositoryProvider).watchHouseholdName(id),
@@ -62,6 +63,8 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
     final messenger = ScaffoldMessenger.of(context);
     setState(() => _busy = true);
     try {
+      // 招待した人の手元の猫と記録を先に送っておき、参加した人にすぐ届くようにする
+      await ref.read(syncControllerProvider.notifier).sync();
       final message = await ref
           .read(accountRepositoryProvider)
           .createInvitation(

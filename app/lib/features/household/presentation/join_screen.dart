@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/api_error.dart';
 import '../../../core/providers.dart';
 import '../../auth/domain/credentials.dart';
+import '../../sync/presentation/sync_controller.dart';
 
 /// 招待されたおうちに参加（S-04 から開く。Android は招待のリンクを押しても開く）
 ///
@@ -50,7 +53,8 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       await ref
           .read(accountRepositoryProvider)
           .acceptInvitation(userId: user.id, token: token);
-      // 最初の画面へ戻るとホームが出て、同期でおうちの中身が届く
+      // すぐに同期して、おうちの猫と記録を受け取る。待たずにホームへ進む（届いたら画面が変わる）
+      unawaited(ref.read(syncControllerProvider.notifier).sync());
       router.go('/');
     } on ApiError catch (e) {
       if (mounted) {
