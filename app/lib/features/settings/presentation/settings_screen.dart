@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
 import '../../calendar/domain/calendar_month.dart';
+import '../../../core/widgets/readable_width.dart';
 
 /// 設定（S-40）
 class SettingsScreen extends ConsumerWidget {
@@ -19,6 +20,7 @@ class SettingsScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('設定')),
       body: ListView(
+        padding: readablePadding(context, 0),
         children: [
           _Link(label: '猫の一覧とプロフィール', path: '/cats'),
           _Link(label: 'おうちの管理', path: '/household'),

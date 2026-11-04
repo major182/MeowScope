@@ -6,6 +6,7 @@ import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../domain/custom_type.dart';
 import '../domain/record_kind.dart';
+import '../../../core/widgets/readable_width.dart';
 import 'record_providers.dart';
 import 'type_icon.dart';
 
@@ -44,6 +45,7 @@ class RecordTypesScreen extends ConsumerWidget {
         ],
       ),
       body: ListView(
+        padding: readablePadding(context, 0),
         children: [
           for (final t in types)
             ListTile(
@@ -177,7 +179,7 @@ class _RecordTypeFormScreenState extends ConsumerState<RecordTypeFormScreen> {
       body: Form(
         key: _form,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: readablePadding(context, 16),
           children: [
             TextFormField(
               controller: _name,

@@ -200,6 +200,34 @@ void main() {
     await close(tester);
   });
 
+  group('UT-HM-12 記録のボタンの並べ方', () {
+    Future<List<Rect>> buttonsAt(WidgetTester tester, double width) async {
+      tester.view.physicalSize = Size(width, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await show(tester);
+      return [
+        for (final e in find.byType(OutlinedButton).evaluate())
+          tester.getRect(find.byWidget(e.widget)),
+      ];
+    }
+
+    testWidgets('広い画面（1280px）：ボタンは 160px 以下で、8つが1列に並ぶ', (tester) async {
+      final rects = await buttonsAt(tester, 1280);
+      expect(rects, hasLength(8));
+      expect(rects.every((r) => r.width <= typeButtonMaxWidth), isTrue);
+      expect(rects.map((r) => r.top).toSet(), hasLength(1));
+      await close(tester);
+    });
+
+    testWidgets('広い画面の手前（899px）：今までどおり4列で2行', (tester) async {
+      final rects = await buttonsAt(tester, 899);
+      expect(rects.map((r) => r.top).toSet(), hasLength(2));
+      expect(rects.first.width, greaterThan(typeButtonMaxWidth));
+      await close(tester);
+    });
+  });
+
   testWidgets('UT-HM-10 今日の記録を押すと、その記録の詳細へ進む', (tester) async {
     await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
     await show(tester);

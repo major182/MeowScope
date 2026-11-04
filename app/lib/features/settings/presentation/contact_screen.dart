@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
+import '../../../core/widgets/readable_width.dart';
 
 /// 問い合わせ先。リポジトリには書かず、ビルドのときに `--dart-define=CONTACT_EMAIL=...` で渡す（ログ設計書 8章）
 const contactEmail = String.fromEnvironment('CONTACT_EMAIL');
@@ -47,7 +48,7 @@ class ContactScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('問い合わせ')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: readablePadding(context, 16),
         children: [
           const Text('不具合があったときは、ログを保存して次の宛先へ添付して連絡してください'),
           const SizedBox(height: 12),

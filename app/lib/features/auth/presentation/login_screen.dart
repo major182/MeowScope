@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api/api_error.dart';
 import '../../../core/providers.dart';
 import '../domain/credentials.dart';
+import '../../../core/widgets/readable_width.dart';
 import 'credential_field.dart';
 
 /// ログイン（S-01）
@@ -62,7 +63,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Form(
           key: _form,
           child: ListView(
-            padding: const EdgeInsets.all(24),
+            padding: readablePadding(context, 24),
             children: [
               const SizedBox(height: 24),
               Center(
@@ -125,7 +126,7 @@ class LoginHelpScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('ログインに困ったら')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: readablePadding(context, 16),
         children: [
           const ListTile(
             enabled: false,

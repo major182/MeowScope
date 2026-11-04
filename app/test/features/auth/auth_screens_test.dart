@@ -63,6 +63,21 @@ void main() {
     await close(tester);
   });
 
+  testWidgets('UT-RW-02 広い画面（1280px）のログイン：入力欄とボタンは 640px で、中央に寄せる', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1280, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await start(tester);
+
+    final email = tester.getRect(field('メールアドレス'));
+    final button = tester.getRect(find.widgetWithText(FilledButton, 'ログイン'));
+    expect((email.width, email.left), (640, 320));
+    expect((button.width, button.left), (640, 320));
+    await close(tester);
+  });
+
   testWidgets('UT-AU-23 ログイン：成功するとおうちの作成へ進む', (tester) async {
     server.on('POST', '/auth/login', (r) => FakeResponse(200, authBody()));
     await start(tester);

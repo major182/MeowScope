@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../icons/icon_avatar.dart';
 import '../../icons/icon_repository.dart';
 import '../data/cat_repository.dart';
+import '../../../core/widgets/readable_width.dart';
 import 'cat_filter.dart';
 
 /// 猫の一覧（S-41）。お別れの猫も出す
@@ -31,6 +32,7 @@ class CatListScreen extends ConsumerWidget {
       body: cats.isEmpty
           ? const Center(child: Text('猫が登録されていません'))
           : ListView(
+              padding: readablePadding(context, 0),
               children: [
                 for (final c in cats)
                   ListTile(

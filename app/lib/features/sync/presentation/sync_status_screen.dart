@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
+import '../../../core/widgets/readable_width.dart';
 import 'sync_controller.dart';
 
 /// 日時を「11/02 09:30」の形にする
@@ -33,7 +34,7 @@ class SyncStatusScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('同期の状態')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: readablePadding(context, 16),
         children: [
           ListTile(
             title: const Text('最終同期'),

@@ -6,6 +6,7 @@ import '../../../core/providers.dart';
 import '../../photos/presentation/photo_widgets.dart';
 import '../data/record_repository.dart';
 import '../domain/record_detail.dart';
+import '../../../core/widgets/readable_width.dart';
 import 'record_format.dart';
 import 'record_providers.dart';
 
@@ -149,7 +150,7 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: readablePadding(context, 16),
           children: [
             ListTile(
               contentPadding: EdgeInsets.zero,

@@ -9,6 +9,7 @@ import '../../../core/widgets/keep_records_dialog.dart';
 import '../../icons/icon_avatar.dart';
 import '../../icons/icon_repository.dart';
 import '../domain/credentials.dart';
+import '../../../core/widgets/readable_width.dart';
 import 'credential_field.dart';
 
 final _myIconProvider = StreamProvider.family<IconRef, String>(
@@ -125,7 +126,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       body: Form(
         key: _form,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: readablePadding(context, 16),
           children: [
             if (user != null)
               Consumer(
