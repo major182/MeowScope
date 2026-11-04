@@ -310,6 +310,49 @@ class SyncIntegrationTest {
         assertThat(nextSeq(body)).isEqualTo(seq);
     }
 
+    private Map<String, Object> button(UUID typeId, int sort) {
+        return Map.of("recordTypeId", typeId.toString(), "sortOrder", sort);
+    }
+
+    @Test
+    @DisplayName("IT-SY-15 ウィジェットのボタン：4つまで（境界値）。自分の分だけを受け取り、他の人・他のおうちの項目は rejected（BR-22）")
+    void ウィジェットのボタン() throws Exception {
+        List<UUID> ids = List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        List<Map<String, Object>> four = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            four.add(change("widget_buttons", ids.get(i), button(food, i)));
+        }
+        four.add(change("widget_buttons", UUID.randomUUID(), button(food, 3)));
+        Map<String, Object> body = syncBody(haru, 0, four);
+        assertThat(statuses(body)).containsExactly("applied", "applied", "applied", "applied", "rejected");
+        assertThat(changes(body, "widget_buttons")).hasSize(4);
+
+        // 並び順の変更と削除。削除で空いたら、また追加できる
+        body = syncBody(haru, 0, List.of(
+                change("widget_buttons", ids.get(0), button(food, 1)),
+                change("widget_buttons", ids.get(1), button(food, 0), "2026-11-03T09:00:00Z"),
+                change("widget_buttons", UUID.randomUUID(), button(food, 3)),
+                change("widget_buttons", ids.get(2), button(food, 2))));
+        assertThat(statuses(body)).containsExactly("applied", "applied", "applied", "ignored");
+
+        // 同じおうちの別の人：はるのボタンは受け取らず、変えられない
+        Registered aki = TestUsers.register(mvc);
+        join(aki, household);
+        body = syncBody(aki, 0, List.of(change("widget_buttons", ids.get(0), button(food, 0))));
+        assertThat(statuses(body)).containsExactly("rejected");
+        assertThat(changes(body, "widget_buttons")).isEmpty();
+
+        // 自分の属さないおうちの記録項目と、ない記録項目は rejected
+        Registered other = TestUsers.register(mvc);
+        UUID otherFood = UUID.randomUUID();
+        createHousehold(other, UUID.randomUUID(), otherFood).andExpect(status().isCreated());
+        body = syncBody(haru, 0, List.of(
+                change("widget_buttons", UUID.randomUUID(), button(otherFood, 0)),
+                change("widget_buttons", UUID.randomUUID(), button(UUID.randomUUID(), 0)),
+                change("widget_buttons", UUID.randomUUID(), button(food, 4))));
+        assertThat(statuses(body)).containsOnly("rejected");
+    }
+
     @Test
     @DisplayName("IT-SY-11 設定：自分の週の始まりを更新し、自分の分だけを受け取る。おうちの名前を変える")
     void 設定とおうちの名前() throws Exception {

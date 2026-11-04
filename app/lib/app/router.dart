@@ -13,6 +13,7 @@ import '../features/records/presentation/record_edit_screen.dart';
 import '../features/records/presentation/record_types_screen.dart';
 import '../features/settings/presentation/contact_screen.dart';
 import '../features/sync/presentation/sync_status_screen.dart';
+import '../features/widget/presentation/widget_buttons_screen.dart';
 import 'start_screen.dart';
 
 /// 画面の一覧（04 画面設計書）。画面を作るたびに足す
@@ -90,6 +91,10 @@ GoRouter createRouter() => GoRouter(
               RecordTypeFormScreen(typeId: state.pathParameters['id']),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/widget-buttons',
+      builder: (context, state) => const WidgetButtonsScreen(),
     ),
     GoRoute(
       path: '/days/:date',

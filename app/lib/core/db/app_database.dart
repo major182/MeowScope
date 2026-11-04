@@ -18,6 +18,7 @@ part 'app_database.g.dart';
     PendingPhotos,
     LocalPhotos,
     ClientLogs,
+    WidgetButtons,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -32,8 +33,8 @@ class AppDatabase extends _$AppDatabase {
   // 4：おうちのメンバーの表を追加（同期）　5：写真の表を追加
   // 6：メンバーのユーザーの ID を空にできるようにする（退会した人）
   // 7：端末のログの表を追加
-  // 8：アイコンの有無を追加
-  int get schemaVersion => 8;
+  // 8：アイコンの有無を追加　9：ウィジェットのボタンの表を追加
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -76,6 +77,9 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(householdMembers, householdMembers.hasIcon);
           await m.addColumn(householdMembers, householdMembers.iconSeq);
         }
+      }
+      if (from < 9) {
+        await m.createTable(widgetButtons);
       }
     },
     beforeOpen: (details) async {

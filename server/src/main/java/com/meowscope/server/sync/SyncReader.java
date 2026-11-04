@@ -60,7 +60,10 @@ class SyncReader {
                             + " 'uploaded', file_path IS NOT NULL)",
                     "record_id IN (SELECT r.id FROM records r JOIN cats c ON c.id = r.cat_id WHERE c.household_id IN ("
                             + MY_HOUSEHOLDS + "))"),
-            new Source("user_settings", "json_build_object('weekStart', week_start)", "user_id = :user"));
+            new Source("user_settings", "json_build_object('weekStart', week_start)", "user_id = :user"),
+            // ウィジェットのボタンはアカウントのもの。自分の分だけを返す（BR-22）
+            new Source("widget_buttons",
+                    "json_build_object('recordTypeId', record_type_id, 'sortOrder', sort_order)", "user_id = :user"));
 
     private final JdbcClient jdbc;
     private final JsonMapper json;

@@ -25,7 +25,7 @@ class SettingsScreen extends ConsumerWidget {
           _Link(label: '猫の一覧とプロフィール', path: '/cats'),
           _Link(label: 'おうちの管理', path: '/household'),
           _Link(label: '記録項目の設定', path: '/record-types'),
-          if (android) const _Pending(label: 'ウィジェットのボタン'),
+          if (android) _Link(label: 'ウィジェットのボタン', path: '/widget-buttons'),
           _Link(label: 'アカウント', path: '/account'),
           _Link(label: '同期の状態', path: '/sync'),
           _Link(label: '問い合わせ', path: '/contact'),
@@ -68,22 +68,6 @@ class _Link extends StatelessWidget {
       title: Text(label),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => context.push(path),
-    );
-  }
-}
-
-/// まだ作っていない画面の項目。押せないようにして「準備中」と出す
-class _Pending extends StatelessWidget {
-  const _Pending({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      enabled: false,
-      title: Text(label),
-      subtitle: const Text('準備中'),
     );
   }
 }
