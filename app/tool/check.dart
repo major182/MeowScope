@@ -1,5 +1,5 @@
 // アプリのチェックを1つのコマンドにまとめる：dart run tool/check.dart
-// --all を付けるとサーバーの ./gradlew check も実行する。CI も同じコマンドを使う
+// Android のウィジェット（Kotlin）の単体テストも動かす。--all を付けるとサーバーの ./gradlew check も実行する。CI も同じコマンドを使う
 import 'dart:io';
 
 /// NF-MT-01 のしきい値（行カバレッジ）
@@ -55,6 +55,13 @@ Future<void> main(List<String> args) async {
     stderr.writeln('カバレッジが $minimumCoverage% を下回りました');
     exit(1);
   }
+
+  // Android のウィジェットの表示の決め方（Kotlin）の単体テスト。
+  // gradlew と local.properties は Git に入れていないので、先に作る（ビルドはしない）
+  await run('flutter', ['build', 'apk', '--config-only']);
+  await run(Platform.isWindows ? r'.\gradlew.bat' : './gradlew', [
+    ':app:testDebugUnitTest',
+  ], dir: 'android');
 
   if (args.contains('--all')) {
     await run(Platform.isWindows ? r'.\gradlew.bat' : './gradlew', [

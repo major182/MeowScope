@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ウィジェットの色。アプリの色（#C2662D）に合わせる。暗い表示は values-night -->
+    <color name="widget_background">#F2FFFFFF</color>
+    <color name="widget_cell">#FFFFFFFF</color>
+    <color name="widget_cell_border">#33C2662D</color>
+    <color name="widget_text">#FF1F1B16</color>
+    <string name="widget_description">ワンボタンで記録する</string>
+
+    <style name="WidgetText">
+        <item name="android:textColor">@color/widget_text</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="WidgetCell" parent="WidgetText">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_margin">3dp</item>
+        <item name="android:background">@drawable/widget_cell</item>
+        <item name="android:gravity">center</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+</resources>

@@ -1,0 +1,186 @@
+package com.meowscope.meowscope.widget
+
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
+import android.net.Uri
+import android.os.SystemClock
+import android.view.View
+import android.widget.RemoteViews
+import com.meowscope.meowscope.MainActivity
+import com.meowscope.meowscope.R
+import es.antonborri.home_widget.HomeWidgetBackgroundIntent
+import es.antonborri.home_widget.HomeWidgetLaunchIntent
+import es.antonborri.home_widget.HomeWidgetPlugin
+import es.antonborri.home_widget.HomeWidgetProvider
+import org.json.JSONArray
+import org.json.JSONObject
+
+/**
+ * 記録のウィジェット（F-WG-01）。表示と動きは [WidgetModel] が決め、ここでは描くことと受け取ることだけをする。
+ *
+ * ボタン・「次へ」・「やめる」は、ここですぐに表示を切り替える。記録は Dart の裏側の処理
+ * （widgetBackgroundCallback）に `meowscope://widget/record?type=...&cat=...` で頼む。
+ */
+class RecordWidgetProvider : HomeWidgetProvider() {
+
+    override fun onUpdate(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetIds: IntArray,
+        widgetData: SharedPreferences,
+    ) {
+        val screen = WidgetModel.screen(snapshot(widgetData), ui(widgetData), System.currentTimeMillis())
+        for (id in appWidgetIds) {
+            appWidgetManager.updateAppWidget(id, views(context, screen))
+        }
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action != ACTION_TAP) {
+            super.onReceive(context, intent)
+            return
+        }
+        val action = parseAction(intent.data) ?: return
+        val prefs = HomeWidgetPlugin.getData(context)
+        val now = System.currentTimeMillis()
+        val outcome = WidgetModel.onAction(snapshot(prefs), ui(prefs), action, now)
+        prefs.edit().putString(KEY_UI, uiJson(outcome.ui)).apply()
+        outcome.ui.until?.let { scheduleExpire(context, it - now) }
+        outcome.record?.let {
+            val uri = Uri.parse("meowscope://widget/record?type=${Uri.encode(it.typeId)}&cat=${Uri.encode(it.catId)}")
+            HomeWidgetBackgroundIntent.getBroadcast(context, uri).send()
+        }
+        redraw(context)
+    }
+
+    private fun redraw(context: Context) {
+        val manager = AppWidgetManager.getInstance(context)
+        val ids = manager.getAppWidgetIds(ComponentName(context, RecordWidgetProvider::class.java))
+        onUpdate(context, manager, ids, HomeWidgetPlugin.getData(context))
+    }
+
+    /** 選ばずに放っておかれたら、期限で描き直してボタンに戻す。 */
+    private fun scheduleExpire(context: Context, delayMs: Long) {
+        val alarms = context.getSystemService(AlarmManager::class.java) ?: return
+        alarms.set(
+            AlarmManager.ELAPSED_REALTIME,
+            SystemClock.elapsedRealtime() + delayMs.coerceAtLeast(0),
+            tap(context, "expire"),
+        )
+    }
+
+    private fun views(context: Context, screen: Screen): RemoteViews {
+        val v = RemoteViews(context.packageName, R.layout.widget_record)
+        val showMessage = screen.message != null
+        v.setViewVisibility(R.id.widget_message, if (showMessage) View.VISIBLE else View.GONE)
+        v.setViewVisibility(R.id.widget_grid, if (showMessage) View.GONE else View.VISIBLE)
+        v.setTextViewText(R.id.widget_message, screen.message ?: "")
+        v.setViewVisibility(R.id.widget_title, if (screen.title != null) View.VISIBLE else View.GONE)
+        v.setTextViewText(R.id.widget_title, screen.title ?: "")
+        // アプリを開くときは、受け取り口を通さずに直接開く（Android 12 からは裏側から画面を開けない）
+        val open = HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java)
+        for ((i, cellId) in CELLS.withIndex()) {
+            val cell = screen.cells.getOrNull(i)
+            v.setViewVisibility(cellId, if (cell == null) View.INVISIBLE else View.VISIBLE)
+            v.setTextViewText(cellId, cell?.label ?: "")
+            val click = when {
+                cell == null -> null
+                screen.openApp -> open
+                else -> cell.action?.let { tap(context, actionPath(it)) }
+            }
+            v.setOnClickPendingIntent(cellId, click)
+        }
+        v.setOnClickPendingIntent(R.id.widget_message, if (screen.openApp) open else null)
+        return v
+    }
+
+    private fun tap(context: Context, path: String): PendingIntent {
+        val intent = Intent(context, RecordWidgetProvider::class.java)
+            .setAction(ACTION_TAP)
+            .setData(Uri.parse("meowscope://widget/$path"))
+        return PendingIntent.getBroadcast(
+            context,
+            0,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+
+    companion object {
+        const val ACTION_TAP = "com.meowscope.meowscope.widget.TAP"
+        const val KEY_SNAPSHOT = "meowscope.snapshot"
+        const val KEY_UI = "meowscope.ui"
+        private val CELLS = intArrayOf(R.id.widget_cell0, R.id.widget_cell1, R.id.widget_cell2, R.id.widget_cell3)
+
+        fun actionPath(action: Action): String = when (action) {
+            is Action.Button -> "button/${action.index}"
+            is Action.Cat -> "cat/${action.index}"
+            Action.Next -> "next"
+            Action.Cancel -> "cancel"
+            Action.Expire -> "expire"
+        }
+
+        fun parseAction(uri: Uri?): Action? = uri?.pathSegments?.let(::parsePath)
+
+        fun parsePath(segments: List<String>): Action? {
+            val index = segments.getOrNull(1)?.toIntOrNull()
+            return when (segments.firstOrNull()) {
+                "button" -> index?.let { Action.Button(it) }
+                "cat" -> index?.let { Action.Cat(it) }
+                "next" -> Action.Next
+                "cancel" -> Action.Cancel
+                "expire" -> Action.Expire
+                else -> null
+            }
+        }
+
+        private fun snapshot(prefs: SharedPreferences): Snapshot? {
+            val text = prefs.getString(KEY_SNAPSHOT, null) ?: return null
+            return try {
+                val json = JSONObject(text)
+                Snapshot(
+                    status = json.getString("status"),
+                    message = json.optString("message").takeIf { !json.isNull("message") },
+                    buttons = items(json.getJSONArray("buttons")),
+                    pages = json.getJSONArray("pages").let { pages -> List(pages.length()) { items(pages.getJSONArray(it)) } },
+                    onlyCat = json.optJSONObject("onlyCat")?.let(::item),
+                )
+            } catch (e: org.json.JSONException) {
+                null
+            }
+        }
+
+        private fun ui(prefs: SharedPreferences): Ui {
+            val text = prefs.getString(KEY_UI, null) ?: return Ui()
+            return try {
+                val json = JSONObject(text)
+                Ui(
+                    mode = json.optString("mode", Ui.BUTTONS),
+                    message = json.optString("message").takeIf { json.has("message") },
+                    until = if (json.has("until")) json.getLong("until") else null,
+                    type = json.optJSONObject("type")?.let(::item),
+                    page = json.optInt("page", 0),
+                )
+            } catch (e: org.json.JSONException) {
+                Ui()
+            }
+        }
+
+        private fun uiJson(ui: Ui): String = JSONObject().apply {
+            put("mode", ui.mode)
+            ui.message?.let { put("message", it) }
+            ui.until?.let { put("until", it) }
+            ui.type?.let { put("type", JSONObject().put("id", it.id).put("name", it.name)) }
+            put("page", ui.page)
+        }.toString()
+
+        private fun items(array: JSONArray): List<Item> = List(array.length()) { item(array.getJSONObject(it)) }
+
+        private fun item(json: JSONObject) = Item(json.getString("id"), json.getString("name"))
+    }
+}
