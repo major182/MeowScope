@@ -19,6 +19,9 @@ class RecordEntry {
     required this.recordTypeId,
     this.valueNumber,
     this.typeIcon,
+    this.level,
+    this.memo,
+    this.authorName = '',
   });
 
   final String id;
@@ -40,6 +43,14 @@ class RecordEntry {
 
   /// 項目のアイコンの値（record_types.icon）
   final String? typeIcon;
+
+  /// 量（RecordLevel の値）
+  final String? level;
+
+  final String? memo;
+
+  /// 投稿者の名前（記録したときの名前）
+  final String authorName;
 }
 
 /// 記録の詳細の画面に出す内容
@@ -356,6 +367,9 @@ class RecordRepository {
             recordTypeId: row.readTable(r).recordTypeId,
             valueNumber: row.readTable(r).valueNumber,
             typeIcon: row.readTable(t).icon,
+            level: row.readTable(r).level,
+            memo: row.readTable(r).memo,
+            authorName: row.readTable(r).authorName,
           ),
       ],
     );

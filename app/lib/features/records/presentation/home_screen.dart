@@ -11,6 +11,7 @@ import '../data/record_repository.dart';
 import '../../../core/widgets/balanced_text.dart';
 import 'record_format.dart';
 import 'record_providers.dart';
+import 'today_detail.dart';
 import 'type_icon.dart';
 
 final _catsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
@@ -65,6 +66,7 @@ class HomeScreen extends ConsumerWidget {
     final today = ref.watch(_todayProvider).value ?? const [];
     // ボタンを押す前に猫の一覧を読み込んでおく
     final cats = ref.watch(_catsProvider).value ?? const [];
+    final detail = TodayDetail.forPlatform;
     return Scaffold(
       appBar: AppBar(
         title: const Text('ホーム'),
@@ -114,6 +116,17 @@ class HomeScreen extends ConsumerWidget {
             ListTile(
               leading: Text(formatTime(e.recordedAt)),
               title: Text('${e.catName}　${e.typeName}'),
+              subtitle: switch (todayDetailText(e, detail)) {
+                null => null,
+                // Android は一覧が長くならないよう2行までにする。Windows は全文を出す
+                final text => Text(
+                  text,
+                  maxLines: detail == TodayDetail.all ? null : 2,
+                  overflow: detail == TodayDetail.all
+                      ? null
+                      : TextOverflow.ellipsis,
+                ),
+              },
               onTap: () => context.push('/records/${e.id}'),
             ),
         ],
