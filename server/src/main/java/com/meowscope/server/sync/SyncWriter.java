@@ -62,6 +62,7 @@ class SyncWriter {
             case "records" -> record(userId, change.id(), f, updatedAt, deletedAt);
             case "record_photos" -> photo(userId, change.id(), f, updatedAt, deletedAt);
             case "user_settings" -> userSettings(userId, f, updatedAt);
+            case "widget_buttons" -> widgetButton(userId, change.id(), f, updatedAt, deletedAt);
             default -> throw new Rejected("unknown_table", null);
         };
     }
@@ -71,7 +72,7 @@ class SyncWriter {
         return switch (table) {
             case "households" -> 0;
             case "cats", "record_types" -> 1;
-            case "records" -> 2;
+            case "records", "widget_buttons" -> 2;
             case "record_photos" -> 3;
             default -> 4;
         };
@@ -262,6 +263,50 @@ class SyncWriter {
                 VALUES (:id, :record, :sort, :deletedAt, :updatedAt)
                 """).param("id", id).param("record", recordId).param("sort", sort).param("deletedAt", deletedAt)
                 .param("updatedAt", updatedAt).update();
+        return APPLIED;
+    }
+
+    /** 1人が登録できるウィジェットのボタンの数（画面設計書 S-44）。 */
+    static final int MAX_WIDGET_BUTTONS = 4;
+
+    /**
+     * ウィジェットのボタン（BR-22）。持ち主はトークンのユーザーで、他の人のボタンは変えられない。
+     * 記録項目は自分の属するおうちのものであること。
+     */
+    private String widgetButton(UUID userId, UUID id, Fields f, Timestamp updatedAt, Timestamp deletedAt) {
+        UUID typeId = f.uuid("recordTypeId");
+        Integer sort = f.integer("sortOrder", 0, MAX_WIDGET_BUTTONS - 1);
+        UUID household = access.householdOfRecordType(typeId)
+                .orElseThrow(() -> new Rejected("not_found", "recordTypeId"));
+        requireMember(userId, household);
+        Optional<UUID> owner = jdbc.sql("SELECT user_id FROM widget_buttons WHERE id = :id").param("id", id)
+                .query(UUID.class).optional();
+        if (owner.isPresent() && !owner.get().equals(userId)) {
+            throw new Rejected("forbidden", null);
+        }
+        if (deletedAt == null) {
+            long others = jdbc.sql("""
+                    SELECT count(*) FROM widget_buttons WHERE user_id = :user AND deleted_at IS NULL AND id <> :id
+                    """).param("user", userId).param("id", id).query(Long.class).single();
+            if (others >= MAX_WIDGET_BUTTONS) {
+                throw new Rejected("too_many", null);
+            }
+        }
+        if (owner.isPresent()) {
+            return result(jdbc.sql("""
+                    UPDATE widget_buttons SET record_type_id = :type, sort_order = :sort, deleted_at = :deletedAt,
+                      updated_at = :updatedAt, server_seq = nextval('sync_seq')
+                    WHERE id = :id AND ROW(record_type_id, sort_order, deleted_at)
+                      IS DISTINCT FROM ROW(CAST(:type AS uuid), CAST(:sort AS integer),
+                        CAST(:deletedAt AS timestamptz))
+                    """).param("id", id).param("type", typeId).param("sort", sort)
+                    .param("deletedAt", deletedAt).param("updatedAt", updatedAt).update());
+        }
+        jdbc.sql("""
+                INSERT INTO widget_buttons (id, user_id, record_type_id, sort_order, deleted_at, updated_at)
+                VALUES (:id, :user, :type, :sort, :deletedAt, :updatedAt)
+                """).param("id", id).param("user", userId).param("type", typeId).param("sort", sort)
+                .param("deletedAt", deletedAt).param("updatedAt", updatedAt).update();
         return APPLIED;
     }
 

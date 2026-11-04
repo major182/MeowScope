@@ -516,4 +516,58 @@ void main() {
     expect(await db.select(db.pendingChanges).get(), isEmpty);
     expect(server.requests.whereType<RequestOptions>(), hasLength(2));
   });
+
+  test('UT-SY-27 ウィジェットのボタンを送り、受け取ったボタンは自分のものとして入れる（BR-22）', () async {
+    await addHousehold(db, 'h1');
+    for (final id in ['t1', 't2']) {
+      await db
+          .into(db.recordTypes)
+          .insert(
+            RecordTypesCompanion.insert(
+              id: id,
+              createdAt: testTime,
+              updatedAt: testTime,
+              householdId: 'h1',
+              name: id,
+              kind: 'custom',
+            ),
+          );
+    }
+    await db
+        .into(db.widgetButtons)
+        .insert(
+          WidgetButtonsCompanion.insert(
+            id: 'w1',
+            createdAt: testTime,
+            updatedAt: testTime,
+            deletedAt: Value(testTime),
+            userId: 'u1',
+            recordTypeId: 't1',
+            sortOrder: const Value(2),
+          ),
+        );
+    await pending('widget_buttons', 'w1');
+    answer(
+      changes: [
+        pulled('widget_buttons', 'w2', {
+          'recordTypeId': 't2',
+          'sortOrder': 1,
+        }, seq: 3),
+      ],
+    );
+
+    await engine.run('u1');
+
+    final sent = sentChanges().single;
+    expect(sent['table'], 'widget_buttons');
+    expect(sent['data'], {'recordTypeId': 't1', 'sortOrder': 2});
+    expect(sent['deletedAt'], testTime.toIso8601String());
+    final got = await (db.select(
+      db.widgetButtons,
+    )..where((w) => w.id.equals('w2'))).getSingle();
+    expect(
+      (got.userId, got.recordTypeId, got.sortOrder, got.serverSeq),
+      ('u1', 't2', 1, 3),
+    );
+  });
 }

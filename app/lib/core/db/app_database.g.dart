@@ -5430,6 +5430,528 @@ class ClientLogsCompanion extends UpdateCompanion<ClientLogRow> {
   }
 }
 
+class $WidgetButtonsTable extends WidgetButtons
+    with TableInfo<$WidgetButtonsTable, WidgetButtonRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WidgetButtonsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverSeqMeta = const VerificationMeta(
+    'serverSeq',
+  );
+  @override
+  late final GeneratedColumn<int> serverSeq = GeneratedColumn<int>(
+    'server_seq',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _recordTypeIdMeta = const VerificationMeta(
+    'recordTypeId',
+  );
+  @override
+  late final GeneratedColumn<String> recordTypeId = GeneratedColumn<String>(
+    'record_type_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES record_types (id)',
+    ),
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    serverSeq,
+    userId,
+    recordTypeId,
+    sortOrder,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'widget_buttons';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WidgetButtonRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('server_seq')) {
+      context.handle(
+        _serverSeqMeta,
+        serverSeq.isAcceptableOrUnknown(data['server_seq']!, _serverSeqMeta),
+      );
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('record_type_id')) {
+      context.handle(
+        _recordTypeIdMeta,
+        recordTypeId.isAcceptableOrUnknown(
+          data['record_type_id']!,
+          _recordTypeIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recordTypeIdMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  WidgetButtonRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WidgetButtonRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      serverSeq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_seq'],
+      ),
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      recordTypeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}record_type_id'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $WidgetButtonsTable createAlias(String alias) {
+    return $WidgetButtonsTable(attachedDatabase, alias);
+  }
+}
+
+class WidgetButtonRow extends DataClass implements Insertable<WidgetButtonRow> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  /// サーバーが振る通し番号。端末では作らない
+  final int? serverSeq;
+  final String userId;
+  final String recordTypeId;
+
+  /// 並び順（0 から）
+  final int sortOrder;
+  const WidgetButtonRow({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    this.serverSeq,
+    required this.userId,
+    required this.recordTypeId,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || serverSeq != null) {
+      map['server_seq'] = Variable<int>(serverSeq);
+    }
+    map['user_id'] = Variable<String>(userId);
+    map['record_type_id'] = Variable<String>(recordTypeId);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  WidgetButtonsCompanion toCompanion(bool nullToAbsent) {
+    return WidgetButtonsCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      serverSeq: serverSeq == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverSeq),
+      userId: Value(userId),
+      recordTypeId: Value(recordTypeId),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory WidgetButtonRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WidgetButtonRow(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      serverSeq: serializer.fromJson<int?>(json['serverSeq']),
+      userId: serializer.fromJson<String>(json['userId']),
+      recordTypeId: serializer.fromJson<String>(json['recordTypeId']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'serverSeq': serializer.toJson<int?>(serverSeq),
+      'userId': serializer.toJson<String>(userId),
+      'recordTypeId': serializer.toJson<String>(recordTypeId),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  WidgetButtonRow copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<int?> serverSeq = const Value.absent(),
+    String? userId,
+    String? recordTypeId,
+    int? sortOrder,
+  }) => WidgetButtonRow(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    serverSeq: serverSeq.present ? serverSeq.value : this.serverSeq,
+    userId: userId ?? this.userId,
+    recordTypeId: recordTypeId ?? this.recordTypeId,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  WidgetButtonRow copyWithCompanion(WidgetButtonsCompanion data) {
+    return WidgetButtonRow(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      serverSeq: data.serverSeq.present ? data.serverSeq.value : this.serverSeq,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      recordTypeId: data.recordTypeId.present
+          ? data.recordTypeId.value
+          : this.recordTypeId,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WidgetButtonRow(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverSeq: $serverSeq, ')
+          ..write('userId: $userId, ')
+          ..write('recordTypeId: $recordTypeId, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    serverSeq,
+    userId,
+    recordTypeId,
+    sortOrder,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WidgetButtonRow &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.serverSeq == this.serverSeq &&
+          other.userId == this.userId &&
+          other.recordTypeId == this.recordTypeId &&
+          other.sortOrder == this.sortOrder);
+}
+
+class WidgetButtonsCompanion extends UpdateCompanion<WidgetButtonRow> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int?> serverSeq;
+  final Value<String> userId;
+  final Value<String> recordTypeId;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const WidgetButtonsCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.serverSeq = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.recordTypeId = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WidgetButtonsCompanion.insert({
+    required String id,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.serverSeq = const Value.absent(),
+    required String userId,
+    required String recordTypeId,
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt),
+       userId = Value(userId),
+       recordTypeId = Value(recordTypeId);
+  static Insertable<WidgetButtonRow> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? serverSeq,
+    Expression<String>? userId,
+    Expression<String>? recordTypeId,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (serverSeq != null) 'server_seq': serverSeq,
+      if (userId != null) 'user_id': userId,
+      if (recordTypeId != null) 'record_type_id': recordTypeId,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WidgetButtonsCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int?>? serverSeq,
+    Value<String>? userId,
+    Value<String>? recordTypeId,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return WidgetButtonsCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      serverSeq: serverSeq ?? this.serverSeq,
+      userId: userId ?? this.userId,
+      recordTypeId: recordTypeId ?? this.recordTypeId,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (serverSeq.present) {
+      map['server_seq'] = Variable<int>(serverSeq.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (recordTypeId.present) {
+      map['record_type_id'] = Variable<String>(recordTypeId.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WidgetButtonsCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverSeq: $serverSeq, ')
+          ..write('userId: $userId, ')
+          ..write('recordTypeId: $recordTypeId, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5446,6 +5968,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $PendingPhotosTable pendingPhotos = $PendingPhotosTable(this);
   late final $LocalPhotosTable localPhotos = $LocalPhotosTable(this);
   late final $ClientLogsTable clientLogs = $ClientLogsTable(this);
+  late final $WidgetButtonsTable widgetButtons = $WidgetButtonsTable(this);
   late final Index recordsCatRecordedAt = Index(
     'records_cat_recorded_at',
     'CREATE INDEX records_cat_recorded_at ON records (cat_id, recorded_at)',
@@ -5466,6 +5989,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     pendingPhotos,
     localPhotos,
     clientLogs,
+    widgetButtons,
     recordsCatRecordedAt,
   ];
 }
@@ -6819,6 +7343,24 @@ final class $$RecordTypesTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$WidgetButtonsTable, List<WidgetButtonRow>>
+  _widgetButtonsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.widgetButtons,
+    aliasName: 'record_types__id__widget_buttons__record_type_id',
+  );
+
+  $$WidgetButtonsTableProcessedTableManager get widgetButtonsRefs {
+    final manager = $$WidgetButtonsTableTableManager(
+      $_db,
+      $_db.widgetButtons,
+    ).filter((f) => f.recordTypeId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_widgetButtonsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$RecordTypesTableFilterComposer
@@ -6919,6 +7461,31 @@ class $$RecordTypesTableFilterComposer
           }) => $$RecordsTableFilterComposer(
             $db: $db,
             $table: $db.records,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> widgetButtonsRefs(
+    Expression<bool> Function($$WidgetButtonsTableFilterComposer f) f,
+  ) {
+    final $$WidgetButtonsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.widgetButtons,
+      getReferencedColumn: (t) => t.recordTypeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WidgetButtonsTableFilterComposer(
+            $db: $db,
+            $table: $db.widgetButtons,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7098,6 +7665,31 @@ class $$RecordTypesTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> widgetButtonsRefs<T extends Object>(
+    Expression<T> Function($$WidgetButtonsTableAnnotationComposer a) f,
+  ) {
+    final $$WidgetButtonsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.widgetButtons,
+      getReferencedColumn: (t) => t.recordTypeId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$WidgetButtonsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.widgetButtons,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$RecordTypesTableTableManager
@@ -7113,7 +7705,11 @@ class $$RecordTypesTableTableManager
           $$RecordTypesTableUpdateCompanionBuilder,
           (RecordTypeRow, $$RecordTypesTableReferences),
           RecordTypeRow,
-          PrefetchHooks Function({bool householdId, bool recordsRefs})
+          PrefetchHooks Function({
+            bool householdId,
+            bool recordsRefs,
+            bool widgetButtonsRefs,
+          })
         > {
   $$RecordTypesTableTableManager(_$AppDatabase db, $RecordTypesTable table)
     : super(
@@ -7190,66 +7786,94 @@ class $$RecordTypesTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({householdId = false, recordsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (recordsRefs) db.records],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (householdId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.householdId,
-                        referencedTable: $$RecordTypesTableReferences
-                            ._householdIdTable(db),
-                        referencedColumn: $$RecordTypesTableReferences
-                            ._householdIdTable(db)
-                            .id,
-                      ) as T;
-                    }
+          prefetchHooksCallback:
+              ({
+                householdId = false,
+                recordsRefs = false,
+                widgetButtonsRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (recordsRefs) db.records,
+                    if (widgetButtonsRefs) db.widgetButtons,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (householdId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.householdId,
+                            referencedTable: $$RecordTypesTableReferences
+                                ._householdIdTable(db),
+                            referencedColumn: $$RecordTypesTableReferences
+                                ._householdIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (recordsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          RecordTypeRow,
+                          $RecordTypesTable,
+                          RecordRow,
+                          $RecordsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RecordTypesTableReferences
+                              ._recordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RecordTypesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).recordsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'record_type_id',
+                          typedResults: items,
+                        ),
+                      if (widgetButtonsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          RecordTypeRow,
+                          $RecordTypesTable,
+                          WidgetButtonRow,
+                          $WidgetButtonsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RecordTypesTableReferences
+                              ._widgetButtonsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RecordTypesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).widgetButtonsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'record_type_id',
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (recordsRefs)
-                    await $_getPrefetchedDataByColumns<
-                      RecordTypeRow,
-                      $RecordTypesTable,
-                      RecordRow,
-                      $RecordsTable
-                    >(
-                      currentTable: table,
-                      referencedTable: $$RecordTypesTableReferences
-                          ._recordsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$RecordTypesTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).recordsRefs,
-                      currentColumn: 'id',
-                      referencedColumn: 'record_type_id',
-                      typedResults: items,
-                    ),
-                ];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -7266,7 +7890,11 @@ typedef $$RecordTypesTableProcessedTableManager =
       $$RecordTypesTableUpdateCompanionBuilder,
       (RecordTypeRow, $$RecordTypesTableReferences),
       RecordTypeRow,
-      PrefetchHooks Function({bool householdId, bool recordsRefs})
+      PrefetchHooks Function({
+        bool householdId,
+        bool recordsRefs,
+        bool widgetButtonsRefs,
+      })
     >;
 typedef $$RecordsTableCreateCompanionBuilder = RecordsCompanion Function({
   required String id,
@@ -9271,6 +9899,384 @@ typedef $$ClientLogsTableProcessedTableManager =
       ClientLogRow,
       PrefetchHooks Function()
     >;
+typedef $$WidgetButtonsTableCreateCompanionBuilder =
+    WidgetButtonsCompanion Function({
+      required String id,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int?> serverSeq,
+      required String userId,
+      required String recordTypeId,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+typedef $$WidgetButtonsTableUpdateCompanionBuilder =
+    WidgetButtonsCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int?> serverSeq,
+      Value<String> userId,
+      Value<String> recordTypeId,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+
+final class $$WidgetButtonsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $WidgetButtonsTable, WidgetButtonRow> {
+  $$WidgetButtonsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $RecordTypesTable _recordTypeIdTable(_$AppDatabase db) => db
+      .recordTypes
+      .createAlias('widget_buttons__record_type_id__record_types__id');
+
+  $$RecordTypesTableProcessedTableManager get recordTypeId {
+    final $_column = $_itemColumn<String>('record_type_id')!;
+
+    final manager = $$RecordTypesTableTableManager(
+      $_db,
+      $_db.recordTypes,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_recordTypeIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$WidgetButtonsTableFilterComposer
+    extends Composer<_$AppDatabase, $WidgetButtonsTable> {
+  $$WidgetButtonsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverSeq => $composableBuilder(
+    column: $table.serverSeq,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$RecordTypesTableFilterComposer get recordTypeId {
+    final $$RecordTypesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recordTypeId,
+      referencedTable: $db.recordTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecordTypesTableFilterComposer(
+            $db: $db,
+            $table: $db.recordTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WidgetButtonsTableOrderingComposer
+    extends Composer<_$AppDatabase, $WidgetButtonsTable> {
+  $$WidgetButtonsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverSeq => $composableBuilder(
+    column: $table.serverSeq,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$RecordTypesTableOrderingComposer get recordTypeId {
+    final $$RecordTypesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recordTypeId,
+      referencedTable: $db.recordTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecordTypesTableOrderingComposer(
+            $db: $db,
+            $table: $db.recordTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WidgetButtonsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $WidgetButtonsTable> {
+  $$WidgetButtonsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get serverSeq =>
+      $composableBuilder(column: $table.serverSeq, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  $$RecordTypesTableAnnotationComposer get recordTypeId {
+    final $$RecordTypesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.recordTypeId,
+      referencedTable: $db.recordTypes,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RecordTypesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.recordTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$WidgetButtonsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $WidgetButtonsTable,
+          WidgetButtonRow,
+          $$WidgetButtonsTableFilterComposer,
+          $$WidgetButtonsTableOrderingComposer,
+          $$WidgetButtonsTableAnnotationComposer,
+          $$WidgetButtonsTableCreateCompanionBuilder,
+          $$WidgetButtonsTableUpdateCompanionBuilder,
+          (WidgetButtonRow, $$WidgetButtonsTableReferences),
+          WidgetButtonRow,
+          PrefetchHooks Function({bool recordTypeId})
+        > {
+  $$WidgetButtonsTableTableManager(_$AppDatabase db, $WidgetButtonsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WidgetButtonsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WidgetButtonsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WidgetButtonsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int?> serverSeq = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<String> recordTypeId = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WidgetButtonsCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                serverSeq: serverSeq,
+                userId: userId,
+                recordTypeId: recordTypeId,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int?> serverSeq = const Value.absent(),
+                required String userId,
+                required String recordTypeId,
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WidgetButtonsCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                serverSeq: serverSeq,
+                userId: userId,
+                recordTypeId: recordTypeId,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$WidgetButtonsTable, WidgetButtonRow>(table),
+                  $$WidgetButtonsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({recordTypeId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (recordTypeId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.recordTypeId,
+                        referencedTable: $$WidgetButtonsTableReferences
+                            ._recordTypeIdTable(db),
+                        referencedColumn: $$WidgetButtonsTableReferences
+                            ._recordTypeIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$WidgetButtonsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $WidgetButtonsTable,
+      WidgetButtonRow,
+      $$WidgetButtonsTableFilterComposer,
+      $$WidgetButtonsTableOrderingComposer,
+      $$WidgetButtonsTableAnnotationComposer,
+      $$WidgetButtonsTableCreateCompanionBuilder,
+      $$WidgetButtonsTableUpdateCompanionBuilder,
+      (WidgetButtonRow, $$WidgetButtonsTableReferences),
+      WidgetButtonRow,
+      PrefetchHooks Function({bool recordTypeId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9296,4 +10302,6 @@ class $AppDatabaseManager {
       $$LocalPhotosTableTableManager(_db, _db.localPhotos);
   $$ClientLogsTableTableManager get clientLogs =>
       $$ClientLogsTableTableManager(_db, _db.clientLogs);
+  $$WidgetButtonsTableTableManager get widgetButtons =>
+      $$WidgetButtonsTableTableManager(_db, _db.widgetButtons);
 }

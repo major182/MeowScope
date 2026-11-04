@@ -75,6 +75,9 @@ void main() {
         AppStatesCompanion.insert(key: 'settings.weekStart', value: 'monday'),
       ]),
     );
+    if (version < 9) {
+      await db.customStatement('DROP TABLE widget_buttons');
+    }
     if (version < 8) {
       await db.customStatement('ALTER TABLE cats DROP COLUMN has_icon');
       for (final column in ['has_icon', 'icon_seq']) {
@@ -137,5 +140,14 @@ void main() {
 
     expect(await db.select(db.records).get(), hasLength(1));
     expect(await db.select(db.appStates).get(), hasLength(4));
+  });
+
+  test('UT-WB-01 版 8 の DB を開くと、ウィジェットのボタンの表ができ、データは残る', () async {
+    await prepare(8);
+    final db = open();
+    addTearDown(db.close);
+
+    expect(await db.select(db.widgetButtons).get(), isEmpty);
+    expect(await db.select(db.records).get(), hasLength(1));
   });
 }

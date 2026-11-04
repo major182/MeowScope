@@ -355,6 +355,17 @@ class SyncEngine {
       case 'user_settings':
         final week = await _state(SettingsRepository.weekStartKey);
         return change({'weekStart': week ?? 'sunday'}, updatedAt: _clock());
+      case 'widget_buttons':
+        final w = await (_db.select(
+          _db.widgetButtons,
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
+        return w == null
+            ? null
+            : change(
+                {'recordTypeId': w.recordTypeId, 'sortOrder': w.sortOrder},
+                updatedAt: w.updatedAt,
+                deletedAt: w.deletedAt,
+              );
     }
     return null;
   }
@@ -519,6 +530,21 @@ class SyncEngine {
               if (week != null) {
                 await _setState(SettingsRepository.weekStartKey, week);
               }
+            case 'widget_buttons':
+              await _db
+                  .into(_db.widgetButtons)
+                  .insertOnConflictUpdate(
+                    WidgetButtonsCompanion.insert(
+                      id: id,
+                      createdAt: updatedAt,
+                      updatedAt: updatedAt,
+                      deletedAt: Value(deletedAt),
+                      serverSeq: Value(seq),
+                      userId: userId,
+                      recordTypeId: data['recordTypeId'] as String,
+                      sortOrder: Value(data['sortOrder'] as int? ?? 0),
+                    ),
+                  );
           }
         }
         for (final household in left) {

@@ -33,6 +33,10 @@ void main() {
           path: '/record-types',
           builder: (context, state) => const Text('記録項目の一覧'),
         ),
+        GoRoute(
+          path: '/widget-buttons',
+          builder: (context, state) => const Text('ボタンの設定'),
+        ),
       ],
     );
     addTearDown(router.dispose);
@@ -76,21 +80,17 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('UT-SE-03 まだ作っていない項目は準備中で押せない：Android のウィジェットのボタンだけ', (
+  testWidgets('UT-SE-03 Android：「ウィジェットのボタン」でボタンの設定（S-44）へ進む。準備中の項目はない', (
     tester,
   ) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    await show(tester);
-    expect(find.text('準備中'), findsNothing);
-    await close(tester);
-
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     await show(tester);
-    final tile = tester.widget<ListTile>(
-      find.widgetWithText(ListTile, 'ウィジェットのボタン'),
-    );
-    expect(tile.enabled, isFalse);
-    expect(find.text('準備中'), findsOneWidget);
+    expect(find.text('準備中'), findsNothing);
+
+    await tester.tap(find.text('ウィジェットのボタン'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ボタンの設定'), findsOneWidget);
     await close(tester);
     debugDefaultTargetPlatformOverride = null;
   });

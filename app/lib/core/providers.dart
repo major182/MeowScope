@@ -16,6 +16,7 @@ import '../features/photos/data/photo_picker.dart';
 import '../features/photos/data/photo_repository.dart';
 import '../features/settings/data/settings_repository.dart';
 import '../features/sync/data/sync_engine.dart';
+import '../features/widget/data/widget_button_repository.dart';
 import 'api/api_client.dart';
 import 'logging/app_log.dart';
 import 'db/app_database.dart';
@@ -36,6 +37,10 @@ final householdRepositoryProvider = Provider<HouseholdRepository>(
     ref.watch(databaseProvider),
     ref.watch(recordRepositoryProvider),
   ),
+);
+
+final widgetButtonRepositoryProvider = Provider<WidgetButtonRepository>(
+  (ref) => WidgetButtonRepository(ref.watch(databaseProvider)),
 );
 
 final catRepositoryProvider = Provider<CatRepository>(

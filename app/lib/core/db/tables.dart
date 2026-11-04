@@ -156,3 +156,13 @@ class ClientLogs extends Table {
   /// 失敗した通信の問い合わせ番号
   TextColumn get requestId => text().nullable()();
 }
+
+/// ウィジェットのボタン（DB 設計書 4章 widget_buttons）。アカウントのもので、同期で機種変更でも引き継ぐ（BR-22）
+@DataClassName('WidgetButtonRow')
+class WidgetButtons extends Table with SyncColumns {
+  TextColumn get userId => text()();
+  TextColumn get recordTypeId => text().references(RecordTypes, #id)();
+
+  /// 並び順（0 から）
+  IntColumn get sortOrder => integer().withDefault(const Constant(0))();
+}

@@ -24,6 +24,12 @@ Future<void> removeHouseholdLocally(
   await (db.delete(
     db.cats,
   )..where((c) => c.householdId.equals(householdId))).go();
+  final types = db.selectOnly(db.recordTypes)
+    ..addColumns([db.recordTypes.id])
+    ..where(db.recordTypes.householdId.equals(householdId));
+  await (db.delete(
+    db.widgetButtons,
+  )..where((w) => w.recordTypeId.isInQuery(types))).go();
   await (db.delete(
     db.recordTypes,
   )..where((t) => t.householdId.equals(householdId))).go();
@@ -59,6 +65,7 @@ Future<void> wipeLocalData(AppDatabase db) async {
   await db.delete(db.pendingPhotos).go();
   await db.delete(db.recordPhotos).go();
   await db.delete(db.records).go();
+  await db.delete(db.widgetButtons).go();
   await db.delete(db.recordTypes).go();
   await db.delete(db.cats).go();
   await db.delete(db.householdMembers).go();
