@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -225,6 +226,56 @@ void main() {
       final rects = await buttonsAt(tester, 899);
       expect(rects.map((r) => r.top).toSet(), hasLength(2));
       expect(rects.first.width, greaterThan(typeButtonMaxWidth));
+      await close(tester);
+    });
+  });
+
+  group('UT-HM-13 今日の記録の詳細', () {
+    /// ご飯を記録して、量とメモを入れる
+    Future<void> recordWithDetail(WidgetTester tester) async {
+      await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+      await show(tester);
+      await tester.tap(find.widgetWithText(OutlinedButton, 'ご飯'));
+      await tester.pumpAndSettle();
+      final id = (await records()).single.id;
+      await RecordRepository(db).updateRecord(
+        id: id,
+        recordedAt: DateTime.now(),
+        level: 'much',
+        valueNumber: null,
+        memo: '完食',
+        author: _session.author,
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('Android：量とメモを2行目に出す。投稿者は出さない', (tester) async {
+      await recordWithDetail(tester);
+
+      expect(find.text('量：多い　メモ：完食'), findsOneWidget);
+      expect(find.textContaining('投稿者'), findsNothing);
+      await close(tester);
+    });
+
+    testWidgets('Windows：写真以外のすべて（投稿者も）を出す', (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      await recordWithDetail(tester);
+
+      expect(find.text('量：多い　メモ：完食　投稿者：はる'), findsOneWidget);
+      await close(tester);
+      debugDefaultTargetPlatformOverride = null;
+    });
+
+    testWidgets('詳細がなければ1行のまま', (tester) async {
+      await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+      await show(tester);
+      await tester.tap(find.widgetWithText(OutlinedButton, '水'));
+      await tester.pumpAndSettle();
+
+      final tile = tester.widget<ListTile>(
+        find.widgetWithText(ListTile, 'ミケ　水'),
+      );
+      expect(tile.subtitle, isNull);
       await close(tester);
     });
   });
