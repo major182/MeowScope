@@ -223,10 +223,11 @@ void main() {
       await close(tester);
     });
 
-    testWidgets('UT-RS-10 量を出す。詳細がなければその旨を出す', (tester) async {
+    testWidgets('UT-RS-10 量を出す。詳細がなくても「詳細はまだありません」は出さない', (tester) async {
       final id = await addRecord(RecordKind.food);
       await show(tester, '/records/$id');
-      expect(find.text('詳細はまだありません'), findsOneWidget);
+      expect(find.text('ミケ　ご飯'), findsOneWidget);
+      expect(find.text('詳細はまだありません'), findsNothing);
 
       await repo.updateRecord(
         id: id,

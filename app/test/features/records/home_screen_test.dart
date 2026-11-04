@@ -8,6 +8,7 @@ import 'package:meowscope/features/household/data/household_repository.dart';
 import 'package:meowscope/features/records/data/record_repository.dart';
 import 'package:meowscope/features/records/presentation/home_screen.dart';
 
+import '../../helpers/balanced_text_finder.dart';
 import '../../helpers/test_db.dart';
 
 const _session = Session(
@@ -83,7 +84,7 @@ void main() {
   testWidgets('UT-HM-02 標準の8項目をイラスト付きのボタンで出す', (tester) async {
     await show(tester);
 
-    for (final name in ['ご飯', '水', '薬', 'おしっこ', 'うんち', '吐いた', '体重', 'ブラッシング']) {
+    for (final name in ['ご飯', '水', '薬', 'おしっこ', 'うんち', '吐いた', '体重', 'ブラシ']) {
       expect(find.widgetWithText(OutlinedButton, name), findsOneWidget);
     }
     expect(find.byType(Image), findsNWidgets(8));
@@ -125,7 +126,7 @@ void main() {
 
     await tester.tap(find.widgetWithText(OutlinedButton, '薬'));
     await tester.pumpAndSettle();
-    expect(find.text('薬：どの子ですか？'), findsOneWidget);
+    expect(findBalancedText('薬：どの子ですか？'), findsOneWidget);
     await tester.tap(find.widgetWithText(SimpleDialogOption, 'タマ'));
     await tester.pumpAndSettle();
 

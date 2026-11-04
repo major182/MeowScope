@@ -21,7 +21,7 @@ enum RecordLevel {
   }
 }
 
-/// 量を入力する項目か。薬・体重・ブラッシング以外
+/// 量を入力する項目か。薬・体重・ブラシ以外
 bool hasLevel(String kind) =>
     kind != RecordKind.medicine.name &&
     kind != RecordKind.weight.name &&

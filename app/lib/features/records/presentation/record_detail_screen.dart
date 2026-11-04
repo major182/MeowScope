@@ -90,8 +90,6 @@ class _Detail extends ConsumerWidget {
           if (r.valueNumber != null)
             _Row(label: '体重', value: formatWeight(r.valueNumber!)),
           if (r.memo != null) _Row(label: 'メモ', value: r.memo!),
-          if (level == null && r.valueNumber == null && r.memo == null)
-            const Text('詳細はまだありません'),
           PhotoGallery(recordId: r.id),
         ],
       ),

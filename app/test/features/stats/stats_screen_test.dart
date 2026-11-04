@@ -166,4 +166,37 @@ void main() {
     expect(bars(tester).last, 1);
     await close(tester);
   });
+
+  test('UT-SS-12 日付の目盛りを出す日：週は毎日、月は最後の日から5日おき。範囲の外と整数でない値は出さない', () {
+    final week = [for (var i = 0; i < 7; i++) DateTime(2026, 10, 27 + i)];
+    expect(
+      [for (var i = 0; i < 7; i++) isLabelDay(week, i.toDouble())],
+      [for (var i = 0; i < 7; i++) true],
+    );
+    expect(isLabelDay(week, -1), isFalse);
+    expect(isLabelDay(week, 7), isFalse);
+    expect(isLabelDay(week, 0.5), isFalse);
+
+    final month = [for (var i = 0; i < 30; i++) DateTime(2026, 10, 4 + i)];
+    final labelled = [
+      for (var i = 0; i < 30; i++)
+        if (isLabelDay(month, i.toDouble())) i,
+    ];
+    expect(labelled, [4, 9, 14, 19, 24, 29]);
+  });
+
+  testWidgets('UT-SS-13 縦の線：棒グラフは引かず、折れ線グラフは日付の目盛りの日にだけ引く', (tester) async {
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    await record('c1', 'weight', DateTime(2026, 11, 2, 8), kg: 4.2);
+    await show(tester);
+
+    final bar = tester.widget<BarChart>(find.byType(BarChart));
+    expect(bar.data.gridData.drawVerticalLine, isFalse);
+    final line = tester.widget<LineChart>(find.byType(LineChart));
+    final grid = line.data.gridData;
+    expect(grid.verticalInterval, 1);
+    expect(grid.checkToShowVerticalLine(6), isTrue);
+    expect(grid.checkToShowVerticalLine(6.5), isFalse);
+    await close(tester);
+  });
 }

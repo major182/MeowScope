@@ -6,7 +6,7 @@ import 'package:meowscope/features/records/domain/record_kind.dart';
 
 void main() {
   group('RecordKind', () {
-    test('UT-RC-01 標準の項目は8つで、ブラッシングを含む', () {
+    test('UT-RC-01 標準の項目は8つで、ブラシを含む', () {
       expect(RecordKind.values.map((k) => k.label), [
         'ご飯',
         '水',
@@ -15,7 +15,7 @@ void main() {
         'うんち',
         '吐いた',
         '体重',
-        'ブラッシング',
+        'ブラシ',
       ]);
     });
   });

@@ -118,17 +118,22 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
   }
 }
 
-/// 日付の目盛り（週は毎日、月は5日おき）
-Widget _dayLabel(List<DateTime> days, double value) {
+/// 日付の目盛りを出す日か（週は毎日、月は最後の日から5日おき）。折れ線グラフの縦の線もこの日に引く
+bool isLabelDay(List<DateTime> days, double value) {
   final i = value.round();
   if (i < 0 || i >= days.length || value != i) {
-    return const SizedBox.shrink();
+    return false;
   }
   final step = days.length > 7 ? 5 : 1;
-  if ((days.length - 1 - i) % step != 0) {
+  return (days.length - 1 - i) % step == 0;
+}
+
+/// 日付の目盛り
+Widget _dayLabel(List<DateTime> days, double value) {
+  if (!isLabelDay(days, value)) {
     return const SizedBox.shrink();
   }
-  final d = days[i];
+  final d = days[value.round()];
   return Text('${d.month}/${d.day}', style: const TextStyle(fontSize: 10));
 }
 
@@ -185,6 +190,11 @@ class WeightChart extends StatelessWidget {
           minY: minY.toDouble(),
           maxY: maxY,
           titlesData: _titles(days, leftInterval: 0.5),
+          // 縦の線は日付の目盛りと同じ日にだけ引く（自動の間隔だと目盛りとずれる）
+          gridData: FlGridData(
+            verticalInterval: 1,
+            checkToShowVerticalLine: (value) => isLabelDay(days, value),
+          ),
           lineBarsData: [LineChartBarData(spots: spots, barWidth: 2)],
         ),
       ),
@@ -210,6 +220,8 @@ class CountChart extends StatelessWidget {
           // 回数が0でも目盛りが出るよう、最低1にする
           maxY: math.max(maxCount, 1).toDouble(),
           titlesData: _titles(days, leftInterval: 1),
+          // 棒そのものが日付の位置を示すので、縦の線は引かない（棒の位置とずれて見えるため）
+          gridData: const FlGridData(drawVerticalLine: false),
           barGroups: [
             for (var i = 0; i < counts.length; i++)
               BarChartGroupData(

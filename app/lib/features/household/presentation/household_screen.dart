@@ -12,6 +12,7 @@ import '../../icons/icon_avatar.dart';
 import '../../icons/icon_repository.dart';
 import '../../sync/presentation/sync_controller.dart';
 import '../../../core/widgets/readable_width.dart';
+import '../../../core/widgets/balanced_text.dart';
 
 final _householdNameProvider = StreamProvider.family<String?, String>(
   (ref, id) => ref.watch(accountRepositoryProvider).watchHouseholdName(id),
@@ -77,8 +78,8 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
         await showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('招待の文をコピーしました'),
-            content: Text('LINE などに貼り付けて送ってください。1時間以内に、1回だけ使えます。\n\n$message'),
+            title: BalancedText('招待の文をコピーしました'),
+            content: Text('LINE などに貼り付けて送ってください。60分以内に、1回だけ使えます。\n\n$message'),
             actions: [
               FilledButton(
                 onPressed: () => Navigator.pop(context),

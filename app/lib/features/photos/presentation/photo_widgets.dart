@@ -129,6 +129,9 @@ class PhotoGallery extends ConsumerWidget {
 }
 
 /// 記録の詳細入力（S-12）の写真の欄。3枚まで付けられ、外せる（AC-03）
+/// サムネイルの角に置く「写真を外す」ボタンの大きさ
+const photoRemoveButtonSize = 28.0;
+
 class PhotoEditor extends ConsumerWidget {
   const PhotoEditor({super.key, required this.recordId});
 
@@ -208,12 +211,21 @@ class PhotoEditor extends ConsumerWidget {
               Stack(
                 children: [
                   PhotoThumb(photo: p),
+                  // 写真を隠しすぎないよう、角に小さく置く
                   Positioned(
-                    right: 0,
-                    top: 0,
+                    right: 4,
+                    top: 4,
                     child: IconButton.filledTonal(
                       tooltip: '写真を外す',
-                      iconSize: 16,
+                      iconSize: 14,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(
+                        width: photoRemoveButtonSize,
+                        height: photoRemoveButtonSize,
+                      ),
+                      style: IconButton.styleFrom(
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      ),
                       onPressed: () => _remove(ref, p),
                       icon: const Icon(Icons.close),
                     ),

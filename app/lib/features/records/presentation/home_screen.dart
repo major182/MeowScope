@@ -8,6 +8,7 @@ import '../../../app/main_shell.dart' show wideLayoutWidth;
 import '../../sync/presentation/sync_status_screen.dart';
 import '../../household/data/household_repository.dart';
 import '../data/record_repository.dart';
+import '../../../core/widgets/balanced_text.dart';
 import 'record_format.dart';
 import 'record_providers.dart';
 import 'type_icon.dart';
@@ -139,7 +140,7 @@ class HomeScreen extends ConsumerWidget {
         : await showDialog<CatRow>(
             context: context,
             builder: (context) => SimpleDialog(
-              title: Text('${type.name}：どの子ですか？'),
+              title: BalancedText('${type.name}：どの子ですか？'),
               children: [
                 for (final c in cats)
                   SimpleDialogOption(
@@ -195,7 +196,7 @@ class _TypeButton extends StatelessWidget {
           Expanded(
             child: TypeIcon(icon: type.icon, name: type.name),
           ),
-          // 「ブラッシング」が収まるよう、幅に合わせて文字を縮める
+          // 長い名前（独自の項目など）も収まるよう、幅に合わせて文字を縮める
           FittedBox(fit: BoxFit.scaleDown, child: Text(type.name, maxLines: 1)),
         ],
       ),
