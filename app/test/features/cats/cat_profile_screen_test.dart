@@ -9,6 +9,7 @@ import 'package:meowscope/features/cats/presentation/cat_list_screen.dart';
 import 'package:meowscope/features/household/data/household_repository.dart';
 import 'package:meowscope/features/records/data/record_repository.dart';
 
+import '../../helpers/balanced_text_finder.dart';
 import '../../helpers/test_db.dart';
 
 const _author = Author(id: 'u1', name: 'はる');
@@ -188,7 +189,7 @@ void main() {
 
       await tester.tap(find.widgetWithText(TextButton, '削除する'));
       await tester.pumpAndSettle();
-      expect(find.text('ミケを削除しますか？'), findsOneWidget);
+      expect(findBalancedText('ミケを削除しますか？'), findsOneWidget);
       final dialog = find.byType(AlertDialog);
       final delete = find.descendant(of: dialog, matching: find.text('削除'));
       final cancel = find.descendant(of: dialog, matching: find.text('キャンセル'));

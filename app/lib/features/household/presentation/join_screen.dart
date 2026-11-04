@@ -9,6 +9,7 @@ import '../../../core/providers.dart';
 import '../../auth/domain/credentials.dart';
 import '../../sync/presentation/sync_controller.dart';
 import '../../../core/widgets/readable_width.dart';
+import '../../../core/widgets/balanced_text.dart';
 
 /// 招待されたおうちに参加（S-04 から開く。Android は招待のリンクを押しても開く）
 ///
@@ -78,7 +79,7 @@ class _JoinScreenState extends ConsumerState<JoinScreen> {
       body: ListView(
         padding: readablePadding(context, 16),
         children: [
-          const Text('LINE などで届いた招待の文を、そのまま貼り付けてください'),
+          BalancedText('LINE などで届いた招待の文を、そのまま貼り付けてください'),
           const SizedBox(height: 12),
           TextField(
             controller: _text,

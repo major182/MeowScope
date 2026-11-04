@@ -9,7 +9,7 @@ enum RecordKind {
   stool('うんち', 'poop'),
   vomit('吐いた', 'vomit'),
   weight('体重', 'weight'),
-  brushing('ブラッシング', 'brushing');
+  brushing('ブラシ', 'brushing');
 
   const RecordKind(this.label, this.icon);
 

@@ -91,7 +91,7 @@ void main() {
     await show(tester, '/record-types');
 
     expect(find.text('ご飯（標準）'), findsOneWidget);
-    expect(find.text('ブラッシング（標準）'), findsOneWidget);
+    expect(find.text('ブラシ（標準）'), findsOneWidget);
     expect(find.text('通院'), findsOneWidget);
     expect(find.widgetWithText(TextButton, '編集'), findsOneWidget);
     await close(tester);
@@ -181,7 +181,7 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, '非表示にする'));
     await tester.pumpAndSettle();
     expect((await customTypes()).single.hidden, isTrue);
-    expect(find.text('非表示（過去の記録は残ります）'), findsOneWidget);
+    expect(find.text('非表示中'), findsOneWidget);
     await tester.pageBack();
     await tester.pumpAndSettle();
     expect(find.widgetWithText(OutlinedButton, '通院'), findsNothing);

@@ -228,7 +228,6 @@ class _CatFormScreenState extends ConsumerState<CatFormScreen> {
               ],
               selected: {?_sex},
               emptySelectionAllowed: true,
-              showSelectedIcon: false,
               onSelectionChanged: (s) =>
                   setState(() => _sex = s.isEmpty ? null : s.first),
             ),

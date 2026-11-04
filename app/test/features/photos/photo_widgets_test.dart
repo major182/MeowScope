@@ -165,6 +165,20 @@ void main() {
     await close(tester);
   });
 
+  testWidgets('UT-PH-18 「写真を外す」は 28px の小さなボタンで、サムネイルの右上の角に収まる', (tester) async {
+    await insertPhoto(db, 'p1', 1);
+    await show(tester, const PhotoEditor(recordId: 'r1'));
+
+    final button = tester.getRect(find.byTooltip('写真を外す'));
+    final thumb = tester.getRect(find.byType(PhotoThumb));
+    expect(
+      button.size,
+      const Size(photoRemoveButtonSize, photoRemoveButtonSize),
+    );
+    expect((thumb.right - button.right, button.top - thumb.top), (4, 4));
+    await close(tester);
+  });
+
   testWidgets('UT-PH-15 異常系：選ばずに閉じたら付けない。読めない画像は案内を出す', (tester) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.windows;
     picker = FakePicker(null);

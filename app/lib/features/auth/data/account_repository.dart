@@ -118,7 +118,7 @@ class AccountRepository {
         );
   });
 
-  /// 招待のリンクを作り、LINE などで送る文を返す（1時間・1回だけ有効）
+  /// 招待のリンクを作り、LINE などで送る文を返す（60分・1回だけ有効）
   Future<String> createInvitation({
     required String householdId,
     required String householdName,
@@ -258,6 +258,6 @@ class AccountRepository {
 
 /// LINE などで送る招待の文（画面設計書 S-42）
 String invitationMessage(String householdName, String link) =>
-    'MeowScope のおうち「$householdName」への招待です。1時間以内に、1回だけ使えます。\n'
+    'MeowScope のおうち「$householdName」への招待です。60分以内に、1回だけ使えます。\n'
     '$link\n'
     'リンクを押しても開かないときは、アプリの「招待されたおうちに参加」にこの文をそのまま貼り付けてください。';

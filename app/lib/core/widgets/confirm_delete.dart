@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'balanced_text.dart';
+
 /// 削除の確認。誤操作を防ぐため、左に削除、右にキャンセルを置く（BR-29）。
 /// 削除を選んだときだけ true を返す
 Future<bool> confirmDelete(
@@ -10,7 +12,7 @@ Future<bool> confirmDelete(
   final result = await showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      title: Text(title),
+      title: BalancedText(title),
       content: Text(message),
       actionsAlignment: MainAxisAlignment.spaceBetween,
       actions: [

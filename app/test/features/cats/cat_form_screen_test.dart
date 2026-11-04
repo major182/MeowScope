@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/core/providers.dart';
+import 'package:meowscope/features/cats/data/cat_repository.dart';
 import 'package:meowscope/features/cats/presentation/cat_form_screen.dart';
 import 'package:meowscope/features/household/data/household_repository.dart';
 import 'package:meowscope/features/records/data/record_repository.dart';
@@ -145,10 +146,24 @@ void main() {
     await tester.tap(find.byTooltip('生年月日を消す'));
     await tester.pumpAndSettle();
     expect(find.text('未設定'), findsOneWidget);
+    final segments = find.byType(SegmentedButton<CatSex>);
+    expect(
+      find.descendant(of: segments, matching: find.byIcon(Icons.check)),
+      findsNothing,
+    );
     await tester.tap(find.text('男の子'));
     await tester.pumpAndSettle();
+    // 選んだ性別には ✓ を出す（ほかの選択と同じ見た目にそろえる）
+    expect(
+      find.descendant(of: segments, matching: find.byIcon(Icons.check)),
+      findsOneWidget,
+    );
     await tester.tap(find.text('男の子'));
     await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: segments, matching: find.byIcon(Icons.check)),
+      findsNothing,
+    );
     await submit(tester);
 
     final cat = await db.select(db.cats).getSingle();

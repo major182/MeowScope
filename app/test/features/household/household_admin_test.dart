@@ -9,6 +9,7 @@ import 'package:meowscope/features/auth/data/account_repository.dart';
 import 'package:meowscope/features/auth/data/token_store.dart';
 import 'package:meowscope/main.dart';
 
+import '../../helpers/balanced_text_finder.dart';
 import '../../helpers/fake_api.dart';
 import '../../helpers/test_db.dart';
 
@@ -294,7 +295,7 @@ void main() {
 
       await tester.tap(find.text('おうちを抜ける'));
       await tester.pumpAndSettle();
-      expect(find.text('おうちの記録を残しますか？'), findsOneWidget);
+      expect(findBalancedText('おうちの記録を残しますか？'), findsOneWidget);
       await tester.tap(find.widgetWithText(FilledButton, '残す'));
       await tester.pumpAndSettle();
 
@@ -313,7 +314,7 @@ void main() {
 
       await tester.tap(find.text('おうちを抜ける'));
       await tester.pumpAndSettle();
-      expect(find.text('おうちと記録をすべて削除しますか？'), findsOneWidget);
+      expect(findBalancedText('おうちと記録をすべて削除しますか？'), findsOneWidget);
       await tester.tap(find.widgetWithText(FilledButton, 'キャンセル'));
       await tester.pumpAndSettle();
 
@@ -412,7 +413,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.widgetWithText(OutlinedButton, '消す'));
       await tester.pumpAndSettle();
-      expect(find.text('アカウントを削除しますか？'), findsOneWidget);
+      expect(findBalancedText('アカウントを削除しますか？'), findsOneWidget);
       await tester.tap(find.widgetWithText(TextButton, '削除'));
       await tester.pumpAndSettle();
 

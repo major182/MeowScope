@@ -56,7 +56,7 @@ class RecordTypesScreen extends ConsumerWidget {
               title: Text(
                 t.kind == RecordKind.custom ? t.name : '${t.name}（標準）',
               ),
-              subtitle: t.hidden ? const Text('非表示（過去の記録は残ります）') : null,
+              subtitle: t.hidden ? const Text('非表示中') : null,
               trailing: t.kind == RecordKind.custom
                   ? Wrap(
                       children: [

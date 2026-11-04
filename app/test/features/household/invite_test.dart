@@ -12,6 +12,7 @@ import 'package:meowscope/features/auth/data/token_store.dart';
 import 'package:meowscope/features/auth/domain/credentials.dart';
 import 'package:meowscope/main.dart';
 
+import '../../helpers/balanced_text_finder.dart';
 import '../../helpers/fake_api.dart';
 import '../../helpers/test_db.dart';
 
@@ -94,7 +95,7 @@ void main() {
       );
       expect(message, contains('「みけ家」'));
       expect(message, contains('meowscope://invite?token=$token'));
-      expect(message, contains('1時間'));
+      expect(message, contains('60分以内'));
 
       server.on(
         'POST',
@@ -175,7 +176,7 @@ void main() {
       await tester.tap(find.text('リンクで招待する'));
       await tester.pumpAndSettle();
 
-      expect(find.text('招待の文をコピーしました'), findsOneWidget);
+      expect(findBalancedText('招待の文をコピーしました'), findsOneWidget);
       expect(copied, contains('meowscope://invite?token=$token'));
       // 先に同期して手元の猫と記録を送ってから、招待を作る
       expect(server.requests.map((r) => r.path), [
