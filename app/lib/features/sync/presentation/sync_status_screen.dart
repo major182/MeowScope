@@ -47,7 +47,7 @@ class SyncStatusScreen extends ConsumerWidget {
           if ((info?.rejected ?? 0) > 0)
             ListTile(
               title: const Text('送れなかった変更'),
-              subtitle: const Text('押すと、どの変更か、どうすればよいかを確かめられます'),
+              subtitle: const Text('内容に誤りがあり、サーバーが受け付けませんでした'),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
