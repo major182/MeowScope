@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/core/providers.dart';
+import 'package:meowscope/core/widgets/save_guard.dart';
 import 'package:meowscope/features/cats/data/cat_repository.dart';
 import 'package:meowscope/features/cats/presentation/cat_form_screen.dart';
 import 'package:meowscope/features/household/data/household_repository.dart';
@@ -27,7 +28,7 @@ void main() {
   tearDown(() => db.close());
 
   /// 猫の登録画面を、ホームの目印の上に開く
-  Future<void> show(WidgetTester tester) async {
+  Future<void> show(WidgetTester tester, {List extra = const []}) async {
     final router = GoRouter(
       initialLocation: '/cats/new',
       routes: [
@@ -49,6 +50,7 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(db),
           sessionProvider.overrideWith((ref) => Stream.value(_session)),
+          ...extra.cast(),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -198,4 +200,39 @@ void main() {
     await tester.pumpAndSettle();
     await close(tester);
   });
+
+  testWidgets('UT-CT-13 保存に失敗したら案内を出して画面に残り、もう一度押せる', (tester) async {
+    await show(
+      tester,
+      extra: [
+        catRepositoryProvider.overrideWithValue(_FailingCatRepository(db)),
+      ],
+    );
+
+    await tester.enterText(find.widgetWithText(TextFormField, '名前'), 'ミケ');
+    await submit(tester);
+
+    expect(find.text(saveFailedMessage), findsOneWidget);
+    expect(find.text('ホームの目印'), findsNothing);
+    final button = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, '登録する'),
+    );
+    expect(button.onPressed, isNotNull);
+    await close(tester);
+  });
+}
+
+/// 猫の保存に失敗する（テストの側の差し替え）
+class _FailingCatRepository extends CatRepository {
+  _FailingCatRepository(super.db);
+
+  @override
+  Future<String> addCat({
+    required String householdId,
+    required String userId,
+    required String name,
+    DateTime? birthDate,
+    CatSex? sex,
+    String? conditions,
+  }) async => throw StateError('保存できない');
 }

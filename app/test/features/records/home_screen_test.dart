@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/core/providers.dart';
+import 'package:meowscope/core/today.dart';
+import 'package:meowscope/core/widgets/save_guard.dart';
 import 'package:meowscope/features/household/data/household_repository.dart';
 import 'package:meowscope/features/records/data/record_repository.dart';
 import 'package:meowscope/features/records/presentation/home_screen.dart';
@@ -293,4 +295,70 @@ void main() {
     expect(find.text('詳細：$id'), findsOneWidget);
     await close(tester);
   });
+
+  /// 上書きを足して、ホームだけを出す
+  Future<void> showWith(WidgetTester tester, List overrides) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
+      ],
+    );
+    addTearDown(router.dispose);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          sessionProvider.overrideWith((ref) => Stream.value(_session)),
+          ...overrides.cast(),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('UT-HM-14 記録の保存に失敗したら、案内を出して「記録しました」は出さない', (tester) async {
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    await showWith(tester, [
+      recordRepositoryProvider.overrideWithValue(_FailingRecordRepository(db)),
+    ]);
+
+    await tester.tap(find.widgetWithText(OutlinedButton, 'ご飯'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(saveFailedMessage), findsOneWidget);
+    expect(find.text('ミケのご飯を記録しました'), findsNothing);
+    expect(await records(), isEmpty);
+    await close(tester);
+  });
+
+  testWidgets('UT-HM-15 開いたまま日付が変わったら、「今日の記録」を新しい日のものにする', (tester) async {
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    var now = DateTime.now();
+    await showWith(tester, [nowProvider.overrideWithValue(() => now)]);
+    await tester.tap(find.widgetWithText(OutlinedButton, 'ご飯'));
+    await tester.pumpAndSettle();
+    expect(find.text('ミケ　ご飯'), findsOneWidget);
+
+    // 次の日の0時を過ぎたことにして、日付の切り替えのタイマーを動かす
+    now = DateTime(now.year, now.month, now.day + 1, 0, 0, 5);
+    await tester.pump(const Duration(hours: 25));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ミケ　ご飯'), findsNothing);
+    expect(find.text('まだ記録がありません'), findsOneWidget);
+    await close(tester);
+  });
+}
+
+/// 記録の保存に失敗する（テストの側の差し替え）
+class _FailingRecordRepository extends RecordRepository {
+  _FailingRecordRepository(super.db);
+
+  @override
+  Future<String> addRecord({
+    required String catId,
+    required String recordTypeId,
+    required Author author,
+  }) async => throw StateError('保存できない');
 }

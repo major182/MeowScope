@@ -10,6 +10,7 @@ import '../../../core/widgets/confirm_delete.dart';
 import '../../household/data/household_repository.dart';
 import '../data/cat_repository.dart';
 import '../../../core/widgets/readable_width.dart';
+import '../../../core/widgets/save_guard.dart';
 
 /// 猫1匹を見張る
 final catProvider = StreamProvider.autoDispose.family<CatRow?, String>(
@@ -108,27 +109,42 @@ class _CatFormScreenState extends ConsumerState<CatFormScreen> {
     final name = _name.text.trim();
     final repo = ref.read(catRepositoryProvider);
     final initial = widget.initial;
+    final saved = await guardSave(
+      log: ref.read(appLogProvider),
+      messenger: messenger,
+      what: '猫の保存',
+      action: () async {
+        if (initial != null) {
+          await repo.updateCat(
+            id: initial.id,
+            userId: session.author.id,
+            name: name,
+            birthDate: _birthDate,
+            sex: _sex,
+            conditions: _conditions.text,
+          );
+        } else {
+          await repo.addCat(
+            householdId: session.householdId,
+            userId: session.author.id,
+            name: name,
+            birthDate: _birthDate,
+            sex: _sex,
+            conditions: _conditions.text,
+          );
+        }
+      },
+    );
+    if (!saved) {
+      // もう一度押せるように戻す
+      if (mounted) setState(() => _saving = false);
+      return;
+    }
     if (initial != null) {
-      await repo.updateCat(
-        id: initial.id,
-        userId: session.author.id,
-        name: name,
-        birthDate: _birthDate,
-        sex: _sex,
-        conditions: _conditions.text,
-      );
       messenger.showSnackBar(SnackBar(content: Text('$nameを保存しました')));
       router.pop();
       return;
     }
-    await repo.addCat(
-      householdId: session.householdId,
-      userId: session.author.id,
-      name: name,
-      birthDate: _birthDate,
-      sex: _sex,
-      conditions: _conditions.text,
-    );
     messenger.showSnackBar(SnackBar(content: Text('$nameを登録しました')));
     // 一覧などから開いたときは戻り、最初の登録のときはホームへ進む
     if (router.canPop()) {

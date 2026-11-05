@@ -12,6 +12,7 @@ import '../../icons/icon_avatar.dart';
 import '../../icons/icon_repository.dart';
 import '../../sync/presentation/sync_controller.dart';
 import '../../../core/widgets/readable_width.dart';
+import '../../../core/widgets/save_guard.dart';
 import '../../../core/widgets/balanced_text.dart';
 
 final _householdNameProvider = StreamProvider.family<String?, String>(
@@ -36,6 +37,7 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
   final _name = TextEditingController();
   var _loaded = false;
   var _busy = false;
+  String? _nameError;
 
   @override
   void dispose() {
@@ -44,17 +46,25 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
   }
 
   Future<void> _saveName(String householdId, String userId) async {
-    if (_name.text.trim().isEmpty) {
+    // 空のまま保存したら、S-04 と同じ入力チェックの文を出す
+    final empty = _name.text.trim().isEmpty;
+    setState(() => _nameError = empty ? 'おうちの名前を入力してください' : null);
+    if (empty) {
       return;
     }
-    await ref
-        .read(accountRepositoryProvider)
-        .renameHousehold(
-          householdId: householdId,
-          userId: userId,
-          name: _name.text,
-        );
-    if (mounted) {
+    final saved = await guardSave(
+      log: ref.read(appLogProvider),
+      messenger: ScaffoldMessenger.of(context),
+      what: 'おうちの名前の保存',
+      action: () => ref
+          .read(accountRepositoryProvider)
+          .renameHousehold(
+            householdId: householdId,
+            userId: userId,
+            name: _name.text,
+          ),
+    );
+    if (saved && mounted) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('おうちの名前を保存しました')));
     }
@@ -161,6 +171,7 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
             maxLength: 50,
             decoration: InputDecoration(
               labelText: 'おうち名',
+              errorText: _nameError,
               suffixIcon: TextButton(
                 onPressed: () => _saveName(id, session.author.id),
                 child: const Text('保存'),

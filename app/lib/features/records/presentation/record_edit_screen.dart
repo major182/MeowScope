@@ -7,6 +7,7 @@ import '../../photos/presentation/photo_widgets.dart';
 import '../data/record_repository.dart';
 import '../domain/record_detail.dart';
 import '../../../core/widgets/readable_width.dart';
+import '../../../core/widgets/save_guard.dart';
 import 'record_format.dart';
 import 'record_providers.dart';
 
@@ -93,7 +94,7 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
       context: context,
       initialTime: TimeOfDay.fromDateTime(_recordedAt),
     );
-    if (time == null) {
+    if (time == null || !mounted) {
       return;
     }
     setState(() {
@@ -120,19 +121,25 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
     }
     final kind = widget.view.kind;
     final weight = _weight.text.trim();
-    await ref
-        .read(recordRepositoryProvider)
-        .updateRecord(
-          id: widget.view.record.id,
-          recordedAt: _recordedAt,
-          level: hasLevel(kind) ? _level?.name : null,
-          valueNumber: hasWeight(kind) && weight.isNotEmpty
-              ? double.parse(weight)
-              : null,
-          memo: _memo.text,
-          author: session.author,
-        );
-    if (mounted) {
+    final saved = await guardSave(
+      log: ref.read(appLogProvider),
+      messenger: ScaffoldMessenger.of(context),
+      what: '記録の保存',
+      action: () => ref
+          .read(recordRepositoryProvider)
+          .updateRecord(
+            id: widget.view.record.id,
+            recordedAt: _recordedAt,
+            level: hasLevel(kind) ? _level?.name : null,
+            valueNumber: hasWeight(kind) && weight.isNotEmpty
+                ? double.parse(weight)
+                : null,
+            memo: _memo.text,
+            author: session.author,
+          ),
+    );
+    // 失敗したら画面に残り、入力をやり直せるようにする
+    if (saved && mounted) {
       context.pop();
     }
   }

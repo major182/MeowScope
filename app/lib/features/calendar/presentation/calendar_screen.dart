@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../app/main_shell.dart';
 import '../../../core/providers.dart';
+import '../../../core/today.dart';
 import '../../cats/presentation/cat_filter.dart';
 import '../../records/data/record_repository.dart';
 import '../../records/domain/record_kind.dart';
@@ -103,7 +104,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           child: _MonthGrid(
             days: days,
             month: _month,
-            today: _today,
+            // 開いたまま日付が変わったら、「今日」の印を新しい日に移す（B-3）
+            today: widget.today ?? ref.watch(todayProvider).value ?? _today,
             selected: wide ? _selected : null,
             marks: dayMarks(entries),
             onTap: (d) => _selectDay(d, wide),

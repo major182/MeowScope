@@ -164,7 +164,18 @@ class _SyncSchedulerState extends ConsumerState<SyncScheduler> {
     // 最初の表示が終わってから始める（表示の途中で状態を変えないため）
     WidgetsBinding.instance.addPostFrameCallback((_) => _sync());
     // 30日を過ぎた写真を端末から消す（AC-14）。起動のたびに確かめる
-    ref.read(photoRepositoryProvider).cleanupOld();
+    // 待たずに進める。失敗しても次の起動でまた確かめるので、例外の種類だけをログに残す
+    final log = ref.read(appLogProvider);
+    unawaited(
+      ref
+          .read(photoRepositoryProvider)
+          .cleanupOld()
+          .then<void>(
+            (_) {},
+            onError: (Object e) =>
+                log.record('warning', '古い写真の片付けに失敗：${e.runtimeType}'),
+          ),
+    );
     _timer = Timer.periodic(SyncScheduler.interval, (_) => _sync());
     _lifecycle = AppLifecycleListener(onHide: _sync);
   }

@@ -36,8 +36,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     super.dispose();
   }
 
-  void _show(String text) =>
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  /// 文を出す。通信を待つ間に画面が閉じていたら出さない（閉じた後の context は使えない）
+  void _show(String text) {
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
 
   /// 通信の要る操作を行い、失敗したら理由を出す
   Future<bool> _run(Future<void> Function() action) async {
@@ -71,7 +76,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       context: context,
       builder: (context) => const _PasswordDialog(),
     );
-    if (result == null) {
+    if (result == null || !mounted) {
       return;
     }
     final (current, next) = result;

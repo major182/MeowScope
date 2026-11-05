@@ -8,6 +8,7 @@ import '../../../core/widgets/confirm_delete.dart';
 import '../data/record_repository.dart';
 import '../domain/record_detail.dart';
 import '../../../core/widgets/readable_width.dart';
+import '../../../core/widgets/save_guard.dart';
 import 'record_edit_screen.dart';
 import 'record_format.dart';
 import 'record_providers.dart';
@@ -38,20 +39,28 @@ class _Detail extends ConsumerWidget {
   final RecordDetailView view;
 
   Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    // 確認を待つ間に画面が閉じても使えるよう、先に取っておく（閉じた後の ref は使えない）
+    final session = ref.read(sessionProvider).value;
+    final repo = ref.read(recordRepositoryProvider);
+    final log = ref.read(appLogProvider);
+    final messenger = ScaffoldMessenger.of(context);
     final ok = await confirmDelete(
       context,
       title: 'この記録を削除しますか？',
       message:
           '${view.catName}の${view.typeName}（${formatDateTime(view.record.recordedAt.toLocal())}）',
     );
-    final session = ref.read(sessionProvider).value;
     if (!ok || session == null) {
       return;
     }
-    await ref
-        .read(recordRepositoryProvider)
-        .deleteRecord(id: view.record.id, author: session.author);
-    if (context.mounted) {
+    final deleted = await guardSave(
+      log: log,
+      messenger: messenger,
+      what: '記録の削除',
+      action: () =>
+          repo.deleteRecord(id: view.record.id, author: session.author),
+    );
+    if (deleted && context.mounted) {
       context.pop();
     }
   }
