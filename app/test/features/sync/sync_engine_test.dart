@@ -598,4 +598,103 @@ void main() {
       ('u1', 't2', 1, 3),
     );
   });
+
+  group('全件の取り直しの後の片付け', () {
+    /// 端末に、サーバーから受け取った猫（serverSeq あり）と記録を置く
+    Future<void> local(String catId, {int? seq = 1}) async {
+      await db
+          .into(db.cats)
+          .insert(
+            CatsCompanion.insert(
+              id: catId,
+              createdAt: testTime,
+              updatedAt: testTime,
+              householdId: 'h1',
+              name: catId,
+              serverSeq: Value(seq),
+            ),
+          );
+    }
+
+    Future<List<String>> cats() async => [
+      for (final c in await db.select(db.cats).get()) c.id,
+    ];
+
+    /// 1回目は全件の取り直しを指示し、2回目に [changes] を返すサーバー
+    void resync(List<Map<String, Object?>> changes, {bool hasMore = false}) {
+      var calls = 0;
+      server.on('POST', '/sync', (r) {
+        calls++;
+        return FakeResponse(200, {
+          'results': [],
+          'changes': calls == 1 ? [] : changes,
+          'nextSeq': 9,
+          'hasMore': calls > 1 && hasMore && calls < 3,
+          'fullResyncRequired': calls == 1,
+        });
+      });
+    }
+
+    test('UT-SY-28 全件を取り直したら、受け取らなかった行（サーバーにない行）を端末から消す。'
+        '受け取った行・この同期で送った行・送っていない変更のある行・まだ送ったことのない行は残す', () async {
+      await addHousehold(db, 'h1');
+      await (db.update(db.households)..where((h) => h.id.equals('h1'))).write(
+        const HouseholdsCompanion(serverSeq: Value(1)),
+      );
+      await local('kept');
+      await local('gone');
+      await local('pending');
+      await local('new', seq: null);
+      await pending('cats', 'pending');
+      resync([
+        pulled('households', 'h1', {'name': 'みけ家'}),
+        pulled('cats', 'kept', {
+          'householdId': 'h1',
+          'name': 'kept',
+          'status': 'active',
+        }),
+      ]);
+
+      await engine.run('u1');
+
+      expect(await cats(), unorderedEquals(['kept', 'pending', 'new']));
+      expect(await db.select(db.households).get(), hasLength(1));
+    });
+
+    test('UT-SY-29 全件の取り直しでなければ、受け取らなかった行は消さない', () async {
+      await addHousehold(db, 'h1');
+      await local('kept');
+      answer();
+
+      await engine.run('u1');
+
+      expect(await cats(), ['kept']);
+    });
+
+    test('UT-SY-30 異常系：取り直しの途中で通信が切れたら、何も消さない', () async {
+      await addHousehold(db, 'h1');
+      await local('kept');
+      var calls = 0;
+      server.on('POST', '/sync', (r) {
+        calls++;
+        if (calls == 1) {
+          return const FakeResponse(200, {
+            'results': [],
+            'changes': [],
+            'nextSeq': 9,
+            'hasMore': false,
+            'fullResyncRequired': true,
+          });
+        }
+        throw DioException.connectionError(
+          requestOptions: r,
+          reason: 'offline',
+        );
+      });
+
+      await engine.run('u1');
+
+      expect(await cats(), ['kept']);
+    });
+  });
 }

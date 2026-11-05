@@ -93,6 +93,7 @@ class SyncReader {
      * <ul>
      *   <li>端末の番号がサーバーの最新より先（サーバーの DB を作り直した）
      *   <li>前回の同期の後に、自分が別のおうちに加わった（そのおうちの古い行は番号が小さく、差分では届かない）
+     *   <li>端末の位置より後に、削除から90日を過ぎた行を完全に消した（消えた行の削除は差分では届かない。{@link PurgeService}）
      * </ul>
      */
     boolean fullResyncRequired(UUID userId, long lastSeq) {
@@ -101,6 +102,10 @@ class SyncReader {
         }
         long latest = jdbc.sql("SELECT last_value FROM sync_seq").query(Long.class).single();
         if (lastSeq > latest) {
+            return true;
+        }
+        long purged = jdbc.sql("SELECT purged_seq FROM sync_purges WHERE id = 1").query(Long.class).single();
+        if (lastSeq < purged) {
             return true;
         }
         return jdbc.sql("""
