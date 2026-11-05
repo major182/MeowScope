@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 07 |
-| 版数 | 0.9 |
+| 版数 | 0.10 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [02 技術選定書](02_tech-stack.md)、[06 API 設計書](06_api-design.md) |
@@ -35,12 +35,13 @@
 | `logger.name`、`logger.thread_name` | ログを出したクラス、スレッド |
 | `request_id` | リクエストの ID |
 | `usr.id` | 利用者の ID |
-| `household.id` | おうちの ID（同期と、おうちの操作）。独自の属性 |
+| `household.id` | おうちの ID（おうちの作成・招待・抜ける操作）。独自の属性。同期は1回で複数のおうちにまたがるので付けない |
 | `http.method`、`http.url_details.path`、`http.status_code` | アクセスログ |
 | `duration` | 処理にかかった時間（ナノ秒） |
-| `network.client.ip` | 利用者の IP |
+| `network.client.ip` | 利用者の IP。中継サーバー（リバースプロキシ）の後ろに置くと中継サーバーの IP になるので、受け取った転送元の IP を使う設定（`server.forward-headers-strategy`）は、PC への移行（No.18）の構成を決めるときに合わせて決める |
 | `evt.name`、`evt.outcome`、`evt.reason` | 出来事の種類、結果、理由 |
-| `sync.received`、`sync.applied`、`sync.ignored`、`sync.rejected` | 同期の件数。独自の属性 |
+| `sync.received`、`sync.applied`、`sync.ignored`、`sync.rejected`、`sync.sent` | 同期の件数（受け取った・反映した・同じだった・受け付けなかった・送った）。独自の属性 |
+| `purge.rows`、`purge.files`、`purge.housekeeping` | 夜中の片付けの件数（消した行・ファイル・期限切れのトークンなど）。独自の属性 |
 | `error.kind`、`error.message`、`error.stack` | 例外 |
 
 ## 3. 重大度
@@ -71,9 +72,9 @@ SLF4J の重大度は ERROR・WARN・INFO の3つなので、`alert`・`critical
 | `alert` | 使い終わった更新トークンが使われた | `refresh_token_reuse` |
 | `critical` | 写真を保存先に書けない、DB に接続できない（API の処理中と、夜中の片付けの中） | `photo_write`、`db_unavailable`、`purge`（`evt.outcome` は `failure`） |
 | `error` | 想定外の例外（500）、パスワードの再設定のメールを送れない（例外は渡さず、原因の種類を `error.kind` に出す）、夜中の片付けの失敗 | -、`password_reset_request`（`evt.reason` は `mail_failed`）、`purge` |
-| `warning` | 同期の変更を `rejected` にした、写真のファイルを消せない、メールの送り方が設定されていない | `sync_rejected`、`mail` |
+| `warning` | 同期の変更を `rejected` にした、写真のファイルを消せない、メールの送り方が設定されていない | `sync_rejected`、`photo_delete`、`mail` |
 | `notice` | ログインの失敗、パスワードの変更、パスワードの再設定（成功・失敗）、登録されていないメールアドレスへの再設定の受付、退会、おうちを抜ける | `authentication`、`password_change`、`password_reset`、`password_reset_request`、`account_delete`、`household_leave` |
-| `info` | ログインの成功、登録、ログアウト、招待の受諾、同期の完了、確認コードを送った・送り直しが早すぎた | `authentication`、`signup`、`logout`、`invitation_accept`、`sync`、`password_reset_request`、`purge`（削除から90日を過ぎたデータの片付け：消した行・ファイル・期限切れの数） |
+| `info` | ログインの成功、登録、ログアウト、おうちの作成、招待のリンクの作成、招待の受諾、同期の完了、確認コードを送った・送り直しが早すぎた | `authentication`、`signup`、`logout`、`household_create`、`invitation_create`、`invitation_accept`、`sync`、`password_reset_request`、`purge`（削除から90日を過ぎたデータの片付け：消した行・ファイル・期限切れの数） |
 
 ## 6. 出さない情報
 
@@ -130,3 +131,4 @@ Datadog を使うときは、Docker のログを Datadog Agent で集める。AP
 | 0.7 | 2026-11-05 | パスワードの再設定とメール送信の出来事を追加 |
 | 0.8 | 2026-11-05 | 90日を過ぎたデータの片付けの出来事を追加 |
 | 0.9 | 2026-11-06 | DB に接続できないときの critical（`db_unavailable`）、片付けの失敗、メールの送信の失敗で例外を渡さないこと、例外の文と積み重ねを伏せることを追加 |
+| 0.10 | 2026-11-06 | 実装にある出来事（おうちの作成・招待のリンクの作成・写真）と属性（`sync.sent`・`purge.*`）を追加。同期に `household.id` を付けないこと、中継サーバーの後ろの IP の扱いは No.18 で決めることを記入 |
