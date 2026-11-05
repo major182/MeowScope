@@ -22,8 +22,8 @@ String sentNotice(int wait) => wait > 0
 /// 最後に確認コードを頼んだメールアドレスと時刻
 typedef ResetRequest = ({String email, DateTime sentAt});
 
-/// 最後に確認コードを頼んだ記録。画面を閉じても、アプリを終えるまで覚えておく。
-/// 開き直したときに、送り直しの待ち時間と入力を元に戻すため（開き直すと送れるように見えてしまうのを防ぐ）
+/// 最後に確認コードを頼んだ記録。送り直しの待ち時間（60秒）の間に画面を開き直したら、入力と待ち時間を元に戻す
+/// （開き直すと送れるように見えてしまうのを防ぐ）。60秒が過ぎてから開き直したら忘れる
 class LastResetRequest extends Notifier<ResetRequest?> {
   @override
   ResetRequest? build() => null;
@@ -32,6 +32,9 @@ class LastResetRequest extends Notifier<ResetRequest?> {
 
   void clear() => state = null;
 }
+
+/// 今の時刻。テストでは時刻を進められるものに差し替える
+final resetClockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 
 final lastResetRequestProvider =
     NotifierProvider<LastResetRequest, ResetRequest?>(LastResetRequest.new);
@@ -83,14 +86,20 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
   @override
   void initState() {
     super.initState();
-    // 前に頼んでいれば、入力と待ち時間を元に戻す
+    // 送り直しの待ち時間（60秒）の間に開き直したときだけ、入力と待ち時間を元に戻す。
+    // 60秒が過ぎていれば、何も戻さずに忘れる（入力したメールアドレスを残し続けないため。利用者の決定）
     final last = ref.read(lastResetRequestProvider);
     if (last != null) {
-      _email.text = last.email;
-      _sent = true;
-      final wait = remainingWait(last.sentAt, DateTime.now());
+      final wait = remainingWait(last.sentAt, ref.read(resetClockProvider)());
       if (wait > 0) {
+        _email.text = last.email;
+        _sent = true;
         _startWait(wait);
+      } else {
+        // build の途中で状態を変えないよう、描き終えてから忘れる
+        Future.microtask(
+          () => ref.read(lastResetRequestProvider.notifier).clear(),
+        );
       }
     }
   }
@@ -117,7 +126,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
       if (mounted) {
         ref
             .read(lastResetRequestProvider.notifier)
-            .sent(_email.text.trim(), DateTime.now());
+            .sent(_email.text.trim(), ref.read(resetClockProvider)());
         setState(() {
           _sending = false;
           _sent = true;

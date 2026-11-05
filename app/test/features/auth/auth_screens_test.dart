@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/core/providers.dart';
+import 'package:meowscope/features/auth/presentation/password_reset_screen.dart';
 import 'package:meowscope/main.dart';
 
 import '../../helpers/fake_api.dart';
@@ -362,6 +363,66 @@ void main() {
       expect(server.sentTo('/auth/password-reset/request'), hasLength(1));
       await close(tester);
     });
+
+    testWidgets(
+      'UT-PR-16 60秒が過ぎてから開き直すと、何も戻さない（入力したアドレスを残さない）。60秒ちょうどまでは戻す（境界値）',
+      (tester) async {
+        var now = DateTime(2026, 11, 5, 14);
+        server.on(
+          'POST',
+          '/auth/password-reset/request',
+          (r) => const FakeResponse(202),
+        );
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              databaseProvider.overrideWithValue(db),
+              tokenStoreProvider.overrideWithValue(tokens),
+              apiClientProvider.overrideWithValue(
+                fakeApiClient(server, tokens),
+              ),
+              resetClockProvider.overrideWithValue(() => now),
+            ],
+            child: const MeowScopeApp(),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('ログインに困ったら'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('パスワード再発行'));
+        await tester.pumpAndSettle();
+        await requestCode(tester);
+
+        Future<void> reopen() async {
+          await tester.tap(find.byType(BackButton));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('パスワード再発行'));
+          await tester.pumpAndSettle();
+        }
+
+        String email() =>
+            tester.widget<TextFormField>(field('メールアドレス')).controller!.text;
+
+        // 59秒後：まだ戻す
+        now = now.add(const Duration(seconds: 59));
+        await reopen();
+        expect(email(), 'haru@example.com');
+        expect(find.textContaining('1秒後に再度実施して下さい'), findsOneWidget);
+
+        // 60秒後：何も戻さない
+        now = now.add(const Duration(seconds: 1));
+        await reopen();
+        expect(email(), isEmpty);
+        expect(field('確認コード（6桁）'), findsNothing);
+        expect(find.widgetWithText(OutlinedButton, '確認コードを送る'), findsOneWidget);
+
+        // 忘れたので、もう一度開き直しても空のまま
+        await reopen();
+        expect(email(), isEmpty);
+        await tester.pump(const Duration(seconds: 60));
+        await close(tester);
+      },
+    );
 
     testWidgets('UT-PR-10 異常系：コードの誤りは案内を出す。つながらないときは通信の文を出す', (tester) async {
       server.on(
