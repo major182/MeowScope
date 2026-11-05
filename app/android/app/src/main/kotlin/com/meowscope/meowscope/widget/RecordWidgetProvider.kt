@@ -106,10 +106,13 @@ class RecordWidgetProvider : HomeWidgetProvider() {
         }, until - now)
     }
 
-    /** 選ばずに放っておかれたら、期限で描き直してボタンに戻す。 */
+    /**
+     * 選ばずに放っておかれたら、期限で描き直してボタンに戻す。
+     * 端末が省電力（Doze）に入っても後回しにされないよう、AllowWhileIdle で掛ける（Issue #93）
+     */
     private fun scheduleExpire(context: Context, delayMs: Long) {
         val alarms = context.getSystemService(AlarmManager::class.java) ?: return
-        alarms.set(
+        alarms.setAndAllowWhileIdle(
             AlarmManager.ELAPSED_REALTIME,
             SystemClock.elapsedRealtime() + delayMs.coerceAtLeast(0),
             tap(context, "expire"),
