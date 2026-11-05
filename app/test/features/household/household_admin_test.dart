@@ -258,7 +258,9 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('UT-MG-09 S-42：おうち名とメンバーを出し、名前を保存できる。招待は準備中', (tester) async {
+    testWidgets('UT-MG-09 S-42：おうち名とメンバーを出し、名前を保存できる。メールでの招待は出さない', (
+      tester,
+    ) async {
       await member('m2', 'u2', 'なつ');
       await start(tester);
       await open(tester, 'おうちの管理');
@@ -266,12 +268,7 @@ void main() {
       expect(find.widgetWithText(TextField, 'みけ家'), findsOneWidget);
       expect(find.text('はる'), findsOneWidget);
       expect(find.text('なつ'), findsOneWidget);
-      expect(
-        tester
-            .widget<ListTile>(find.widgetWithText(ListTile, 'メールで招待する'))
-            .enabled,
-        isFalse,
-      );
+      expect(find.text('メールで招待する'), findsNothing);
 
       await tester.enterText(find.byType(TextField), 'たま家');
       await tester.tap(find.widgetWithText(TextButton, '保存'));

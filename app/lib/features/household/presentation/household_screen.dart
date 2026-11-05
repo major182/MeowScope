@@ -191,12 +191,6 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
             icon: const Icon(Icons.link),
             label: const Text('リンクで招待する'),
           ),
-          const ListTile(
-            enabled: false,
-            leading: Icon(Icons.mail_outline),
-            title: Text('メールで招待する'),
-            subtitle: Text('準備中'),
-          ),
           const SizedBox(height: 16),
           OutlinedButton(
             onPressed: _busy
