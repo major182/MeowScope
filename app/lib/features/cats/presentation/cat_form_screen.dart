@@ -46,7 +46,7 @@ class CatProfileScreen extends ConsumerWidget {
 }
 
 /// 猫の登録（S-05）とプロフィールの編集（S-41）。名前以外は任意（BR-24）。
-/// 写真はアイコンの実装で足す
+/// 写真（アイコン）は登録の後、プロフィールで設定する（画面設計書 S-05）
 class CatFormScreen extends ConsumerStatefulWidget {
   const CatFormScreen({super.key, this.today, this.initial});
 

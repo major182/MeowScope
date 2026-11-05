@@ -288,7 +288,7 @@ class SyncIntegrationTest {
     }
 
     @Test
-    @DisplayName("IT-SY-09 分割：500件を超えたら hasMore で続きを返し、続けて呼ぶと残りを返す（境界値 500・501）")
+    @DisplayName("IT-SY-09 分割の境界値：503件は500件と3件に分けて返し（hasMore）、続きがなければ番号は変わらない")
     void 分割() throws Exception {
         UUID catId = UUID.randomUUID();
         syncBody(haru, 0, List.of(change("cats", catId, cat("ミケ"))));

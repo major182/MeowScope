@@ -100,11 +100,13 @@ class PendingChanges extends Table {
   TextColumn get targetTable => text()();
   TextColumn get rowId => text()();
 
-  /// `upsert` または `delete`
+  /// `create`（おうちの作成。POST /households で送る）、`upsert`、`delete`
   TextColumn get operation => text()();
 
   /// 送る内容（JSON）
   TextColumn get payload => text()();
+
+  /// 送るのに失敗した回数。記録のためだけに持ち、再送の打ち切りや表示には使わない
   IntColumn get attempts => integer().withDefault(const Constant(0))();
 }
 

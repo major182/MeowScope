@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 02 |
-| 版数 | 0.16 |
+| 版数 | 0.17 |
 | 作成日 | 2026-11-01 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md) |
@@ -36,13 +36,13 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 | 画面遷移 | go_router | 18.1.2 | Flutter チームの公式パッケージで、ログイン状態による画面の振り分けを書ける | |
 | 通信 | dio | 5.11.1 | トークンの付与と、期限切れ時の更新を共通の処理（インターセプター）で書ける | http：共通の処理を自作する必要がある |
 | トークンの保管 | flutter_secure_storage | 11.2.0 | Android は Keystore、Windows は資格情報の保管庫を使う（NF-SC-07） | |
-| 端末内の DB | SQLite（drift） | drift 2.35.3 | Windows と Android で共通に使え、型安全 | |
+| 端末内の DB | SQLite（drift） | drift 2.35.3、drift_dev 2.35.2（コード生成。版の番号は drift と別に付く） | Windows と Android で共通に使え、型安全 | |
 | グラフ | fl_chart | 1.3.0 | MIT ライセンスで無料。Flutter のグラフで最も利用が多く（pub.dev の評価 160 点）、折れ線と棒の両方を描ける | syncfusion_flutter_charts：商用ライセンスか登録が必要。graphic：利用者が少ない |
 | 招待のリンク | app_links | 7.2.2 | Android で meowscope:// のリンクを押したときにアプリを開き、リンクを受け取れる。独自ドメインを取らない（C-10）ので、https のリンクは使わない | |
 | 写真の選択 | image_picker | 1.2.4 | Flutter チームの公式パッケージで、Android のカメラとアルバム、Windows のファイル選択に対応する | |
 | 写真の縮小 | image | 4.12.0 | Dart だけで動き、Windows と Android で同じ処理になる。向きの反映と縮小、JPEG の保存ができる | flutter_image_compress：Windows に対応していない |
 | 端末のフォルダー | path_provider | 2.1.6 | Flutter チームの公式パッケージで、写真を置くアプリ用フォルダーを得る | |
-| 通知 | flutter_local_notifications | 22.3.3 | 端末内で通知でき、時刻を予約できる。アプリ未使用時の処理が不要になったので、workmanager は採用しない | workmanager：定期実行が不要になった |
+| 通知（未導入。通知の機能を作る段階で入れる） | flutter_local_notifications | 22.3.3 | 端末内で通知でき、時刻を予約できる。アプリ未使用時の処理が不要になったので、workmanager は採用しない | workmanager：定期実行が不要になった |
 | サーバー | Spring Boot | 4.1.2 | 開発者の経験があり、Spring Security で認証と認可を標準的に作れる | 2人の利用には大きいが、経験と安全性を優先した |
 | 認証 | Spring Security（OAuth2 Resource Server） | Spring Boot の管理に従う | アクセストークンは JWT とし、標準の仕組みで検証する。毎回 DB を見ない | すべて DB のトークン：自作の部分が増える |
 | DB の変更管理 | Flyway | Spring Boot の管理に従う | SQL を番号順に流す単純な方式で、Spring Boot が標準で対応する | Liquibase：2人の利用には機能が過剰 |
@@ -54,7 +54,7 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 | DB の操作 | Spring の JdbcClient（spring-boot-starter-jdbc） | Spring Boot の管理に従う | SQL をそのまま書ける。同期は表をまたぐ一括の処理が多く、SQL が見える方が確かめやすい | JPA：自動の動き（遅延読み込みや更新の検知）が同期の処理と相性が悪い |
 | 結合テストの DB | Testcontainers | Spring Boot の管理に従う | 本番と同じ PostgreSQL 18.6 をテストのたびにコンテナで動かす。CI（GitHub Actions）でもそのまま動く | H2 などのメモリーの DB：PostgreSQL と SQL の方言が違う |
 | クラウド | AWS EC2（t3.small） | - | Compose をそのまま動かせる | t3.micro：Spring Boot にはメモリが少ない |
-| HTTPS | Caddy | 2.11.7 | 証明書を自動で取得できる（AWS のみ） | |
+| HTTPS（未導入。AWS へ置くときに入れる） | Caddy | 2.11.7 | 証明書を自動で取得できる（AWS のみ） | |
 | PC での接続 | Tailscale | 導入時に確定 | サーバーをインターネットに公開しない（C-08） | |
 | 生成 AI | Claude API | 実装時に確定 | サーバーから呼び出す（NF-SC-05）。利用した分の費用がかかる | |
 | メール送信（パスワードの再設定） | 未定（Q-26）。第一候補は Gmail の SMTP。送る仕組みは SMTP（spring-boot-starter-mail）で作り、どのサービスでも設定（環境変数 `MAIL_*`）だけで切り替える | Spring Boot の管理に従う | 無料でドメインが不要だが、アプリパスワードが未発行 | Resend、Amazon SES：送信元の認証にドメインが必要になる可能性がある |
@@ -118,3 +118,4 @@ Windows 版は、家族での利用の間は署名しない（2026-11-05 決定�
 | 0.14 | 2026-11-05 | メール送信の用途をパスワードの再設定だけにする（メールでの招待をなくす） |
 | 0.15 | 2026-11-05 | メール送信の仕組み（spring-boot-starter-mail と設定の渡し方）を記入 |
 | 0.16 | 2026-11-05 | Windows 版の署名を決定（今は署名せず、一般公開のときに発行する） |
+| 0.17 | 2026-11-06 | 通知と HTTPS（Caddy）が未導入であることと、drift_dev の版を記入（品質チェック） |

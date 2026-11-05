@@ -25,7 +25,7 @@ final _membersProvider = StreamProvider.family<List<Member>, String>(
 
 /// おうちの管理（S-42）
 ///
-/// 招待はメール送信の手段が決まるまで（Q-26）「準備中」とする
+/// 招待はリンクで行う（招待の文をコピーして、LINE などで送ってもらう）
 class HouseholdScreen extends ConsumerStatefulWidget {
   const HouseholdScreen({super.key});
 
