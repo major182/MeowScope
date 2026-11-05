@@ -123,4 +123,23 @@ class InvitationIntegrationTest {
         assertThat(jdbc.sql("SELECT count(*) FROM household_members WHERE household_id = :h AND user_id = :u")
                 .param("h", household).param("u", haru.id()).query(Long.class).single()).isEqualTo(1);
     }
+
+    @Test
+    @DisplayName("IT-IV-05 新しく加わった人のユーザーの行（表示名・アイコンの有無）が、前からいるメンバーの差分の同期に届く")
+    void 加わった人が届く() throws Exception {
+        Registered natsu = TestUsers.register(mvc);
+        String sync = "{\"lastSeq\":0,\"changes\":[]}";
+        String first = mvc.perform(post("/api/v1/sync").header("Authorization", haru.bearer())
+                .contentType(MediaType.APPLICATION_JSON).content(sync)).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        long seq = ((Number) JsonPath.read(first, "$.nextSeq")).longValue();
+
+        accept(natsu, invite(haru)).andExpect(status().isOk());
+
+        String body = mvc.perform(post("/api/v1/sync").header("Authorization", haru.bearer())
+                .contentType(MediaType.APPLICATION_JSON).content("{\"lastSeq\":" + seq + ",\"changes\":[]}"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        List<String> users = JsonPath.read(body, "$.changes[?(@.table == 'users')].id");
+        assertThat(users).contains(natsu.id().toString());
+    }
 }

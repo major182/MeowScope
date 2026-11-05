@@ -212,4 +212,62 @@ class LeaveIntegrationTest {
                 .andExpect(status().isOk());
         assertThat(output.getOut()).contains("password_change").doesNotContain("NewPassw0rd");
     }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> syncFrom(Registered user, long lastSeq) throws Exception {
+        String body = mvc.perform(post("/api/v1/sync").header("Authorization", user.bearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Map.of("lastSeq", lastSeq, "changes", List.of()))))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        return json.readValue(body, Map.class);
+    }
+
+    private static long nextSeq(Map<String, Object> body) {
+        return ((Number) body.get("nextSeq")).longValue();
+    }
+
+    @Test
+    @DisplayName("IT-MG-08 最後の1人が抜けると、同じ人の別の端末には全件の取り直しを指示する。取り直した後は指示しない")
+    void 最後の1人_別の端末() throws Exception {
+        leave(natsu, household, true);
+        // 別の端末：抜ける前に最新まで同期してある
+        long other = nextSeq(syncFrom(haru, 0));
+        leave(haru, household, true).andExpect(jsonPath("$.householdDeleted").value(true));
+
+        assertThat(syncFrom(haru, other).get("fullResyncRequired")).isEqualTo(true);
+        Map<String, Object> again = syncFrom(haru, 0);
+        assertThat(syncFrom(haru, nextSeq(again)).get("fullResyncRequired")).isEqualTo(false);
+    }
+
+    @Test
+    @DisplayName("IT-MG-09 抜けると、そのおうちの項目のウィジェットのボタンに削除の印を付け、本人の端末へ届く。ほかのおうちのボタンは残す")
+    void 抜けるとボタンを消す() throws Exception {
+        UUID other = UUID.randomUUID();
+        UUID otherType = UUID.randomUUID();
+        mvc.perform(post("/api/v1/households").header("Authorization", natsu.bearer())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json.writeValueAsString(Map.of("id", other, "name", "なつ家", "recordTypes", List.of(
+                        Map.of("id", otherType, "name", "水", "kind", "water", "sortOrder", 0))))))
+                .andExpect(status().isCreated());
+        UUID button = UUID.randomUUID();
+        UUID kept = UUID.randomUUID();
+        sync(natsu, List.of(
+                change("widget_buttons", button, Map.of("recordTypeId", type.toString(), "sortOrder", 0)),
+                change("widget_buttons", kept, Map.of("recordTypeId", otherType.toString(), "sortOrder", 1))));
+        long before = nextSeq(syncFrom(natsu, 0));
+
+        leave(natsu, household, true).andExpect(status().isOk());
+
+        assertThat(jdbc.sql("SELECT deleted_at IS NOT NULL FROM widget_buttons WHERE id = :id").param("id", button)
+                .query(Boolean.class).single()).isTrue();
+        assertThat(jdbc.sql("SELECT deleted_at IS NULL FROM widget_buttons WHERE id = :id").param("id", kept)
+                .query(Boolean.class).single()).isTrue();
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> changes = (List<Map<String, Object>>) syncFrom(natsu, before).get("changes");
+        assertThat(changes).anySatisfy(c -> {
+            assertThat(c.get("table")).isEqualTo("widget_buttons");
+            assertThat(c.get("id")).isEqualTo(button.toString());
+            assertThat(c.get("deletedAt")).isNotNull();
+        });
+    }
 }

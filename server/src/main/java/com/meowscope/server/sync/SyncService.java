@@ -47,13 +47,8 @@ public class SyncService {
         }
         List<Result> results = request.changes().stream().map(outcomes::get).toList();
 
-        boolean full = reader.fullResyncRequired(userId, request.lastSeq());
-        List<ChangeOut> changes = full ? List.of() : reader.read(userId, request.lastSeq(), SyncDtos.MAX_CHANGES);
-        boolean hasMore = changes.size() > SyncDtos.MAX_CHANGES;
-        if (hasMore) {
-            changes = changes.subList(0, SyncDtos.MAX_CHANGES);
-        }
-        long nextSeq = changes.isEmpty() ? request.lastSeq() : changes.getLast().seq();
+        Read read = transaction.execute(status -> read(userId, request.lastSeq()));
+        List<ChangeOut> changes = read.changes();
 
         log.atInfo().addKeyValue("evt.name", "sync").addKeyValue("evt.outcome", "success")
                 .addKeyValue("sync.received", results.size())
@@ -62,7 +57,30 @@ public class SyncService {
                 .addKeyValue("sync.rejected", count(results, REJECTED))
                 .addKeyValue("sync.sent", changes.size())
                 .log("同期");
-        return new SyncResponse(results, changes, full ? request.lastSeq() : nextSeq, hasMore, full);
+        return new SyncResponse(results, changes, read.nextSeq(), read.hasMore(), read.full());
+    }
+
+    private record Read(List<ChangeOut> changes, long nextSeq, boolean hasMore, boolean full) {
+    }
+
+    /**
+     * 相手の変更を読む。番号を振る処理と同じロックを共有で取ってから読むので、読んでいる間は新しい番号が確定せず、
+     * 振った番号の最新より手前の行は、すべて確定している（V7）。
+     *
+     * <p>最後のページでは、次の位置を「振った番号の最新」にする。見えない行・欠番の分も進めておかないと、
+     * 完全に消した行の番号（purged_seq）より手前に留まり、全件の取り直しが続けて起きることがある。
+     */
+    private Read read(UUID userId, long lastSeq) {
+        reader.lockShared();
+        if (reader.fullResyncRequired(userId, lastSeq)) {
+            return new Read(List.of(), lastSeq, false, true);
+        }
+        List<ChangeOut> changes = reader.read(userId, lastSeq, SyncDtos.MAX_CHANGES);
+        if (changes.size() > SyncDtos.MAX_CHANGES) {
+            List<ChangeOut> page = changes.subList(0, SyncDtos.MAX_CHANGES);
+            return new Read(page, page.getLast().seq(), true, false);
+        }
+        return new Read(changes, Math.max(lastSeq, reader.latestSeq()), false, false);
     }
 
     private Result apply(UUID userId, ChangeIn change) {

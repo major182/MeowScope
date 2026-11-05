@@ -91,6 +91,16 @@ class PurgeIntegrationTest {
         return (Boolean) json.readValue(body, Map.class).get("fullResyncRequired");
     }
 
+    /** はじめから同期し直したときの、次の位置。 */
+    @SuppressWarnings("unchecked")
+    private long nextSeqFrom0() throws Exception {
+        String body = mvc.perform(post("/api/v1/sync").header("Authorization", haru.bearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Map.of("lastSeq", 0, "changes", List.of()))))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        return ((Number) json.readValue(body, Map.class).get("nextSeq")).longValue();
+    }
+
     @Test
     @DisplayName("IT-PG-01 境界値：削除から91日の行は消し、89日の行と削除していない行は残す")
     void 期間() {
@@ -117,7 +127,14 @@ class PurgeIntegrationTest {
                 VALUES (:id, :rec, 1, :path, now() - interval '91 days')
                 """).param("id", photo).param("rec", rec).param("path", path).update();
         UUID kept = record(null);
-        jdbc.sql("UPDATE cats SET deleted_at = now() - interval '91 days' WHERE id = :id").param("id", cat).update();
+        // 削除の印のない記録の写真と、猫のアイコンも、猫と一緒に消える
+        UUID childPhoto = UUID.randomUUID();
+        String childPath = storage.saveAt("purge-test/" + childPhoto, new byte[] {4});
+        jdbc.sql("INSERT INTO record_photos (id, record_id, sort_order, file_path) VALUES (:id, :rec, 1, :path)")
+                .param("id", childPhoto).param("rec", kept).param("path", childPath).update();
+        String iconPath = storage.saveAt("purge-test/icon-" + cat, new byte[] {5});
+        jdbc.sql("UPDATE cats SET icon_path = :path, deleted_at = now() - interval '91 days' WHERE id = :id")
+                .param("path", iconPath).param("id", cat).update();
 
         purge.purge();
 
@@ -125,19 +142,24 @@ class PurgeIntegrationTest {
         assertThatThrownBy(() -> storage.load(path)).isInstanceOf(IOException.class);
         assertThat(exists("cats", cat)).isFalse();
         assertThat(exists("records", kept)).isFalse();
+        assertThat(exists("record_photos", childPhoto)).isFalse();
+        assertThatThrownBy(() -> storage.load(childPath)).isInstanceOf(IOException.class);
+        assertThatThrownBy(() -> storage.load(iconPath)).isInstanceOf(IOException.class);
     }
 
     @Test
-    @DisplayName("IT-PG-03 消した行より前の位置から同期した端末には全件の取り直しを指示し、消した行の位置からなら指示しない")
+    @DisplayName("IT-PG-03 消す前の位置から同期した端末には全件の取り直しを指示し、取り直した後の位置からなら指示しない")
     void 全件の取り直し() throws Exception {
         UUID old = record(91);
         long seq = seqOf("records", old);
-        assertThat(fullResync(seq - 1)).isFalse();
+        assertThat(fullResync(seq)).isFalse();
 
         purge.purge();
 
+        // 消した行の位置まで受け取っていても、一緒に消えた子の行があり得るので取り直させる
         assertThat(fullResync(seq - 1)).isTrue();
-        assertThat(fullResync(seq)).isFalse();
+        assertThat(fullResync(seq)).isTrue();
+        assertThat(fullResync(nextSeqFrom0())).isFalse();
         // はじめての同期（位置 0）は、もともと全件を受け取るので指示しない
         assertThat(fullResync(0)).isFalse();
     }
