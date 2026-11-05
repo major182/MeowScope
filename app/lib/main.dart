@@ -5,6 +5,7 @@ import 'dart:ui';
 import 'package:app_links/app_links.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -86,6 +87,10 @@ class _MeowScopeAppState extends State<MeowScopeApp> {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'MeowScope',
+      // 日本語のアプリとして表示する。指定しないと、日本語と中国語で共通の漢字が中国語の字形で出ることがある
+      locale: const Locale('ja', 'JP'),
+      supportedLocales: const [Locale('ja', 'JP')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: ThemeData(colorSchemeSeed: const Color(0xFFC2662D)),
       routerConfig: _router,
     );

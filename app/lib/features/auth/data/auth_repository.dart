@@ -62,6 +62,30 @@ class AuthRepository {
   Future<void> login({required String email, required String password}) =>
       _signIn('/auth/login', {'email': email.trim(), 'password': password});
 
+  /// パスワードの再設定の確認コードをメールで送ってもらう（F-AU-03）。登録の有無にかかわらず成功する
+  Future<void> requestPasswordReset(String email) async {
+    try {
+      await _api.post<void>(
+        '/auth/password-reset/request',
+        data: {'email': email.trim()},
+        options: Options(extra: {noAuth: true}),
+      );
+    } on DioException catch (e) {
+      throw ApiError.from(e);
+    }
+  }
+
+  /// 確認コードと新しいパスワードで再設定し、そのままログインする
+  Future<void> confirmPasswordReset({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) => _signIn('/auth/password-reset/confirm', {
+    'email': email.trim(),
+    'code': code.trim(),
+    'newPassword': newPassword,
+  });
+
   Future<void> _signIn(String path, Map<String, String> body) async {
     final Map<String, dynamic> data;
     try {

@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 07 |
-| 版数 | 0.6 |
+| 版数 | 0.7 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [02 技術選定書](02_tech-stack.md)、[06 API 設計書](06_api-design.md) |
@@ -70,10 +70,10 @@ SLF4J の重大度は ERROR・WARN・INFO の3つなので、`alert`・`critical
 |---|---|---|
 | `alert` | 使い終わった更新トークンが使われた | `refresh_token_reuse` |
 | `critical` | 写真を保存先に書けない、DB に接続できない | - |
-| `error` | 想定外の例外（500） | - |
-| `warning` | 同期の変更を `rejected` にした、写真のファイルを消せない | `sync_rejected` |
-| `notice` | ログインの失敗、パスワードの変更、退会、おうちを抜ける | `authentication`、`password_change`、`account_delete`、`household_leave` |
-| `info` | ログインの成功、登録、ログアウト、招待の受諾、同期の完了 | `authentication`、`signup`、`logout`、`invitation_accept`、`sync` |
+| `error` | 想定外の例外（500）、パスワードの再設定のメールを送れない | -、`password_reset_request`（`evt.reason` は `mail_failed`） |
+| `warning` | 同期の変更を `rejected` にした、写真のファイルを消せない、メールの送り方が設定されていない | `sync_rejected`、`mail` |
+| `notice` | ログインの失敗、パスワードの変更、パスワードの再設定（成功・失敗）、登録されていないメールアドレスへの再設定の受付、退会、おうちを抜ける | `authentication`、`password_change`、`password_reset`、`password_reset_request`、`account_delete`、`household_leave` |
+| `info` | ログインの成功、登録、ログアウト、招待の受諾、同期の完了、確認コードを送った・送り直しが早すぎた | `authentication`、`signup`、`logout`、`invitation_accept`、`sync`、`password_reset_request` |
 
 ## 6. 出さない情報
 
@@ -125,3 +125,4 @@ Datadog を使うときは、Docker のログを Datadog Agent で集める。AP
 | 0.4 | 2026-11-02 | ログの書き出しを追加 |
 | 0.5 | 2026-11-03 | 重大度とマーカーの対応を記入 |
 | 0.6 | 2026-11-03 | 端末のログの件数・重大度・記録するもの・保存先を記入 |
+| 0.7 | 2026-11-05 | パスワードの再設定とメール送信の出来事を追加 |

@@ -1,8 +1,10 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/core/providers.dart';
+import 'package:meowscope/features/auth/presentation/password_reset_screen.dart';
 import 'package:meowscope/main.dart';
 
 import '../../helpers/fake_api.dart';
@@ -50,6 +52,17 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'ログイン'));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('UT-JA-01 アプリは日本語（ja_JP）で表示する。漢字を日本語の字形で出すため', (tester) async {
+    await start(tester);
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.locale, const Locale('ja', 'JP'));
+    expect(
+      Localizations.localeOf(tester.element(find.text('MeowScope'))),
+      const Locale('ja', 'JP'),
+    );
+    await close(tester);
+  });
 
   testWidgets('UT-AU-22 ログイン：空欄なら送らない', (tester) async {
     await start(tester);
@@ -175,22 +188,276 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('UT-AU-28 ログインに困ったら（S-07）：再発行は準備中で押せず、問い合わせは S-06 を開く', (
+  testWidgets('UT-AU-28 ログインに困ったら（S-07）：再発行は S-03 を開き、問い合わせは S-06 を開く', (
     tester,
   ) async {
     await start(tester);
 
     await tester.tap(find.text('ログインに困ったら'));
     await tester.pumpAndSettle();
+    expect(find.text('準備中'), findsNothing);
+    await tester.tap(find.text('パスワード再発行'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(OutlinedButton, '確認コードを送る'), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
 
-    final reset = tester.widget<ListTile>(
-      find.widgetWithText(ListTile, 'パスワード再発行'),
-    );
-    expect(reset.enabled, isFalse);
-    expect(find.text('準備中'), findsOneWidget);
     await tester.tap(find.text('問い合わせ'));
     await tester.pumpAndSettle();
     expect(find.text('ログを保存する'), findsOneWidget);
     await close(tester);
+  });
+
+  group('S-03 パスワード再設定', () {
+    Future<void> openReset(WidgetTester tester) async {
+      await start(tester);
+      await tester.tap(find.text('ログインに困ったら'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('パスワード再発行'));
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> requestCode(WidgetTester tester) async {
+      await tester.enterText(field('メールアドレス'), 'haru@example.com');
+      await tester.tap(find.widgetWithText(OutlinedButton, '確認コードを送る'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('UT-PR-08 メールアドレスの誤りは送らない。正しければ送り、コードと新しいパスワードの欄を出す', (
+      tester,
+    ) async {
+      server.on(
+        'POST',
+        '/auth/password-reset/request',
+        (r) => const FakeResponse(202),
+      );
+      await openReset(tester);
+      expect(field('確認コード（6桁）'), findsNothing);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, '確認コードを送る'));
+      await tester.pumpAndSettle();
+      expect(find.text('メールアドレスを入力してください'), findsOneWidget);
+      expect(server.requests, isEmpty);
+
+      await requestCode(tester);
+      expect(server.sentTo('/auth/password-reset/request').single.data, {
+        'email': 'haru@example.com',
+      });
+      expect(find.textContaining('確認コードを送りました'), findsOneWidget);
+      expect(field('確認コード（6桁）'), findsOneWidget);
+      expect(find.widgetWithText(OutlinedButton, '確認コードを送り直す'), findsOneWidget);
+      await close(tester);
+    });
+
+    testWidgets(
+      'UT-PR-09 境界値：コードは6桁の数字だけ（5桁は送らない）。パスワードは8文字から。正しければ変えてログインする',
+      (tester) async {
+        server.on(
+          'POST',
+          '/auth/password-reset/request',
+          (r) => const FakeResponse(202),
+        );
+        server.on(
+          'POST',
+          '/auth/password-reset/confirm',
+          (r) => FakeResponse(200, authBody()),
+        );
+        await openReset(tester);
+        await requestCode(tester);
+
+        await tester.enterText(field('確認コード（6桁）'), '12345');
+        await tester.enterText(field('新しいパスワード（8〜64文字）'), 'Short1!');
+        await tester.tap(find.widgetWithText(FilledButton, 'パスワードを変更'));
+        await tester.pumpAndSettle();
+        expect(find.text('確認コードは6桁の数字です'), findsOneWidget);
+        expect(server.sentTo('/auth/password-reset/confirm'), isEmpty);
+
+        // 数字でない文字は入らず、7桁目も入らない
+        await tester.enterText(field('確認コード（6桁）'), '12a3456789');
+        expect(
+          tester.widget<TextFormField>(field('確認コード（6桁）')).controller!.text,
+          '123456',
+        );
+        await tester.enterText(field('新しいパスワード（8〜64文字）'), 'Passw0rd');
+        await tester.tap(find.widgetWithText(FilledButton, 'パスワードを変更'));
+        await tester.pumpAndSettle();
+
+        expect(server.sentTo('/auth/password-reset/confirm').single.data, {
+          'email': 'haru@example.com',
+          'code': '123456',
+          'newPassword': 'Passw0rd',
+        });
+        expect(tokens.tokens, isNotNull);
+        expect(find.text('パスワード再設定'), findsNothing);
+        await close(tester);
+      },
+    );
+
+    testWidgets('UT-PR-12 送り直し：60秒を毎秒数え下げ、その間は送り直せない。60秒たったら送り直せる（境界値）', (
+      tester,
+    ) async {
+      server.on(
+        'POST',
+        '/auth/password-reset/request',
+        (r) => const FakeResponse(202),
+      );
+      await openReset(tester);
+      await requestCode(tester);
+
+      OutlinedButton resend() => tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, '確認コードを送り直す'),
+      );
+      expect(find.textContaining('60秒後に再度実施して下さい'), findsOneWidget);
+      expect(resend().onPressed, isNull);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.textContaining('59秒後に再度実施して下さい'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 58));
+      expect(find.textContaining('1秒後に再度実施して下さい'), findsOneWidget);
+      expect(resend().onPressed, isNull);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(
+        find.text('登録済みのメールアドレスに確認コードを送りました。届かない場合は、メールアドレスをお確かめの上、再度実施して下さい。'),
+        findsOneWidget,
+      );
+      expect(resend().onPressed, isNotNull);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, '確認コードを送り直す'));
+      await tester.pumpAndSettle();
+      expect(server.sentTo('/auth/password-reset/request'), hasLength(2));
+      expect(find.textContaining('60秒後'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 60));
+      await close(tester);
+    });
+
+    testWidgets('UT-PR-14 送った後に前の画面へ戻って開き直しても、アドレス・案内・待ち時間を戻し、待つ間は送り直せない', (
+      tester,
+    ) async {
+      server.on(
+        'POST',
+        '/auth/password-reset/request',
+        (r) => const FakeResponse(202),
+      );
+      await openReset(tester);
+      await requestCode(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('パスワード再発行'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<TextFormField>(field('メールアドレス')).controller!.text,
+        'haru@example.com',
+      );
+      expect(find.textContaining('秒後に再度実施して下さい'), findsOneWidget);
+      expect(field('確認コード（6桁）'), findsOneWidget);
+      final resend = find.widgetWithText(OutlinedButton, '確認コードを送り直す');
+      expect(tester.widget<OutlinedButton>(resend).onPressed, isNull);
+
+      await tester.pump(const Duration(seconds: 60));
+      expect(tester.widget<OutlinedButton>(resend).onPressed, isNotNull);
+      expect(server.sentTo('/auth/password-reset/request'), hasLength(1));
+      await close(tester);
+    });
+
+    testWidgets(
+      'UT-PR-16 60秒が過ぎてから開き直すと、何も戻さない（入力したアドレスを残さない）。60秒ちょうどまでは戻す（境界値）',
+      (tester) async {
+        var now = DateTime(2026, 11, 5, 14);
+        server.on(
+          'POST',
+          '/auth/password-reset/request',
+          (r) => const FakeResponse(202),
+        );
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              databaseProvider.overrideWithValue(db),
+              tokenStoreProvider.overrideWithValue(tokens),
+              apiClientProvider.overrideWithValue(
+                fakeApiClient(server, tokens),
+              ),
+              resetClockProvider.overrideWithValue(() => now),
+            ],
+            child: const MeowScopeApp(),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('ログインに困ったら'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('パスワード再発行'));
+        await tester.pumpAndSettle();
+        await requestCode(tester);
+
+        Future<void> reopen() async {
+          await tester.tap(find.byType(BackButton));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('パスワード再発行'));
+          await tester.pumpAndSettle();
+        }
+
+        String email() =>
+            tester.widget<TextFormField>(field('メールアドレス')).controller!.text;
+
+        // 59秒後：まだ戻す
+        now = now.add(const Duration(seconds: 59));
+        await reopen();
+        expect(email(), 'haru@example.com');
+        expect(find.textContaining('1秒後に再度実施して下さい'), findsOneWidget);
+
+        // 60秒後：何も戻さない
+        now = now.add(const Duration(seconds: 1));
+        await reopen();
+        expect(email(), isEmpty);
+        expect(field('確認コード（6桁）'), findsNothing);
+        expect(find.widgetWithText(OutlinedButton, '確認コードを送る'), findsOneWidget);
+
+        // 忘れたので、もう一度開き直しても空のまま
+        await reopen();
+        expect(email(), isEmpty);
+        await tester.pump(const Duration(seconds: 60));
+        await close(tester);
+      },
+    );
+
+    testWidgets('UT-PR-10 異常系：コードの誤りは案内を出す。つながらないときは通信の文を出す', (tester) async {
+      server.on(
+        'POST',
+        '/auth/password-reset/request',
+        (r) => const FakeResponse(202),
+      );
+      server.on(
+        'POST',
+        '/auth/password-reset/confirm',
+        (r) => const FakeResponse(400, {'code': 'INVALID_RESET_CODE'}),
+      );
+      await openReset(tester);
+      await requestCode(tester);
+      await tester.enterText(field('確認コード（6桁）'), '123456');
+      await tester.enterText(field('新しいパスワード（8〜64文字）'), 'Passw0rd!');
+      await tester.tap(find.widgetWithText(FilledButton, 'パスワードを変更'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('確認コードが違うか、期限が切れています'), findsOneWidget);
+      expect(tokens.tokens, isNull);
+
+      server.on(
+        'POST',
+        '/auth/password-reset/request',
+        (r) => throw DioException.connectionError(
+          requestOptions: r,
+          reason: 'offline',
+        ),
+      );
+      // 送り直しは60秒たってから
+      await tester.pump(const Duration(seconds: 60));
+      await tester.tap(find.widgetWithText(OutlinedButton, '確認コードを送り直す'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('サーバーにつながりません'), findsOneWidget);
+      await close(tester);
+    });
   });
 }

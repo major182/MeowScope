@@ -27,7 +27,10 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ApiException.class)
     ResponseEntity<Object> handleApi(ApiException ex, WebRequest request) {
         ErrorCode code = ex.code();
-        return handleExceptionInternal(ex, null, new HttpHeaders(), code.status(), request);
+        // 同じ状態コードに複数の種類がある（400 の入力の誤りと確認コードの誤りなど）ので、種類を本文に渡す
+        ProblemDetail problem = ProblemDetail.forStatus(code.status());
+        problem.setProperty("code", code.name());
+        return handleExceptionInternal(ex, problem, new HttpHeaders(), code.status(), request);
     }
 
     @ExceptionHandler(Exception.class)
@@ -40,8 +43,9 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
     @Override
     protected ResponseEntity<Object> createResponseEntity(Object body, HttpHeaders headers,
             HttpStatusCode statusCode, WebRequest request) {
-        ErrorCode code = ErrorCode.of(statusCode);
         ProblemDetail problem = body instanceof ProblemDetail given ? given : ProblemDetail.forStatus(statusCode);
+        ErrorCode code = problem.getProperties() != null && problem.getProperties().get("code") instanceof String name
+                ? ErrorCode.valueOf(name) : ErrorCode.of(statusCode);
         // フレームワークの英語の説明は内部の情報を含むことがあるので、決まった文に置き換える
         problem.setTitle(code.title());
         problem.setDetail(null);

@@ -18,6 +18,7 @@ public enum ErrorCode {
     PAYLOAD_TOO_LARGE(HttpStatus.CONTENT_TOO_LARGE, "容量が大きすぎます"),
     UNSUPPORTED_MEDIA_TYPE(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "この形式には対応していません"),
     TOO_MANY_REQUESTS(HttpStatus.TOO_MANY_REQUESTS, "回数の上限に達しました。しばらく待ってからやり直してください"),
+    INVALID_RESET_CODE(HttpStatus.BAD_REQUEST, "確認コードが違うか、期限が切れています"),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "サーバーで問題が発生しました");
 
     private final HttpStatus status;
