@@ -53,6 +53,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # E2E テスト（技術選定書：Windows と Android で同じテストを動かす）
+  integration_test:
+    sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
