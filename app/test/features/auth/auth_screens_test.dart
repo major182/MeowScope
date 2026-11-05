@@ -331,6 +331,38 @@ void main() {
       await close(tester);
     });
 
+    testWidgets('UT-PR-14 送った後に前の画面へ戻って開き直しても、アドレス・案内・待ち時間を戻し、待つ間は送り直せない', (
+      tester,
+    ) async {
+      server.on(
+        'POST',
+        '/auth/password-reset/request',
+        (r) => const FakeResponse(202),
+      );
+      await openReset(tester);
+      await requestCode(tester);
+      await tester.pump(const Duration(seconds: 1));
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('パスワード再発行'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<TextFormField>(field('メールアドレス')).controller!.text,
+        'haru@example.com',
+      );
+      expect(find.textContaining('秒後に再度実施して下さい'), findsOneWidget);
+      expect(field('確認コード（6桁）'), findsOneWidget);
+      final resend = find.widgetWithText(OutlinedButton, '確認コードを送り直す');
+      expect(tester.widget<OutlinedButton>(resend).onPressed, isNull);
+
+      await tester.pump(const Duration(seconds: 60));
+      expect(tester.widget<OutlinedButton>(resend).onPressed, isNotNull);
+      expect(server.sentTo('/auth/password-reset/request'), hasLength(1));
+      await close(tester);
+    });
+
     testWidgets('UT-PR-10 異常系：コードの誤りは案内を出す。つながらないときは通信の文を出す', (tester) async {
       server.on(
         'POST',

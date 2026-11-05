@@ -23,4 +23,16 @@ void main() {
     );
     expect(resendWaitSeconds, 60);
   });
+
+  test('UT-PR-15 送り直せるまでの残りの秒数（境界値：0秒・0.5秒・59秒・59.5秒・60秒・61秒）', () {
+    final sent = DateTime(2026, 11, 5, 14);
+    int after(int ms) =>
+        remainingWait(sent, sent.add(Duration(milliseconds: ms)));
+    expect(after(0), 60);
+    expect(after(500), 60);
+    expect(after(59000), 1);
+    expect(after(59500), 1);
+    expect(after(60000), 0);
+    expect(after(61000), 0);
+  });
 }

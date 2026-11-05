@@ -19,6 +19,29 @@ String sentNotice(int wait) => wait > 0
     ? '登録済みのメールアドレスに確認コードを送りました。届かない場合は、メールアドレスをお確かめの上、$wait秒後に再度実施して下さい。'
     : '登録済みのメールアドレスに確認コードを送りました。届かない場合は、メールアドレスをお確かめの上、再度実施して下さい。';
 
+/// 最後に確認コードを頼んだメールアドレスと時刻
+typedef ResetRequest = ({String email, DateTime sentAt});
+
+/// 最後に確認コードを頼んだ記録。画面を閉じても、アプリを終えるまで覚えておく。
+/// 開き直したときに、送り直しの待ち時間と入力を元に戻すため（開き直すと送れるように見えてしまうのを防ぐ）
+class LastResetRequest extends Notifier<ResetRequest?> {
+  @override
+  ResetRequest? build() => null;
+
+  void sent(String email, DateTime at) => state = (email: email, sentAt: at);
+
+  void clear() => state = null;
+}
+
+final lastResetRequestProvider =
+    NotifierProvider<LastResetRequest, ResetRequest?>(LastResetRequest.new);
+
+/// 送り直せるまでの残りの秒数。[now] が [sentAt] から [resendWaitSeconds] 秒たったら 0
+int remainingWait(DateTime sentAt, DateTime now) {
+  final left = resendWaitSeconds - now.difference(sentAt).inMilliseconds / 1000;
+  return left <= 0 ? 0 : left.ceil();
+}
+
 /// 確認コードの形（6桁の数字）を確かめる
 String? validateResetCode(String? value) {
   final text = (value ?? '').trim();
@@ -58,6 +81,21 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
   Timer? _timer;
 
   @override
+  void initState() {
+    super.initState();
+    // 前に頼んでいれば、入力と待ち時間を元に戻す
+    final last = ref.read(lastResetRequestProvider);
+    if (last != null) {
+      _email.text = last.email;
+      _sent = true;
+      final wait = remainingWait(last.sentAt, DateTime.now());
+      if (wait > 0) {
+        _startWait(wait);
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _timer?.cancel();
     _email.dispose();
@@ -77,11 +115,14 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
     try {
       await ref.read(authRepositoryProvider).requestPasswordReset(_email.text);
       if (mounted) {
+        ref
+            .read(lastResetRequestProvider.notifier)
+            .sent(_email.text.trim(), DateTime.now());
         setState(() {
           _sending = false;
           _sent = true;
+          _startWait(resendWaitSeconds);
         });
-        _startWait();
       }
     } on ApiError catch (e) {
       if (mounted) {
@@ -94,9 +135,10 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
   }
 
   /// 送り直せるまで、毎秒数え下げる（サーバーは1分以内の送り直しではメールを送らない）
-  void _startWait() {
+  void _startWait(int seconds) {
     _timer?.cancel();
-    setState(() => _wait = resendWaitSeconds);
+    // 値だけを入れる。描き直しは呼んだ側で行う（初期化の途中では setState を呼べないため）
+    _wait = seconds;
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
@@ -126,6 +168,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
             code: _code.text,
             newPassword: _password.text,
           );
+      ref.read(lastResetRequestProvider.notifier).clear();
       // ログインした状態になったので、最初の画面（ホームかおうちの作成）へ戻る
       router.go('/');
     } on ApiError catch (e) {
