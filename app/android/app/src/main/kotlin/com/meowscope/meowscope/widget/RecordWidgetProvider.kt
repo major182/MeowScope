@@ -55,7 +55,16 @@ class RecordWidgetProvider : HomeWidgetProvider() {
         val prefs = HomeWidgetPlugin.getData(context)
         val now = System.currentTimeMillis()
         val outcome = WidgetModel.onAction(snapshot(prefs), ui(prefs), action, now)
-        prefs.edit().putString(KEY_UI, uiJson(outcome.ui)).apply()
+        val edit = prefs.edit().putString(KEY_UI, uiJson(outcome.ui))
+        // 記録待ちの印。Dart が保存を終えたら消す。残ったままなら失敗を出す
+        if (outcome.record != null) {
+            edit.putLong(KEY_PENDING, now)
+        } else {
+            WidgetModel.overdue(pendingSince(prefs), now)?.let {
+                edit.putString(KEY_UI, uiJson(it)).remove(KEY_PENDING)
+            }
+        }
+        edit.apply()
         outcome.record?.let {
             val uri = Uri.parse("meowscope://widget/record?type=${Uri.encode(it.typeId)}&cat=${Uri.encode(it.catId)}")
             HomeWidgetBackgroundIntent.getBroadcast(context, uri).send()
@@ -73,23 +82,24 @@ class RecordWidgetProvider : HomeWidgetProvider() {
      * 期限のある表示（猫の選択・記録の結果）を、期限ちょうどにボタンへ戻す。
      *
      * 結果は Dart の裏側の処理が書くが、その処理は書いた後すぐに止められるので、戻すのはこちらで行う。
-     * アラームは OS がまとめて遅らせる（1分ほど）ため、受け取りの処理を期限まで延ばして（goAsync）戻す。
-     * 延ばせるのは受け取りの制限時間の内だけなので、アラームも予備として掛けておく
+     * アラームは OS がまとめて遅らせる（1分ほど）ため、アプリの中のタイマーで戻す。
+     * 受け取りの処理を延ばす（goAsync）と、その間は次に押した知らせが待たされて反応が数秒遅れるので使わない。
+     * アプリが凍結されてタイマーが止まったときのために、アラームも予備として掛けておく
      */
     private fun armExpire(context: Context) {
         val now = System.currentTimeMillis()
-        val until = ui(HomeWidgetPlugin.getData(context)).until ?: return
-        if (until <= now) {
-            return
-        }
+        val prefs = HomeWidgetPlugin.getData(context)
+        val until = listOfNotNull(
+            ui(prefs).until,
+            pendingSince(prefs)?.plus(WidgetModel.SAVE_TIMEOUT_MS),
+        ).filter { it > now }.minOrNull() ?: return
         scheduleExpire(context, until - now)
-        val pending = goAsync()
-        Handler(Looper.getMainLooper()).postDelayed({
-            try {
-                apply(context, Action.Expire)
-            } finally {
-                pending.finish()
-            }
+        val app = context.applicationContext
+        timer.removeCallbacksAndMessages(null)
+        timer.postDelayed({
+            apply(app, Action.Expire)
+            // 失敗の文に変わったときなど、次の期限を掛け直す
+            armExpire(app)
         }, until - now)
     }
 
@@ -141,9 +151,12 @@ class RecordWidgetProvider : HomeWidgetProvider() {
     }
 
     companion object {
+        // 使うときに作る（単体テストでは Android の Looper がないため）
+        private val timer by lazy { Handler(Looper.getMainLooper()) }
         const val ACTION_TAP = "com.meowscope.meowscope.widget.TAP"
         const val KEY_SNAPSHOT = "meowscope.snapshot"
         const val KEY_UI = "meowscope.ui"
+        const val KEY_PENDING = "meowscope.pending"
         private val CELLS = intArrayOf(R.id.widget_cell0, R.id.widget_cell1, R.id.widget_cell2, R.id.widget_cell3)
 
         fun actionPath(action: Action): String = when (action) {
@@ -183,6 +196,9 @@ class RecordWidgetProvider : HomeWidgetProvider() {
                 null
             }
         }
+
+        private fun pendingSince(prefs: SharedPreferences): Long? =
+            if (prefs.contains(KEY_PENDING)) prefs.getLong(KEY_PENDING, 0) else null
 
         private fun ui(prefs: SharedPreferences): Ui {
             val text = prefs.getString(KEY_UI, null) ?: return Ui()

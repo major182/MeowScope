@@ -9,14 +9,20 @@ abstract final class WidgetKeys {
 
   /// 今の表示（ボタン・猫の選択・記録中・記録の結果）
   static const ui = 'meowscope.ui';
+
+  /// 記録待ちの印（押した時刻）。Android の側が付け、保存を終えたらこちらで消す
+  static const pending = 'meowscope.pending';
 }
 
-/// 記録の結果を出す時間。過ぎたら元のボタンに戻す
-const doneDuration = Duration(seconds: 2);
+/// 失敗の文を出す時間。過ぎたら元のボタンに戻す（Android の側と同じ）
+const failedDuration = Duration(seconds: 3);
 
 /// ウィジェットへデータを渡す口。テストでは差し替える
 abstract class WidgetHost {
   Future<void> save(String key, String value);
+
+  /// 値を消す
+  Future<void> remove(String key);
 
   /// ウィジェットを描き直す
   Future<void> refresh();
@@ -42,6 +48,10 @@ class HomeWidgetHost extends WidgetHost {
   @override
   Future<void> save(String key, String value) =>
       HomeWidget.saveWidgetData<String>(key, value);
+
+  @override
+  Future<void> remove(String key) =>
+      HomeWidget.saveWidgetData<String>(key, null);
 
   @override
   Future<void> refresh() =>

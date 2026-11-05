@@ -33,10 +33,11 @@ class WidgetModelTest {
     }
 
     @Test
-    fun `UT-WG-02 猫が1匹なら、選ばずにその猫で記録を頼み、記録中を出す（BR-23）`() {
+    fun `UT-WG-02 猫が1匹なら、選ばずにその猫で記録を頼み、保存を待たずに結果を2秒出す（BR-23）`() {
         val out = WidgetModel.onAction(ready(mike), Ui(), Action.Button(0), now)
         assertEquals(Record("t1", "c1"), out.record)
-        assertEquals("記録しています…", WidgetModel.screen(ready(mike), out.ui, now).message)
+        assertEquals("✓ ミケのご飯を記録しました", WidgetModel.screen(ready(mike), out.ui, now).message)
+        assertEquals(now + WidgetModel.DONE_MS, out.ui.until)
     }
 
     @Test
@@ -135,15 +136,14 @@ class WidgetModelTest {
     }
 
     @Test
-    fun `UT-WG-19 境界値：記録中のまま10秒たったら失敗を出し、3秒後にボタンに戻る。直前は記録中のまま`() {
-        val s = ready(mike)
-        val busy = WidgetModel.onAction(s, Ui(), Action.Button(0), now).ui
-        val limit = now + WidgetModel.BUSY_TIMEOUT_MS
-        assertEquals(Ui.BUSY, WidgetModel.onAction(s, busy, Action.Expire, limit - 1).ui.mode)
+    fun `UT-WG-19 境界値：記録待ちの印が10秒残ったら失敗を3秒出す。直前・印なしは何もしない`() {
+        val limit = now + WidgetModel.SAVE_TIMEOUT_MS
+        assertNull(WidgetModel.overdue(now, limit - 1))
+        assertNull(WidgetModel.overdue(null, limit))
 
-        val failed = WidgetModel.onAction(s, busy, Action.Expire, limit).ui
-        assertEquals(WidgetModel.FAILED_MESSAGE, WidgetModel.screen(s, failed, limit).message)
-        assertEquals(Ui.BUTTONS, WidgetModel.onAction(s, failed, Action.Expire, limit + WidgetModel.FAILED_MS).ui.mode)
+        val failed = WidgetModel.overdue(now, limit)!!
+        assertEquals(WidgetModel.FAILED_MESSAGE, WidgetModel.screen(ready(mike), failed, limit).message)
+        assertEquals(limit + WidgetModel.FAILED_MS, failed.until)
     }
 
     /** android.net.Uri は単体テストでは使えないので、道筋の部分だけで確かめる。 */

@@ -19,7 +19,7 @@ data class Snapshot(
     val onlyCat: Item?,
 )
 
-/** 今の表示。mode は buttons・cats・busy・done。until を過ぎたらボタンに戻す。 */
+/** 今の表示。mode は buttons・cats・done。until を過ぎたらボタンに戻す。 */
 data class Ui(
     val mode: String = BUTTONS,
     val message: String? = null,
@@ -30,7 +30,6 @@ data class Ui(
     companion object {
         const val BUTTONS = "buttons"
         const val CATS = "cats"
-        const val BUSY = "busy"
         const val DONE = "done"
     }
 }
@@ -65,8 +64,14 @@ object WidgetModel {
     /** 選ばずに放っておいたら、ボタンに戻すまでの時間。 */
     const val SELECT_TIMEOUT_MS = 15_000L
 
-    /** 記録中のまま結果が来なければ、失敗として扱うまでの時間（アプリの更新の直後など、裏側の処理が動かないとき）。 */
-    const val BUSY_TIMEOUT_MS = 10_000L
+    /** 記録の結果を出す時間。 */
+    const val DONE_MS = 2_000L
+
+    /**
+     * 保存が終わらなければ、失敗として扱うまでの時間（アプリの更新の直後など、裏側の処理が動かないとき）。
+     * 結果は押した時点で先に出すので、保存の終わりは別の印（記録待ち）で見る
+     */
+    const val SAVE_TIMEOUT_MS = 10_000L
 
     /** 失敗の文を出す時間。 */
     const val FAILED_MS = 3_000L
@@ -88,7 +93,6 @@ object WidgetModel {
         }
         val shown = current(ui, now)
         return when (shown.mode) {
-            Ui.BUSY -> Screen(message = "記録しています…")
             Ui.DONE -> Screen(message = shown.message)
             Ui.CATS -> catsScreen(snapshot, shown)
             else -> Screen(
@@ -115,6 +119,23 @@ object WidgetModel {
         )
     }
 
+    /**
+     * 記録を頼み、保存を待たずに結果を出す（待ちを感じさせないため。Issue #80 で決定）。
+     * 保存できなかったときは、Dart の側が失敗の文に書き換える
+     */
+    private fun recorded(type: Item, cat: Item, now: Long) = Outcome(
+        Ui(mode = Ui.DONE, message = "✓ ${cat.name}の${type.name}を記録しました", until = now + DONE_MS),
+        Record(type.id, cat.id),
+    )
+
+    /** 記録待ちの印が [SAVE_TIMEOUT_MS] を過ぎても残っていたら、失敗の表示を返す。 */
+    fun overdue(pendingSince: Long?, now: Long): Ui? =
+        if (pendingSince != null && now >= pendingSince + SAVE_TIMEOUT_MS) {
+            Ui(mode = Ui.DONE, message = FAILED_MESSAGE, until = now + FAILED_MS)
+        } else {
+            null
+        }
+
     fun onAction(snapshot: Snapshot?, ui: Ui, action: Action, now: Long): Outcome {
         val shown = current(ui, now)
         if (snapshot == null || snapshot.status != READY) {
@@ -127,7 +148,7 @@ object WidgetModel {
                 val only = snapshot.onlyCat
                 if (only != null) {
                     // 猫が1匹なら選ばずに記録する（BR-23）
-                    Outcome(Ui(mode = Ui.BUSY, until = now + BUSY_TIMEOUT_MS), Record(type.id, only.id))
+                    recorded(type, only, now)
                 } else {
                     Outcome(Ui(mode = Ui.CATS, type = type, until = now + SELECT_TIMEOUT_MS))
                 }
@@ -138,7 +159,7 @@ object WidgetModel {
                 if (shown.mode != Ui.CATS || cat == null || type == null) {
                     Outcome(Ui())
                 } else {
-                    Outcome(Ui(mode = Ui.BUSY, until = now + BUSY_TIMEOUT_MS), Record(type.id, cat.id))
+                    recorded(type, cat, now)
                 }
             }
             Action.Next -> if (shown.mode != Ui.CATS || snapshot.pages.isEmpty()) {
@@ -148,12 +169,8 @@ object WidgetModel {
                 Outcome(shown.copy(page = (shown.page + 1) % snapshot.pages.size, until = now + SELECT_TIMEOUT_MS))
             }
             Action.Cancel -> Outcome(Ui())
-            // 期限の知らせ。記録中のまま期限を過ぎたら失敗を出す。ほかは期限を過ぎていれば current でボタンに戻っている
-            Action.Expire -> if (ui.mode == Ui.BUSY && shown.mode == Ui.BUTTONS) {
-                Outcome(Ui(mode = Ui.DONE, message = FAILED_MESSAGE, until = now + FAILED_MS))
-            } else {
-                Outcome(shown)
-            }
+            // 期限の知らせ。期限を過ぎていれば current でボタンに戻っている
+            Action.Expire -> Outcome(shown)
         }
     }
 }

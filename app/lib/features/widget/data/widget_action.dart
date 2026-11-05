@@ -8,9 +8,13 @@ import 'widget_host.dart';
 /// ウィジェットから記録する（F-WG-01、BR-23）。アプリの画面は開かずに、裏側で動く
 ///
 /// 受け取るリンクは `meowscope://widget/record?type=<記録項目の ID>&cat=<猫の ID>`。
-/// 記録したら「✓ ミケのご飯を記録しました」を [doneDuration] だけ出す。元のボタンに戻すのは Android の側
-/// （この処理は書いた後すぐに止められることがあり、待ってから戻すことができないため）。
-/// 記録できなければ、その旨を出す。記録の内容は同期待ちに積まれ、次の同期でサーバーへ送られる
+/// 「✓ ミケのご飯を記録しました」は、押した時点で Android の側が先に出している（待ちを感じさせないため）。
+/// ここでは保存して、記録待ちの印を消す。保存できなければ、失敗の文に書き換えて [failedDuration] だけ出す
+/// （元のボタンに戻すのは Android の側。この処理は書いた後すぐに止められることがあるため）。
+///記録の内容は同期待ちに積まれ、次の同期でサーバーへ送られる
+/// 保存できなかったときの文（Android の側と同じ）
+const widgetFailedMessage = '記録できませんでした。アプリを開いてください';
+
 Future<void> handleWidgetAction(
   Uri uri, {
   required AppDatabase db,
@@ -22,21 +26,27 @@ Future<void> handleWidgetAction(
       uri.path != '/record') {
     return;
   }
-  final message = await _record(
+  final saved = await _record(
     db,
     typeId: uri.queryParameters['type'],
     catId: uri.queryParameters['cat'],
   );
-  await host.showUi('done', message: message, until: clock().add(doneDuration));
+  await host.remove(WidgetKeys.pending);
+  if (!saved) {
+    await host.showUi(
+      'done',
+      message: widgetFailedMessage,
+      until: clock().add(failedDuration),
+    );
+  }
 }
 
-/// 記録して、出す文を返す
-Future<String> _record(
+/// 記録を保存する。保存できたら真
+Future<bool> _record(
   AppDatabase db, {
   required String? typeId,
   required String? catId,
 }) async {
-  const failed = '記録できませんでした。アプリを開いてください';
   final states = {
     for (final s in await db.select(db.appStates).get()) s.key: s.value,
   };
@@ -48,7 +58,7 @@ Future<String> _record(
       householdId == null ||
       typeId == null ||
       catId == null) {
-    return failed;
+    return false;
   }
   // 押した時点の、今のおうちの猫と項目であること（別のおうちに切り替えた後の古い表示など）
   final cat =
@@ -70,12 +80,12 @@ Future<String> _record(
           ))
           .getSingleOrNull();
   if (cat == null || type == null) {
-    return failed;
+    return false;
   }
   await RecordRepository(db).addRecord(
     catId: cat.id,
     recordTypeId: type.id,
     author: Author(id: userId, name: userName),
   );
-  return '✓ ${cat.name}の${type.name}を記録しました';
+  return true;
 }

@@ -17,6 +17,7 @@ import '../../helpers/test_db.dart';
 /// 渡した内容を覚えておく口
 class FakeHost extends WidgetHost {
   final saved = <(String, String)>[];
+  final removed = <String>[];
   var refreshed = 0;
 
   @override
@@ -24,6 +25,9 @@ class FakeHost extends WidgetHost {
 
   @override
   Future<void> refresh() async => refreshed++;
+
+  @override
+  Future<void> remove(String key) async => removed.add(key);
 
   List<Map<String, dynamic>> uis() => [
     for (final (k, v) in saved)
@@ -84,29 +88,25 @@ void main() {
   Future<void> run(String uri) =>
       handleWidgetAction(Uri.parse(uri), db: db, host: host, clock: () => now);
 
-  test('UT-WG-14 記録して、結果を2秒の期限付きで出す。記録は同期待ちに積み、投稿者はログイン中の人', () async {
-    await signIn();
+  test(
+    'UT-WG-14 保存して記録待ちの印を消す。結果は Android が先に出すので書き換えない。同期待ちに積み、投稿者はログイン中の人',
+    () async {
+      await signIn();
 
-    await run('meowscope://widget/record?type=t1&cat=c1');
+      await run('meowscope://widget/record?type=t1&cat=c1');
 
-    final record = await db.select(db.records).getSingle();
-    expect(
-      (record.catId, record.recordTypeId, record.authorName),
-      ('c1', 't1', 'はる'),
-    );
-    expect(await db.select(db.pendingChanges).get(), hasLength(1));
-    expect(host.uis(), [
-      {
-        'mode': 'done',
-        'message': '✓ ミケのご飯を記録しました',
-        'until': now.add(doneDuration).millisecondsSinceEpoch,
-      },
-    ]);
-    expect(host.refreshed, 1);
-  });
+      final record = await db.select(db.records).getSingle();
+      expect(
+        (record.catId, record.recordTypeId, record.authorName),
+        ('c1', 't1', 'はる'),
+      );
+      expect(await db.select(db.pendingChanges).get(), hasLength(1));
+      expect(host.uis(), isEmpty);
+      expect(host.removed, [WidgetKeys.pending]);
+    },
+  );
 
-  test('UT-WG-15 異常系：記録できないときは記録せず、その旨を出す', () async {
-    const failed = '記録できませんでした。アプリを開いてください';
+  test('UT-WG-15 異常系：記録できないときは記録せず、印を消して失敗の文を3秒出す', () async {
     // ログインしていない
     await run('meowscope://widget/record?type=t1&cat=c1');
     await signIn();
@@ -126,7 +126,12 @@ void main() {
       for (final ui in host.uis())
         if (ui['mode'] == 'done') ui['message'],
     ];
-    expect(messages, List.filled(8, failed));
+    expect(messages, List.filled(8, widgetFailedMessage));
+    expect(host.removed, List.filled(8, WidgetKeys.pending));
+    expect(
+      host.uis().first['until'],
+      now.add(failedDuration).millisecondsSinceEpoch,
+    );
   });
 
   test('UT-WG-16 おうちが選ばれていなければ記録しない', () async {
