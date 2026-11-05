@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show TableUpdateQuery;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -104,10 +105,28 @@ final syncInfoProvider = StreamProvider<SyncInfo>((ref) {
       ),
     );
   }
-  // 未送信の件数か同期の状態が変わるたびに、両方を読み直す
-  final pendingQuery = db.select(db.pendingChanges)
-    ..where((p) => p.userId.equals(user.id));
-  return pendingQuery.watch().asyncMap((pending) async {
+  // 未送信・送れなかった変更・同期の状態のどれかが変わるたびに、すべてを読み直す
+  final changed = db
+      .tableUpdates(
+        TableUpdateQuery.onAllTables([
+          db.pendingChanges,
+          db.rejectedChanges,
+          db.appStates,
+        ]),
+      )
+      .map((_) {});
+  Stream<void> ticks() async* {
+    yield null;
+    yield* changed;
+  }
+
+  return ticks().asyncMap((_) async {
+    final pending = await (db.select(
+      db.pendingChanges,
+    )..where((p) => p.userId.equals(user.id))).get();
+    final rejected = await (db.select(
+      db.rejectedChanges,
+    )..where((r) => r.userId.equals(user.id))).get();
     final states = {
       for (final s in await db.select(db.appStates).get()) s.key: s.value,
     };
@@ -116,7 +135,7 @@ final syncInfoProvider = StreamProvider<SyncInfo>((ref) {
         states[SyncKeys.lastSyncedAt(user.id)] ?? '',
       )?.toLocal(),
       pending: {for (final p in pending) (p.targetTable, p.rowId)}.length,
-      rejected: int.tryParse(states[SyncKeys.rejected(user.id)] ?? '') ?? 0,
+      rejected: rejected.length,
       lastRequestId: states[SyncKeys.lastRequestId(user.id)],
     );
   });

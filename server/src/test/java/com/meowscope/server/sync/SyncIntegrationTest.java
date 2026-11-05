@@ -119,6 +119,13 @@ class SyncIntegrationTest {
                 .filter(c -> c.get("table").equals(table)).toList();
     }
 
+    /** 結果ごとの「理由:項目」。理由がなければ null。 */
+    @SuppressWarnings("unchecked")
+    private static List<String> reasons(Map<String, Object> body) {
+        return ((List<Map<String, Object>>) body.get("results")).stream().map(r -> r.get("reason") == null ? null
+                : r.get("field") == null ? (String) r.get("reason") : r.get("reason") + ":" + r.get("field")).toList();
+    }
+
     private static long nextSeq(Map<String, Object> body) {
         return ((Number) body.get("nextSeq")).longValue();
     }
@@ -237,7 +244,7 @@ class SyncIntegrationTest {
     }
 
     @Test
-    @DisplayName("IT-SY-07 内容の誤りは、その変更だけ rejected にし、ほかは反映する")
+    @DisplayName("IT-SY-07 内容の誤りは、その変更だけ rejected にし、ほかは反映する。理由と項目を返す")
     void 内容の誤り() throws Exception {
         UUID catId = UUID.randomUUID();
         Map<String, Object> badLevel = record(catId, null);
@@ -258,6 +265,9 @@ class SyncIntegrationTest {
                 change("records", UUID.randomUUID(), record(UUID.randomUUID(), null))));
         assertThat(statuses(body)).containsExactly("applied", "rejected", "rejected", "rejected", "rejected",
                 "rejected", "rejected");
+        // 端末が利用者に示せるよう、理由と項目の名前を返す。反映したものには返さない（Issue #83）
+        assertThat(reasons(body)).containsExactly(null, "invalid:level", "invalid:valueNumber", "invalid:name",
+                "invalid:birthDate", "unknown_table", "not_found:catId");
     }
 
     @Test

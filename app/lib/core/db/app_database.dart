@@ -19,6 +19,7 @@ part 'app_database.g.dart';
     LocalPhotos,
     ClientLogs,
     WidgetButtons,
+    RejectedChanges,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -34,7 +35,8 @@ class AppDatabase extends _$AppDatabase {
   // 6：メンバーのユーザーの ID を空にできるようにする（退会した人）
   // 7：端末のログの表を追加
   // 8：アイコンの有無を追加　9：ウィジェットのボタンの表を追加
-  int get schemaVersion => 9;
+  // 10：送れなかった変更の表を追加（件数だけの記録は、どの行か分からないので捨てる）
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -80,6 +82,12 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 9) {
         await m.createTable(widgetButtons);
+      }
+      if (from < 10) {
+        await m.createTable(rejectedChanges);
+        await (delete(
+          appStates,
+        )..where((s) => s.key.like('sync.rejected.%'))).go();
       }
     },
     beforeOpen: (details) async {

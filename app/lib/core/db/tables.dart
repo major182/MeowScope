@@ -166,3 +166,22 @@ class WidgetButtons extends Table with SyncColumns {
   /// 並び順（0 から）
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 }
+
+/// サーバーが受け付けなかった変更（端末だけの表、Issue #83）。どの行が、なぜ送れなかったかを S-48 に出す。
+/// 同じ行がまた送れなかったときは、新しい理由で置き換える
+@DataClassName('RejectedChangeRow')
+class RejectedChanges extends Table {
+  TextColumn get userId => text()();
+  TextColumn get targetTable => text()();
+  TextColumn get rowId => text()();
+
+  /// サーバーの理由（unknown_table・forbidden・not_found・invalid・too_many・constraint）
+  TextColumn get reason => text()();
+
+  /// 値の誤りのときの項目の名前（例：level）
+  TextColumn get field => text().nullable()();
+  DateTimeColumn get rejectedAt => dateTime()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {userId, targetTable, rowId};
+}

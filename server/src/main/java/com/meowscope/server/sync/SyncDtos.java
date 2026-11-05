@@ -37,8 +37,16 @@ public final class SyncDtos {
             Map<String, Object> data) {
     }
 
-    /** 1件ごとの結果。{@code applied}・{@code ignored}・{@code rejected}。 */
-    public record Result(UUID id, String status) {
+    /**
+     * 1件ごとの結果。{@code applied}・{@code ignored}・{@code rejected}。
+     *
+     * <p>{@code rejected} のときは、理由（{@code reason}）と、値の誤りなら項目の名前（{@code field}）も返す。
+     * 端末はこれで、どの変更がなぜ送れなかったかを利用者に示す（Issue #83）。それ以外のときは null
+     */
+    public record Result(UUID id, String status, String reason, String field) {
+        Result(UUID id, String status) {
+            this(id, status, null, null);
+        }
     }
 
     /** サーバーから端末へ送る変更。{@code seq} はその行の通し番号。 */

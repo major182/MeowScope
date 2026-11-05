@@ -144,14 +144,20 @@ final class Fields {
     /** 変更を受け付けないときの理由。ログの {@code evt.reason} に出す（内容は出さない）。 */
     static final class Rejected extends RuntimeException {
         private final String reason;
+        private final String field;
 
         Rejected(String reason, String field) {
             super(field == null ? reason : reason + ":" + field);
             this.reason = reason;
+            this.field = field;
         }
 
         String reason() {
             return reason;
+        }
+
+        String field() {
+            return field;
         }
     }
 }

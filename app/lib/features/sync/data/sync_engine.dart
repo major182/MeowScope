@@ -38,7 +38,6 @@ class SyncNeedsLogin extends SyncOutcome {
 abstract final class SyncKeys {
   static String lastSeq(String userId) => 'sync.lastSeq.$userId';
   static String lastSyncedAt(String userId) => 'sync.lastSyncedAt.$userId';
-  static String rejected(String userId) => 'sync.rejected.$userId';
   static String lastRequestId(String userId) => 'sync.lastRequestId.$userId';
 }
 
@@ -95,12 +94,6 @@ class SyncEngine {
       _clock().toUtc().toIso8601String(),
     );
     await _setState(SyncKeys.lastRequestId(userId), null);
-    if (rejected > 0) {
-      final before = int.tryParse(
-        await _state(SyncKeys.rejected(userId)) ?? '',
-      );
-      await _setState(SyncKeys.rejected(userId), '${(before ?? 0) + rejected}');
-    }
     await _chooseHousehold(userId);
     return SyncSucceeded(rejected: rejected);
   }
@@ -148,6 +141,13 @@ class SyncEngine {
             rethrow;
           }
           rejected++;
+          await _reject(
+            userId,
+            'households',
+            pending.rowId,
+            e.response?.statusCode == 404 ? 'not_found' : 'invalid',
+            null,
+          );
         }
       }
       await (_db.delete(
@@ -238,7 +238,35 @@ class SyncEngine {
     }
     final results = (body['results'] as List).cast<Map<String, dynamic>>();
     final rejected = results.where((r) => r['status'] == 'rejected').length;
-    // applied・ignored・rejected のどれも、送り直さない（rejected は件数だけを S-46 に出す）
+    // applied・ignored・rejected のどれも、送り直さない。rejected は、どの行がなぜ送れなかったかを残して
+    // S-48 に出す（Issue #83）。送れた行は、前に送れなかった記録から外す
+    final tables = {
+      for (final c in changes) c['id'] as String: c['table'] as String,
+    };
+    for (final r in results) {
+      final id = r['id'] as String;
+      final table = tables[id];
+      if (table == null) {
+        continue;
+      }
+      if (r['status'] == 'rejected') {
+        await _reject(
+          userId,
+          table,
+          id,
+          r['reason'] as String? ?? 'unknown',
+          r['field'] as String?,
+        );
+      } else {
+        await (_db.delete(_db.rejectedChanges)..where(
+              (x) =>
+                  x.userId.equals(userId) &
+                  x.targetTable.equals(table) &
+                  x.rowId.equals(id),
+            ))
+            .go();
+      }
+    }
     await (_db.delete(
       _db.pendingChanges,
     )..where((p) => p.seq.isIn(sentSeqs))).go();
@@ -255,6 +283,26 @@ class SyncEngine {
     final remaining = pending.length > sentSeqs.length;
     return (again: body['hasMore'] == true || remaining, rejected: rejected);
   }
+
+  /// 送れなかった変更を残す。同じ行の前の記録は置き換える
+  Future<void> _reject(
+    String userId,
+    String table,
+    String rowId,
+    String reason,
+    String? field,
+  ) => _db
+      .into(_db.rejectedChanges)
+      .insertOnConflictUpdate(
+        RejectedChangesCompanion.insert(
+          userId: userId,
+          targetTable: table,
+          rowId: rowId,
+          reason: reason,
+          field: Value(field),
+          rejectedAt: _clock().toUtc(),
+        ),
+      );
 
   /// 送る内容。行がなくなっていれば null
   Future<Map<String, Object?>?> _changeOf(
