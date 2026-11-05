@@ -73,6 +73,16 @@ class SyncReader {
         this.json = json;
     }
 
+    /** 番号を振る処理のロックを共有で取る。トランザクションの終わりまで持ち、その間は新しい番号が確定しない（V7）。 */
+    void lockShared() {
+        jdbc.sql("SELECT pg_advisory_xact_lock_shared(sync_lock_key())").query((rs, n) -> 0).list();
+    }
+
+    /** 振った番号の最新。 */
+    long latestSeq() {
+        return jdbc.sql("SELECT last_value FROM sync_seq").query(Long.class).single();
+    }
+
     /** 番号順に最大 {@code limit + 1} 件を返す。{@code limit} を超えていれば、まだ続きがある。 */
     List<ChangeOut> read(UUID userId, long lastSeq, int limit) {
         List<ChangeOut> all = new ArrayList<>();
@@ -100,8 +110,7 @@ class SyncReader {
         if (lastSeq == 0) {
             return false;
         }
-        long latest = jdbc.sql("SELECT last_value FROM sync_seq").query(Long.class).single();
-        if (lastSeq > latest) {
+        if (lastSeq > latestSeq()) {
             return true;
         }
         long purged = jdbc.sql("SELECT purged_seq FROM sync_purges WHERE id = 1").query(Long.class).single();

@@ -94,6 +94,8 @@ public class InvitationService {
         if (!access.isMember(userId, row.householdId())) {
             jdbc.sql("INSERT INTO household_members (id, household_id, user_id) VALUES (:id, :h, :u)")
                     .param("id", UUID.randomUUID()).param("h", row.householdId()).param("u", userId).update();
+            // 加わった人のユーザーの行（表示名・アイコンの有無）は番号が古く、前からいるメンバーへ差分で届かない。番号を進める
+            jdbc.sql("UPDATE users SET server_seq = nextval('sync_seq') WHERE id = :u").param("u", userId).update();
         }
         log.atInfo().addKeyValue("evt.name", "invitation_accept").addKeyValue("evt.outcome", "success")
                 .addKeyValue("usr.id", userId.toString()).addKeyValue("household.id", row.householdId().toString())

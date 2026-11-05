@@ -60,6 +60,12 @@ public class LeaveService {
             if (!keepRecords) {
                 deletePosts(userId, householdId);
             }
+            // ウィジェットのボタンはアカウントのもの。抜けたおうちの項目のボタンは使えないので、削除の印を付ける
+            jdbc.sql("""
+                    UPDATE widget_buttons SET deleted_at = now(), updated_at = now(), server_seq = nextval('sync_seq')
+                    WHERE user_id = :u AND deleted_at IS NULL
+                      AND record_type_id IN (SELECT id FROM record_types WHERE household_id = :h)
+                    """).param("h", householdId).param("u", userId).update();
             jdbc.sql("""
                     UPDATE household_members SET deleted_at = now(), updated_at = now(),
                       server_seq = nextval('sync_seq')
@@ -107,6 +113,9 @@ public class LeaveService {
                 .param("h", householdId).query(String.class).list());
         // 表の外部キーは ON DELETE CASCADE なので、おうちを消せば中のデータもすべて消える
         jdbc.sql("DELETE FROM households WHERE id = :h").param("h", householdId).update();
+        // 消えた行（自分のメンバーの行も）の削除は差分では届かない。新しい番号で purged_seq を進め、
+        // それより前の位置の端末（同じ人の別の端末を含む）に全件を取り直させる（PurgeService と同じ）
+        jdbc.sql("UPDATE sync_purges SET purged_seq = sync_next_seq(), purged_at = now() WHERE id = 1").update();
         files.forEach(storage::delete);
     }
 }

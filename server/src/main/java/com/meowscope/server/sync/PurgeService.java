@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <ul>
  *   <li>参照する側から消す：写真 → 記録 → ウィジェットのボタン → 記録項目 → 猫 → おうちのメンバー → おうち
  *   <li>写真は、サーバーの画像のファイルも消す
- *   <li>消した行の通し番号の最大を {@code sync_purges} に残す。それより前の位置から同期してきた端末には、
+ *   <li>消したら、新しい通し番号を {@code sync_purges} に残す。それより前の位置から同期してきた端末には、
  *       全件の取り直しを指示する（消えた行の削除を受け取れないため。{@link SyncReader#fullResyncRequired}）
  *   <li>期限が切れて使えなくなったログインのトークン・招待・確認コードも片付ける
  * </ul>
@@ -57,26 +57,28 @@ public class PurgeService {
     public int purge() {
         Instant now = clock.instant();
         Timestamp before = Timestamp.from(now.minus(RETENTION));
-        // 写真のファイルは、行を消す前に場所を控える
-        List<String> files = jdbc.sql("""
-                SELECT file_path FROM record_photos
-                WHERE deleted_at < :before AND file_path IS NOT NULL
-                """).param("before", before).query(String.class).list();
-        long maxSeq = 0;
+        // 画像のファイルは、行を消す前に場所を控える。削除の印のない子の行も、親と一緒に（CASCADE で）消えるので含める
+        List<String> files = new java.util.ArrayList<>(jdbc.sql("""
+                SELECT p.file_path FROM record_photos p JOIN records r ON r.id = p.record_id
+                JOIN record_types t ON t.id = r.record_type_id JOIN cats c ON c.id = r.cat_id
+                JOIN households h ON h.id = c.household_id
+                WHERE p.file_path IS NOT NULL AND (p.deleted_at < :before OR r.deleted_at < :before
+                  OR t.deleted_at < :before OR c.deleted_at < :before OR h.deleted_at < :before)
+                """).param("before", before).query(String.class).list());
+        files.addAll(jdbc.sql("""
+                SELECT c.icon_path FROM cats c JOIN households h ON h.id = c.household_id
+                WHERE c.icon_path IS NOT NULL AND (c.deleted_at < :before OR h.deleted_at < :before)
+                """).param("before", before).query(String.class).list());
         int total = 0;
         for (String table : TABLES) {
-            // 消す行がない表では max が空になるので、0 として読む
-            long seq = jdbc.sql("SELECT COALESCE(max(server_seq), 0) FROM " + table + " WHERE deleted_at < :before")
-                    .param("before", before).query(Long.class).single();
-            int count = jdbc.sql("DELETE FROM " + table + " WHERE deleted_at < :before").param("before", before)
+            total += jdbc.sql("DELETE FROM " + table + " WHERE deleted_at < :before").param("before", before)
                     .update();
-            maxSeq = Math.max(maxSeq, seq);
-            total += count;
         }
         if (total > 0) {
-            jdbc.sql("""
-                    UPDATE sync_purges SET purged_seq = GREATEST(purged_seq, :seq), purged_at = :now WHERE id = 1
-                    """).param("seq", maxSeq).param("now", Timestamp.from(now)).update();
+            // 消えた行（一緒に消えた子の行も）の削除は差分では届かない。新しい番号で purged_seq を進め、
+            // それより前の位置の端末に全件を取り直させる（V7 の sync_next_seq）
+            jdbc.sql("UPDATE sync_purges SET purged_seq = sync_next_seq(), purged_at = :now WHERE id = 1")
+                    .param("now", Timestamp.from(now)).update();
         }
         int housekeeping = jdbc.sql("""
                 DELETE FROM refresh_tokens WHERE expires_at < :before OR revoked_at < :before

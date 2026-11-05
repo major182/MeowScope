@@ -13,6 +13,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,6 +27,8 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.json.JsonMapper;
 
 @IntegrationTest
@@ -426,5 +431,86 @@ class SyncIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"lastSeq\":0}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
+    }
+
+    @Autowired
+    PlatformTransactionManager transactionManager;
+
+    private long seqOfCat(UUID id) {
+        return jdbc.sql("SELECT server_seq FROM cats WHERE id = :id").param("id", id).query(Long.class).single();
+    }
+
+    @Test
+    @DisplayName("IT-SY-16 同時の変更：先に番号を取った変更が確定するまで、次の変更は番号を取れない。確定の順と番号の順が同じ（BR-10）")
+    void 番号は確定の順() throws Exception {
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+        syncBody(haru, 0, List.of(change("cats", first, cat("ミケ")), change("cats", second, cat("タマ"))));
+        TransactionTemplate tx = new TransactionTemplate(transactionManager);
+        CountDownLatch updated = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+
+        // 1つ目：番号を進めたまま、確定を待たせる
+        CompletableFuture<Void> a = CompletableFuture.runAsync(() -> tx.executeWithoutResult(s -> {
+            jdbc.sql("UPDATE cats SET name = 'ミケ2', server_seq = nextval('sync_seq') WHERE id = :id")
+                    .param("id", first).update();
+            updated.countDown();
+            try {
+                release.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }));
+        assertThat(updated.await(10, TimeUnit.SECONDS)).isTrue();
+        // 2つ目：1つ目の確定まで待つ
+        CompletableFuture<Void> b = CompletableFuture.runAsync(() -> tx.executeWithoutResult(s -> jdbc.sql(
+                "UPDATE cats SET name = 'タマ2', server_seq = nextval('sync_seq') WHERE id = :id")
+                .param("id", second).update()));
+        Thread.sleep(500);
+        assertThat(b).isNotDone();
+
+        release.countDown();
+        a.get(10, TimeUnit.SECONDS);
+        b.get(10, TimeUnit.SECONDS);
+        assertThat(seqOfCat(second)).isGreaterThan(seqOfCat(first));
+    }
+
+    @Test
+    @DisplayName("IT-SY-17 同期の途中の変更：変更の確定を待ってから読む。最後のページの次の位置は、振った番号の最新")
+    void 読むときは確定を待つ() throws Exception {
+        UUID id = UUID.randomUUID();
+        long start = ((Number) syncBody(haru, 0, List.of(change("cats", id, cat("ミケ")))).get("nextSeq")).longValue();
+        TransactionTemplate tx = new TransactionTemplate(transactionManager);
+        CountDownLatch updated = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        CompletableFuture<Void> writer = CompletableFuture.runAsync(() -> tx.executeWithoutResult(s -> {
+            jdbc.sql("UPDATE cats SET name = 'ミケ2', server_seq = nextval('sync_seq') WHERE id = :id")
+                    .param("id", id).update();
+            updated.countDown();
+            try {
+                release.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }));
+        assertThat(updated.await(10, TimeUnit.SECONDS)).isTrue();
+
+        CompletableFuture<Map<String, Object>> reading = CompletableFuture.supplyAsync(() -> {
+            try {
+                return syncBody(haru, start, List.of());
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        });
+        Thread.sleep(500);
+        assertThat(reading).isNotDone();
+        release.countDown();
+        writer.get(10, TimeUnit.SECONDS);
+
+        Map<String, Object> body = reading.get(10, TimeUnit.SECONDS);
+        assertThat(changes(body, "cats")).extracting(c -> (Object) ((Map<?, ?>) c.get("data")).get("name"))
+                .containsExactly("ミケ2");
+        long latest = jdbc.sql("SELECT last_value FROM sync_seq").query(Long.class).single();
+        assertThat(((Number) body.get("nextSeq")).longValue()).isEqualTo(latest);
     }
 }
