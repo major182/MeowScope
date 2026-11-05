@@ -4,11 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
+import '../../../core/today.dart';
 import '../../../app/main_shell.dart' show wideLayoutWidth;
 import '../../sync/presentation/sync_status_screen.dart';
 import '../../household/data/household_repository.dart';
 import '../data/record_repository.dart';
 import '../../../core/widgets/balanced_text.dart';
+import '../../../core/widgets/save_guard.dart';
 import 'record_format.dart';
 import 'record_providers.dart';
 import 'today_detail.dart';
@@ -26,12 +28,14 @@ final _catsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
 
 final _todayProvider = StreamProvider.autoDispose<List<RecordEntry>>((ref) {
   final session = ref.watch(sessionProvider).value;
-  if (session == null) {
+  // 日付が変わったら、新しい日の記録を見張り直す（B-3）
+  final today = ref.watch(todayProvider).value;
+  if (session == null || today == null) {
     return Stream.value(const []);
   }
   return ref
       .watch(recordRepositoryProvider)
-      .watchDay(session.householdId, DateTime.now());
+      .watchDay(session.householdId, today);
 });
 
 /// 広い画面での記録のボタン1つの幅の上限
@@ -143,6 +147,9 @@ class HomeScreen extends ConsumerWidget {
   ) async {
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
+    // 猫を選ぶのを待つ間に画面が閉じても使えるよう、先に取っておく
+    final repo = ref.read(recordRepositoryProvider);
+    final log = ref.read(appLogProvider);
     if (cats.isEmpty) {
       messenger.showSnackBar(const SnackBar(content: Text('先に猫を登録してください')));
       return;
@@ -166,13 +173,20 @@ class HomeScreen extends ConsumerWidget {
     if (cat == null) {
       return;
     }
-    final id = await ref
-        .read(recordRepositoryProvider)
-        .addRecord(
-          catId: cat.id,
-          recordTypeId: type.id,
-          author: session.author,
-        );
+    late final String id;
+    final saved = await guardSave(
+      log: log,
+      messenger: messenger,
+      what: '記録の追加',
+      action: () async => id = await repo.addRecord(
+        catId: cat.id,
+        recordTypeId: type.id,
+        author: session.author,
+      ),
+    );
+    if (!saved) {
+      return;
+    }
     messenger.showSnackBar(
       SnackBar(
         content: Text('${cat.name}の${type.name}を記録しました'),

@@ -278,6 +278,28 @@ void main() {
       await close(tester);
     });
 
+    testWidgets(
+      'UT-MG-16 S-42：おうち名が空（空白だけも）なら入力チェックの文を出して保存しない。直して保存すると文が消える',
+      (tester) async {
+        await start(tester);
+        await open(tester, 'おうちの管理');
+
+        await tester.enterText(find.byType(TextField), '　 ');
+        await tester.tap(find.widgetWithText(TextButton, '保存'));
+        await tester.pumpAndSettle();
+        expect(find.text('おうちの名前を入力してください'), findsOneWidget);
+        expect(find.text('おうちの名前を保存しました'), findsNothing);
+        expect((await db.select(db.households).getSingle()).name, 'みけ家');
+
+        await tester.enterText(find.byType(TextField), 'たま家');
+        await tester.tap(find.widgetWithText(TextButton, '保存'));
+        await tester.pumpAndSettle();
+        expect(find.text('おうちの名前を入力してください'), findsNothing);
+        expect(find.text('おうちの名前を保存しました'), findsOneWidget);
+        await close(tester);
+      },
+    );
+
     testWidgets('UT-MG-10 S-42：ほかにメンバーがいれば「残す・消す」を選んで抜け、おうちの作成へ戻る', (
       tester,
     ) async {

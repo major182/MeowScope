@@ -46,15 +46,16 @@ class EditableIcon extends ConsumerWidget {
 
   Future<void> _change(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
+    // 画像を選ぶ間に画面が閉じても使えるよう、先に取っておく（閉じた後の ref は使えない）
+    final container = ProviderScope.containerOf(context);
+    final repo = ref.read(iconRepositoryProvider);
     final bytes = await ref.read(photoPickerProvider).pick(PhotoSource.gallery);
     if (bytes == null) {
       return;
     }
     try {
-      await ref
-          .read(iconRepositoryProvider)
-          .setIcon(icon.owner, icon.id, bytes);
-      ref.invalidate(iconImageProvider(icon));
+      await repo.setIcon(icon.owner, icon.id, bytes);
+      container.invalidate(iconImageProvider(icon));
       messenger.showSnackBar(const SnackBar(content: Text('アイコンを変更しました')));
     } on PhotoUnreadable {
       messenger.showSnackBar(const SnackBar(content: Text('この画像は読み込めませんでした')));

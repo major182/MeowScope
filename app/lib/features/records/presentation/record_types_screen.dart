@@ -7,6 +7,7 @@ import '../../../core/providers.dart';
 import '../domain/custom_type.dart';
 import '../domain/record_kind.dart';
 import '../../../core/widgets/readable_width.dart';
+import '../../../core/widgets/save_guard.dart';
 import 'record_providers.dart';
 import 'type_icon.dart';
 
@@ -128,20 +129,31 @@ class _RecordTypeFormScreenState extends ConsumerState<RecordTypeFormScreen> {
     final router = GoRouter.of(context);
     final repo = ref.read(recordRepositoryProvider);
     final id = widget.typeId;
-    if (id == null) {
-      await repo.addCustomType(
-        householdId: session.householdId,
-        userId: session.author.id,
-        name: _name.text,
-        icon: _icon.value,
-      );
-    } else {
-      await repo.updateCustomType(
-        id: id,
-        userId: session.author.id,
-        name: _name.text,
-        icon: _icon.value,
-      );
+    final saved = await guardSave(
+      log: ref.read(appLogProvider),
+      messenger: ScaffoldMessenger.of(context),
+      what: '記録項目の保存',
+      action: () async {
+        if (id == null) {
+          await repo.addCustomType(
+            householdId: session.householdId,
+            userId: session.author.id,
+            name: _name.text,
+            icon: _icon.value,
+          );
+        } else {
+          await repo.updateCustomType(
+            id: id,
+            userId: session.author.id,
+            name: _name.text,
+            icon: _icon.value,
+          );
+        }
+      },
+    );
+    if (!saved) {
+      if (mounted) setState(() => _saving = false);
+      return;
     }
     router.pop();
   }

@@ -6,6 +6,7 @@ import '../../../core/api/api_error.dart';
 import '../../../core/providers.dart';
 import '../../../core/widgets/confirm_delete.dart';
 import '../../../core/widgets/readable_width.dart';
+import '../../../core/widgets/save_guard.dart';
 
 /// おうちの作成または参加（S-04）
 ///
@@ -37,9 +38,19 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
     }
     setState(() => _saving = true);
     final router = GoRouter.of(context);
-    await ref
-        .read(householdRepositoryProvider)
-        .createHousehold(householdName: _householdName.text, user: user);
+    final saved = await guardSave(
+      log: ref.read(appLogProvider),
+      messenger: ScaffoldMessenger.of(context),
+      what: 'おうちの作成',
+      action: () => ref
+          .read(householdRepositoryProvider)
+          .createHousehold(householdName: _householdName.text, user: user),
+    );
+    if (!saved) {
+      // もう一度押せるように戻す
+      if (mounted) setState(() => _saving = false);
+      return;
+    }
     // おうちができたら、続けて最初の猫を登録する（S-05）
     router.push('/cats/new');
   }

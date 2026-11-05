@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../../../core/widgets/readable_width.dart';
+import '../../../core/widgets/save_guard.dart';
 import '../../records/presentation/record_providers.dart';
 import '../../records/presentation/type_icon.dart';
 import '../data/widget_button_repository.dart';
@@ -97,11 +98,20 @@ class WidgetButtonsScreen extends ConsumerWidget {
                   onPressed: full || choices.isEmpty
                       ? null
                       : () async {
+                          // 選ぶのを待つ間に画面が閉じても使えるよう、先に取っておく
+                          final messenger = ScaffoldMessenger.of(context);
+                          final log = ref.read(appLogProvider);
                           final type = await _choose(context, choices);
                           if (type != null) {
-                            await repo.add(
-                              userId: session.author.id,
-                              recordTypeId: type.id,
+                            // 上限や同じ項目は画面で防いでいるが、別の端末の同期と重なると断られることがある
+                            await guardSave(
+                              log: log,
+                              messenger: messenger,
+                              what: 'ウィジェットのボタンの追加',
+                              action: () => repo.add(
+                                userId: session.author.id,
+                                recordTypeId: type.id,
+                              ),
                             );
                           }
                         },
