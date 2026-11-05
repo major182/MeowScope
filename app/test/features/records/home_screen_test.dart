@@ -8,6 +8,7 @@ import 'package:meowscope/core/providers.dart';
 import 'package:meowscope/core/today.dart';
 import 'package:meowscope/core/widgets/save_guard.dart';
 import 'package:meowscope/features/household/data/household_repository.dart';
+import 'package:meowscope/features/icons/icon_avatar.dart';
 import 'package:meowscope/features/records/data/record_repository.dart';
 import 'package:meowscope/features/records/presentation/home_screen.dart';
 
@@ -138,6 +139,41 @@ void main() {
     await close(tester);
   });
 
+  testWidgets(
+    'UT-HM-16 猫の選択（S-11）は猫をアイコンと名前で出し、「キャンセル」で保存せずに閉じる。今日の記録の猫もアイコンと並べる',
+    (tester) async {
+      await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+      await addCat(db, id: 'c2', householdId: 'h1', name: 'タマ');
+      await show(tester);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, '薬'));
+      await tester.pumpAndSettle();
+      final dialog = find.byType(SimpleDialog);
+      expect(
+        find.descendant(of: dialog, matching: find.byType(IconAvatar)),
+        findsNWidgets(2),
+      );
+      await tester.tap(find.widgetWithText(TextButton, 'キャンセル'));
+      await tester.pumpAndSettle();
+      expect(dialog, findsNothing);
+      expect(await records(), isEmpty);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, '薬'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(SimpleDialogOption, 'ミケ'));
+      await tester.pumpAndSettle();
+      final tile = find.ancestor(
+        of: find.text('ミケ　薬'),
+        matching: find.byType(ListTile),
+      );
+      expect(
+        find.descendant(of: tile, matching: find.byType(IconAvatar)),
+        findsOneWidget,
+      );
+      await close(tester);
+    },
+  );
+
   testWidgets('UT-HM-06 猫の選択を閉じたら保存しない', (tester) async {
     await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
     await addCat(db, id: 'c2', householdId: 'h1', name: 'タマ');
@@ -163,14 +199,15 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('UT-HM-08 猫がいても「猫を追加」で登録画面へ進める', (tester) async {
+  testWidgets('UT-HM-08 上部は左におうち名、右に同期の状態。「猫を追加」は出さない（猫の追加は S-41 で行う）', (
+    tester,
+  ) async {
     await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
     await show(tester);
 
-    await tester.tap(find.text('猫を追加'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('猫の登録画面'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'みけ家'), findsOneWidget);
+    expect(find.textContaining('同期済み'), findsOneWidget);
+    expect(find.text('猫を追加'), findsNothing);
     await close(tester);
   });
 

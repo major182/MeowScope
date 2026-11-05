@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
+import '../../icons/icon_avatar.dart';
+import '../../icons/icon_repository.dart';
 
 /// 絞り込みに出す猫（お別れを含み、削除済みを除く）
 final filterCatsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
@@ -43,7 +45,15 @@ class CatFilter extends ConsumerWidget {
         for (final c in cats)
           DropdownMenuItem<String?>(
             value: c.id,
-            child: Text(c.status == 'farewell' ? '${c.name}（お別れ）' : c.name),
+            child: IconLabel(
+              icon: IconRef(
+                IconOwner.cat,
+                c.id,
+                hasIcon: c.hasIcon,
+                version: c.serverSeq,
+              ),
+              text: c.status == 'farewell' ? '${c.name}（お別れ）' : c.name,
+            ),
           ),
       ],
     );

@@ -202,7 +202,8 @@ void main() {
       await tester.tap(find.text('参加する'));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(AppBar, 'ホーム'), findsOneWidget);
+      // テスト用のサーバーは同期でおうちの行を返さないので、見出しではなくホームの中身で確かめる
+      expect(find.text('今日の記録'), findsOneWidget);
       // 参加したらすぐに同期して、おうちの中身を受け取る
       expect(server.requests.map((r) => r.path), [
         '/invitations/accept',

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
+import '../../icons/icon_avatar.dart';
+import '../../icons/icon_repository.dart';
 import '../../../core/today.dart';
 import '../../../app/main_shell.dart' show wideLayoutWidth;
 import '../../sync/presentation/sync_status_screen.dart';
@@ -24,6 +26,17 @@ final _catsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
   return ref
       .watch(recordRepositoryProvider)
       .watchActiveCats(session.householdId);
+});
+
+/// 上部に出すおうち名（S-10）
+final _householdNameProvider = StreamProvider.autoDispose<String?>((ref) {
+  final session = ref.watch(sessionProvider).value;
+  if (session == null) {
+    return Stream.value(null);
+  }
+  return ref
+      .watch(accountRepositoryProvider)
+      .watchHouseholdName(session.householdId);
 });
 
 final _todayProvider = StreamProvider.autoDispose<List<RecordEntry>>((ref) {
@@ -72,16 +85,10 @@ class HomeScreen extends ConsumerWidget {
     final cats = ref.watch(_catsProvider).value ?? const [];
     final detail = TodayDetail.forPlatform;
     return Scaffold(
+      // 左上におうち名、右に同期の状態（S-10）。猫の追加は設定の猫の一覧（S-41）から行う
       appBar: AppBar(
-        title: const Text('ホーム'),
-        actions: [
-          const SyncIndicator(),
-          TextButton.icon(
-            onPressed: () => context.push('/cats/new'),
-            icon: const Icon(Icons.add),
-            label: const Text('猫を追加'),
-          ),
-        ],
+        title: Text(ref.watch(_householdNameProvider).value ?? ''),
+        actions: const [SyncIndicator()],
       ),
       body: ListView(
         padding: const EdgeInsets.all(12),
@@ -119,7 +126,13 @@ class HomeScreen extends ConsumerWidget {
           for (final e in today)
             ListTile(
               leading: Text(formatTime(e.recordedAt)),
-              title: Text('${e.catName}　${e.typeName}'),
+              title: Align(
+                alignment: Alignment.centerLeft,
+                child: IconLabel(
+                  icon: e.catIcon,
+                  text: '${e.catName}　${e.typeName}',
+                ),
+              ),
               subtitle: switch (todayDetailText(e, detail)) {
                 null => null,
                 // Android は一覧が長くならないよう2行までにする。Windows は全文を出す
@@ -165,8 +178,28 @@ class HomeScreen extends ConsumerWidget {
                 for (final c in cats)
                   SimpleDialogOption(
                     onPressed: () => Navigator.pop(context, c),
-                    child: Text(c.name),
+                    child: IconLabel(
+                      icon: IconRef(
+                        IconOwner.cat,
+                        c.id,
+                        hasIcon: c.hasIcon,
+                        version: c.serverSeq,
+                      ),
+                      text: c.name,
+                      radius: 16,
+                    ),
                   ),
+                // 外側を押しても閉じるが、閉じ方が分かるようにボタンも置く（S-11）
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16, top: 8),
+                    child: TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('キャンセル'),
+                    ),
+                  ),
+                ),
               ],
             ),
           );

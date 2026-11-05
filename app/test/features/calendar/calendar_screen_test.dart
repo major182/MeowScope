@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,7 @@ import 'package:meowscope/features/calendar/domain/calendar_month.dart';
 import 'package:meowscope/features/calendar/presentation/calendar_screen.dart';
 import 'package:meowscope/features/calendar/presentation/day_records.dart';
 import 'package:meowscope/features/household/data/household_repository.dart';
+import 'package:meowscope/features/icons/icon_avatar.dart';
 import 'package:meowscope/features/records/data/record_repository.dart';
 import 'package:meowscope/features/settings/data/settings_repository.dart';
 
@@ -231,8 +233,17 @@ void main() {
 
       final tiles = tester.widgetList<ListTile>(find.byType(ListTile)).toList();
       expect(tiles, hasLength(2));
-      expect((tiles[0].title! as Text).data, 'タマ　おしっこ');
-      expect((tiles[1].title! as Text).data, 'ミケ　吐いた');
+      // 名前はアイコンと並べて出す（画面設計書 1章）。文はその中にある
+      String titleOf(ListTile tile) => tester
+          .widget<Text>(
+            find.descendant(
+              of: find.byWidget(tile.title!),
+              matching: find.byType(Text),
+            ),
+          )
+          .data!;
+      expect(titleOf(tiles[0]), 'タマ　おしっこ');
+      expect(titleOf(tiles[1]), 'ミケ　吐いた');
       expect(tiles[0].trailing, isNull);
       expect(
         find.image(const AssetImage('assets/icons/cal_memo.png')),
@@ -277,6 +288,42 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('詳細：$id'), findsOneWidget);
+      await close(tester);
+    });
+
+    testWidgets('UT-CS-13 写真がある記録には写真の印を付け、ない記録と削除した写真には付けない。猫はアイコンと並べる', (
+      tester,
+    ) async {
+      final withPhoto = await record('c1', 'vomit', DateTime(2026, 11, 2, 12));
+      final deleted = await record('c2', 'urine', DateTime(2026, 11, 2, 9, 30));
+      await record('c1', 'food', DateTime(2026, 11, 2, 8));
+      Future<void> photo(String id, String recordId, {DateTime? deletedAt}) =>
+          db
+              .into(db.recordPhotos)
+              .insert(
+                RecordPhotosCompanion.insert(
+                  id: id,
+                  createdAt: testTime,
+                  updatedAt: testTime,
+                  recordId: recordId,
+                  sortOrder: 1,
+                  deletedAt: Value(deletedAt),
+                ),
+              );
+      await photo('p1', withPhoto);
+      await photo('p2', deleted, deletedAt: testTime);
+      await show(tester, DayListScreen(day: _today));
+
+      expect(find.byIcon(Icons.photo_camera_outlined), findsOneWidget);
+      final photoTile = find.ancestor(
+        of: find.byIcon(Icons.photo_camera_outlined),
+        matching: find.byType(ListTile),
+      );
+      expect(
+        find.descendant(of: photoTile, matching: find.text('ミケ　吐いた')),
+        findsOneWidget,
+      );
+      expect(find.byType(IconAvatar), findsNWidgets(3));
       await close(tester);
     });
   });

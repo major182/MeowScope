@@ -101,23 +101,24 @@ class SyncIndicator extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(syncControllerProvider);
     final info = ref.watch(syncInfoProvider).value;
-    final IconData icon;
-    if (state.running) {
-      icon = Icons.sync;
-    } else if (state.error != null || state.needsLogin) {
-      icon = Icons.cloud_off;
-    } else if ((info?.pending ?? 0) > 0) {
-      icon = Icons.cloud_upload_outlined;
-    } else {
-      icon = Icons.cloud_done_outlined;
-    }
+    // 印の形と状態の文（S-10：同期済み・未送信あり・同期中・失敗）
+    final (IconData icon, String status) = switch (state) {
+      _ when state.running => (Icons.sync, '同期中'),
+      _ when state.error != null || state.needsLogin => (Icons.cloud_off, '失敗'),
+      _ when (info?.pending ?? 0) > 0 => (Icons.cloud_upload_outlined, '未送信あり'),
+      _ => (Icons.cloud_done_outlined, '同期済み'),
+    };
+    final time = info?.lastSyncedAt == null
+        ? '未同期'
+        : formatSyncTime(info!.lastSyncedAt);
     return TextButton.icon(
       onPressed: state.running
           ? null
           : () => ref.read(syncControllerProvider.notifier).sync(),
       icon: Icon(icon, size: 18),
+      // 横に最終同期の時刻を出す（画面設計書 5章 S-46 の決まり）
       label: Text(
-        info?.lastSyncedAt == null ? '未同期' : formatSyncTime(info!.lastSyncedAt),
+        '$time  $status',
         style: Theme.of(context).textTheme.labelSmall,
       ),
     );
