@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 2×2 の大きさ。表示は Dart とウィジェットの操作で描き直すので、定期の更新はしない -->
+<!-- 2×2 の大きさ。表示は Dart とウィジェットの操作で描き直す。
+     端末を長く休ませた後に期限の切れた表示（猫の選択・記録の結果）が残らないよう、念のため30分ごと（Android の最短）にも描き直す。
+     描き直すと、期限の切れた表示はボタンに戻る（Issue #93） -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
     android:initialLayout="@layout/widget_record"
@@ -8,5 +10,5 @@
     android:targetCellWidth="2"
     android:targetCellHeight="2"
     android:resizeMode="horizontal|vertical"
-    android:updatePeriodMillis="0"
+    android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen" />
