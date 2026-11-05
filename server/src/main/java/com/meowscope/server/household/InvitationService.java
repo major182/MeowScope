@@ -90,8 +90,9 @@ public class InvitationService {
                 || !access.householdExists(row.householdId())) {
             throw new ApiException(ErrorCode.NOT_FOUND);
         }
-        jdbc.sql("UPDATE invitations SET used_at = now() WHERE id = :id").param("id", row.id()).update();
+        // すでにメンバーの人が受けたときは、リンクを使用済みにしない（招待したい別の家族が使えるように）
         if (!access.isMember(userId, row.householdId())) {
+            jdbc.sql("UPDATE invitations SET used_at = now() WHERE id = :id").param("id", row.id()).update();
             jdbc.sql("INSERT INTO household_members (id, household_id, user_id) VALUES (:id, :h, :u)")
                     .param("id", UUID.randomUUID()).param("h", row.householdId()).param("u", userId).update();
             // 加わった人のユーザーの行（表示名・アイコンの有無）は番号が古く、前からいるメンバーへ差分で届かない。番号を進める

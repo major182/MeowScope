@@ -210,4 +210,43 @@ class PhotoIntegrationTest {
         mvc.perform(get("/api/v1/photos/" + photo).header("Authorization", haru.bearer()))
                 .andExpect(status().isNotFound());
     }
+
+    @Autowired
+    PhotoStorage storage;
+
+    @Autowired
+    org.springframework.transaction.PlatformTransactionManager transactionManager;
+
+    @Test
+    @DisplayName("IT-PH-06 ファイルは DB の確定の後に消す：取り消したら残し、確定したら消す。トランザクションの外ではすぐ消す")
+    void 確定の後に消す() throws Exception {
+        var tx = new org.springframework.transaction.support.TransactionTemplate(transactionManager);
+        String path = storage.saveAt("delete-test/" + UUID.randomUUID(), new byte[] {1});
+
+        tx.executeWithoutResult(status -> {
+            storage.delete(path);
+            assertThat(exists(path)).isTrue();
+            status.setRollbackOnly();
+        });
+        assertThat(exists(path)).isTrue();
+
+        tx.executeWithoutResult(status -> {
+            storage.delete(path);
+            assertThat(exists(path)).isTrue();
+        });
+        assertThat(exists(path)).isFalse();
+
+        String outside = storage.saveAt("delete-test/" + UUID.randomUUID(), new byte[] {2});
+        storage.delete(outside);
+        assertThat(exists(outside)).isFalse();
+    }
+
+    private boolean exists(String path) {
+        try {
+            storage.load(path);
+            return true;
+        } catch (java.io.IOException e) {
+            return false;
+        }
+    }
 }

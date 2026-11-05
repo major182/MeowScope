@@ -5,6 +5,7 @@ import com.meowscope.server.common.error.ErrorCode;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,13 +43,18 @@ public class HouseholdService {
         jdbc.sql("INSERT INTO household_members (id, household_id, user_id) VALUES (:id, :household, :user)")
                 .param("id", UUID.randomUUID()).param("household", request.id()).param("user", userId).update();
         for (HouseholdController.RecordTypeInput type : request.recordTypes()) {
-            jdbc.sql("""
-                    INSERT INTO record_types (id, household_id, name, icon, kind, sort_order)
-                    VALUES (:id, :household, :name, :icon, :kind, :sort)
-                    """)
-                    .param("id", type.id()).param("household", request.id()).param("name", type.name().strip())
-                    .param("icon", type.icon()).param("kind", type.kind()).param("sort", type.sortOrder())
-                    .update();
+            try {
+                jdbc.sql("""
+                        INSERT INTO record_types (id, household_id, name, icon, kind, sort_order)
+                        VALUES (:id, :household, :name, :icon, :kind, :sort)
+                        """)
+                        .param("id", type.id()).param("household", request.id()).param("name", type.name().strip())
+                        .param("icon", type.icon()).param("kind", type.kind()).param("sort", type.sortOrder())
+                        .update();
+            } catch (DuplicateKeyException e) {
+                // 記録項目の ID が、ほかのおうちの項目とぶつかった。おうちごと作らず 409 にする（UUID なので実際にはまず起きない）
+                throw new ApiException(ErrorCode.CONFLICT);
+            }
         }
         log.atInfo().addKeyValue("evt.name", "household_create").addKeyValue("evt.outcome", "success")
                 .addKeyValue("household.id", request.id().toString())

@@ -1,5 +1,7 @@
 package com.meowscope.server.sync;
 
+import com.meowscope.server.common.error.ApiExceptionHandler;
+import com.meowscope.server.common.logging.Severity;
 import com.meowscope.server.photo.PhotoStorage;
 import java.sql.Timestamp;
 import java.time.Clock;
@@ -11,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * 削除の印（deleted_at）から90日を過ぎた行を完全に消す（DB 設計書 7章、BR-29）。毎日1回動く。
@@ -39,22 +41,36 @@ public class PurgeService {
     private final JdbcClient jdbc;
     private final PhotoStorage storage;
     private final Clock clock;
+    private final TransactionTemplate transaction;
 
-    PurgeService(JdbcClient jdbc, PhotoStorage storage, Clock clock) {
+    PurgeService(JdbcClient jdbc, PhotoStorage storage, Clock clock, TransactionTemplate transaction) {
         this.jdbc = jdbc;
         this.storage = storage;
         this.clock = clock;
+        this.transaction = transaction;
     }
 
-    /** 毎日 3 時（日本時間）に動かす。 */
+    /** 毎日 3 時（日本時間）に動かす。失敗したら、次の日にまた動く。 */
     @Scheduled(cron = "0 0 3 * * *", zone = "Asia/Tokyo")
     public void scheduled() {
-        purge();
+        try {
+            purge();
+        } catch (RuntimeException e) {
+            boolean db = ApiExceptionHandler.dbUnavailable(e);
+            var event = log.atError().setCause(e).addKeyValue("evt.name", "purge").addKeyValue("evt.outcome", "failure");
+            (db ? event.addMarker(Severity.CRITICAL) : event).log(db ? "DB に接続できない" : "片付けに失敗した");
+        }
     }
 
-    /** 消した行の数を返す。 */
-    @Transactional
+    /**
+     * 消した行の数を返す。全体を1つのトランザクションで行う（途中で失敗したら、何も消さない）。
+     * 同じクラスから呼ぶと {@code @Transactional} が効かないので、TransactionTemplate で囲む。
+     */
     public int purge() {
+        return transaction.execute(status -> purgeInTransaction());
+    }
+
+    private int purgeInTransaction() {
         Instant now = clock.instant();
         Timestamp before = Timestamp.from(now.minus(RETENTION));
         // 画像のファイルは、行を消す前に場所を控える。削除の印のない子の行も、親と一緒に（CASCADE で）消えるので含める

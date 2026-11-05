@@ -1,8 +1,10 @@
 package com.meowscope.server.common.error;
 
 import com.meowscope.server.common.logging.RequestIdFilter;
+import com.meowscope.server.common.logging.Severity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
@@ -35,8 +37,25 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     ResponseEntity<Object> handleUnexpected(Exception ex, WebRequest request) {
-        log.error("想定外の例外", ex);
+        if (dbUnavailable(ex)) {
+            // DB に接続できないと、ほとんどの機能が止まる（ログ設計書 5章：critical）
+            log.atError().addMarker(Severity.CRITICAL).setCause(ex).addKeyValue("evt.name", "db_unavailable")
+                    .log("DB に接続できない");
+        } else {
+            log.error("想定外の例外", ex);
+        }
         return handleExceptionInternal(ex, null, new HttpHeaders(), ErrorCode.INTERNAL_ERROR.status(), request);
+    }
+
+    /** DB に接続できないことによる例外か（接続の取得の失敗など。原因をたどって確かめる）。 */
+    public static boolean dbUnavailable(Throwable ex) {
+        for (Throwable t = ex; t != null; t = t.getCause() == t ? null : t.getCause()) {
+            if (t instanceof DataAccessResourceFailureException || t instanceof java.sql.SQLTransientConnectionException
+                    || t instanceof java.sql.SQLNonTransientConnectionException) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** どの経路のエラーも最後にここを通る。本文を設計書の形にそろえる。 */

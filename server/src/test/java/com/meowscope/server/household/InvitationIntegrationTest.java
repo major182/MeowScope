@@ -142,4 +142,14 @@ class InvitationIntegrationTest {
         List<String> users = JsonPath.read(body, "$.changes[?(@.table == 'users')].id");
         assertThat(users).contains(natsu.id().toString());
     }
+
+    @Test
+    @DisplayName("IT-IV-06 すでにメンバーの人が招待を受けても、リンクは使用済みにならず、ほかの人が使える")
+    void メンバーが受けても使える() throws Exception {
+        String token = invite(haru);
+        accept(haru, token).andExpect(status().isOk());
+        Registered natsu = TestUsers.register(mvc);
+        accept(natsu, token).andExpect(status().isOk());
+        assertThat(member(natsu)).isTrue();
+    }
 }
