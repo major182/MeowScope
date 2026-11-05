@@ -7,6 +7,7 @@ import 'package:drift/drift.dart';
 import '../../../core/api/api_error.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/db/local_cleanup.dart';
+import '../../../core/db/tables.dart' show SyncColumns;
 import '../../auth/data/auth_repository.dart';
 import '../../auth/data/token_store.dart';
 import '../../settings/data/settings_repository.dart';
@@ -70,15 +71,25 @@ class SyncEngine {
       return const SyncNeedsLogin();
     }
     var rejected = 0;
+    _resyncReceived = null;
+    _sentThisRun.clear();
     try {
       rejected += await _createHouseholds(userId);
+      var finished = false;
       for (var round = 0; round < maxRounds; round++) {
         final more = await _round(userId);
         rejected += more.rejected;
         if (!more.again) {
+          finished = true;
           break;
         }
       }
+      // 全件を取り直し終えたら、受け取らなかった行を端末から消す（途中で止まったときは消さない）
+      final received = _resyncReceived;
+      if (finished && received != null) {
+        await _dropUnreceived(userId, received);
+      }
+      _resyncReceived = null;
       // 写真の情報を送った後で、画像を送る（API 設計書 6章）
       await _uploadPhotos(userId);
     } on DioException catch (e) {
@@ -212,6 +223,7 @@ class SyncEngine {
     for (final MapEntry(key: (table, id), value: seqs) in rows.entries) {
       final change = await _changeOf(table, id, userId);
       sentSeqs.addAll(seqs);
+      _sentThisRun.add((table, id));
       if (change != null) {
         changes.add(change);
       }
@@ -273,6 +285,8 @@ class SyncEngine {
 
     if (body['fullResyncRequired'] == true) {
       await _setState(SyncKeys.lastSeq(userId), '0');
+      // ここから受け取る行を数え、取り直し終えたら受け取らなかった行を消す
+      _resyncReceived = {};
       return (again: true, rejected: rejected);
     }
     await _apply(
@@ -303,6 +317,62 @@ class SyncEngine {
           rejectedAt: _clock().toUtc(),
         ),
       );
+
+  /// 全件の取り直しの間に受け取った行。取り直していないときは null
+  Set<(String, String)>? _resyncReceived;
+
+  /// この同期で送った行。受け付けられなかった変更の行も、全件の取り直しの後に消さずに残す（S-48 で何の変更かを出すため）
+  final _sentThisRun = <(String, String)>{};
+
+  /// 全件を取り直した後、受け取らなかった行（サーバーにない行）を端末から消す（API 設計書 5章）
+  ///
+  /// サーバーが削除から90日を過ぎた行を完全に消したときや、サーバーの DB を作り直したときに、
+  /// 端末にだけ行が残り続けないようにする。まだ送っていない変更のある行と、サーバーから受け取ったことのない行
+  /// （serverSeq が空：端末で作ってまだ送っていない）は残す。参照する側から消す
+  Future<void> _dropUnreceived(
+    String userId,
+    Set<(String, String)> received,
+  ) async {
+    final pending = {
+      for (final p in await (_db.select(
+        _db.pendingChanges,
+      )..where((p) => p.userId.equals(userId))).get())
+        (p.targetTable, p.rowId),
+    };
+    bool keep(String table, String id) =>
+        received.contains((table, id)) ||
+        pending.contains((table, id)) ||
+        _sentThisRun.contains((table, id));
+    // 同期する表は共通の列（SyncColumns）を持つので、id と serverSeq で同じように扱える
+    Future<void> drop<T extends SyncColumns, R>(
+      String table,
+      TableInfo<T, R> info,
+    ) async {
+      final rows = await (_db.selectOnly(
+        info,
+      )..addColumns([info.asDslTable.id, info.asDslTable.serverSeq])).get();
+      final ids = [
+        for (final r in rows)
+          if (r.read(info.asDslTable.serverSeq) != null &&
+              !keep(table, r.read(info.asDslTable.id)!))
+            r.read(info.asDslTable.id)!,
+      ];
+      if (ids.isEmpty) {
+        return;
+      }
+      await (_db.delete(info)..where((t) => t.id.isIn(ids))).go();
+    }
+
+    await _db.transaction(() async {
+      await drop('record_photos', _db.recordPhotos);
+      await drop('records', _db.records);
+      await drop('widget_buttons', _db.widgetButtons);
+      await drop('record_types', _db.recordTypes);
+      await drop('cats', _db.cats);
+      await drop('household_members', _db.householdMembers);
+      await drop('households', _db.households);
+    });
+  }
 
   /// 送る内容。行がなくなっていれば null
   Future<Map<String, Object?>?> _changeOf(
@@ -439,6 +509,7 @@ class SyncEngine {
         for (final c in changes) {
           final table = c['table'] as String;
           final id = c['id'] as String;
+          _resyncReceived?.add((table, id));
           if (pendingRows.contains((table, id))) {
             continue;
           }

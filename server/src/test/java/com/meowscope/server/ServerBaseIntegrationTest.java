@@ -32,7 +32,7 @@ class ServerBaseIntegrationTest {
                 """).query(String.class).list();
         assertThat(tables).containsExactlyInAnyOrder("users", "user_settings", "households", "household_members",
                 "cats", "record_types", "records", "record_photos", "widget_buttons", "invitations",
-                "refresh_tokens", "password_resets");
+                "refresh_tokens", "password_resets", "sync_purges");
     }
 
     @Test
