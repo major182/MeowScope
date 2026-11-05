@@ -73,4 +73,46 @@ class ApiExceptionHandlerTest {
     void 状態コードとcode(int status, ErrorCode expected) {
         assertThat(ErrorCode.of(HttpStatusCode.valueOf(status))).isEqualTo(expected);
     }
+
+    @Test
+    @DisplayName("UT-ER-05 DB に接続できないことによる例外か：接続の取得の失敗・原因にある接続の例外は真、ほかの例外は偽")
+    void DBに接続できない() {
+        assertThat(ApiExceptionHandler.dbUnavailable(
+                new org.springframework.jdbc.CannotGetJdbcConnectionException("x"))).isTrue();
+        assertThat(ApiExceptionHandler.dbUnavailable(
+                new RuntimeException(new java.sql.SQLTransientConnectionException("x")))).isTrue();
+        assertThat(ApiExceptionHandler.dbUnavailable(
+                new RuntimeException(new java.sql.SQLNonTransientConnectionException("x")))).isTrue();
+        assertThat(ApiExceptionHandler.dbUnavailable(new IllegalStateException("x"))).isFalse();
+        assertThat(ApiExceptionHandler.dbUnavailable(null)).isFalse();
+    }
+
+    @Test
+    @DisplayName("UT-ER-06 DB に接続できないときは critical のログを出し、500 で中身を本文に出さない（ログ設計書 5章）")
+    void DBに接続できないときの応答() throws Exception {
+        var logger = (ch.qos.logback.classic.Logger) org.slf4j.LoggerFactory.getLogger(ApiExceptionHandler.class);
+        var appender = new ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent>();
+        appender.start();
+        logger.addAppender(appender);
+        try {
+            MockMvc db = MockMvcBuilders.standaloneSetup(new DbController())
+                    .setControllerAdvice(new ApiExceptionHandler()).addFilters(new RequestIdFilter()).build();
+            String body = db.perform(get("/db")).andExpect(status().isInternalServerError())
+                    .andExpect(jsonPath("$.code").value("INTERNAL_ERROR"))
+                    .andReturn().getResponse().getContentAsString();
+            assertThat(body).doesNotContain("Connection");
+            assertThat(appender.list).singleElement().satisfies(e -> assertThat(e.getMarkerList())
+                    .contains(com.meowscope.server.common.logging.Severity.CRITICAL));
+        } finally {
+            logger.detachAppender(appender);
+        }
+    }
+
+    @RestController
+    static class DbController {
+        @GetMapping("/db")
+        void db() {
+            throw new org.springframework.jdbc.CannotGetJdbcConnectionException("Connection refused");
+        }
+    }
 }

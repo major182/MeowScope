@@ -27,6 +27,8 @@ import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @IntegrationTest
 @Import(PasswordResetIntegrationTest.MailConfig.class)
@@ -44,7 +46,8 @@ class PasswordResetIntegrationTest {
         @Override
         public synchronized void sendCode(String to, String code, Duration validFor) {
             if (fail) {
-                throw new MailException("テストで送れなくした", null);
+                // 本物の SMTP の例外のように、文と原因に送り先のアドレスを入れる
+                throw new MailException("テストで送れなくした：" + to, new IllegalStateException("Invalid Addresses: " + to));
             }
             sent.add(new Sent(to, code, validFor));
         }
@@ -227,5 +230,26 @@ class PasswordResetIntegrationTest {
         confirm(haru.email(), code, "NewPassw0rd!").andExpect(status().isOk());
         assertThat(output.getOut()).doesNotContain(haru.email()).doesNotContain("\"" + code + "\"")
                 .contains("password_reset");
+    }
+
+    @Autowired
+    PasswordResetService service;
+
+    @Autowired
+    PlatformTransactionManager transactionManager;
+
+    @Test
+    @DisplayName("IT-PR-08 メールは DB の確定の後に送る：確定の前は送らず、取り消したら送らない")
+    void 確定の後に送る() {
+        TransactionTemplate tx = new TransactionTemplate(transactionManager);
+        tx.executeWithoutResult(status -> {
+            service.request(haru.email());
+            assertThat(mailer.countTo(haru.email())).isZero();
+            status.setRollbackOnly();
+        });
+        assertThat(mailer.countTo(haru.email())).isZero();
+
+        tx.executeWithoutResult(status -> service.request(haru.email()));
+        assertThat(mailer.countTo(haru.email())).isEqualTo(1);
     }
 }

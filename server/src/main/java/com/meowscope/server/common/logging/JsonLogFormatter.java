@@ -47,7 +47,7 @@ public class JsonLogFormatter implements StructuredLogFormatter<ILoggingEvent> {
         Map<String, Object> root = new LinkedHashMap<>();
         root.put("timestamp", event.getInstant().toString());
         root.put("status", status(event));
-        root.put("message", event.getFormattedMessage());
+        root.put("message", LogMasking.mask(event.getFormattedMessage()));
         put(root, "service", service);
         put(root, "env", env);
         put(root, "version", version);
@@ -61,8 +61,9 @@ public class JsonLogFormatter implements StructuredLogFormatter<ILoggingEvent> {
         IThrowableProxy error = event.getThrowableProxy();
         if (error != null) {
             put(root, "error.kind", error.getClassName());
-            put(root, "error.message", error.getMessage());
-            put(root, "error.stack", ThrowableProxyUtil.asString(error));
+            // 例外の文と積み重ねは、メールアドレスや行の値を含むことがあるので伏せる（ログ設計書 6章）
+            put(root, "error.message", LogMasking.mask(error.getMessage()));
+            put(root, "error.stack", LogMasking.mask(ThrowableProxyUtil.asString(error)));
         }
         return JsonWriter.standard().writeToString(root) + "\n";
     }

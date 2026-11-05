@@ -513,4 +513,33 @@ class SyncIntegrationTest {
         long latest = jdbc.sql("SELECT last_value FROM sync_seq").query(Long.class).single();
         assertThat(((Number) body.get("nextSeq")).longValue()).isEqualTo(latest);
     }
+
+    @Test
+    @DisplayName("IT-SY-18 記録項目がないときは not_found、ほかのおうちの項目のときは forbidden")
+    void 記録項目の理由() throws Exception {
+        UUID catId = UUID.randomUUID();
+        Registered natsu = TestUsers.register(mvc);
+        UUID otherType = UUID.randomUUID();
+        createHousehold(natsu, UUID.randomUUID(), otherType).andExpect(status().isCreated());
+        Map<String, Object> missing = record(catId, null);
+        missing.put("recordTypeId", UUID.randomUUID().toString());
+        Map<String, Object> others = record(catId, null);
+        others.put("recordTypeId", otherType.toString());
+
+        Map<String, Object> body = syncBody(haru, 0, List.of(change("cats", catId, cat("ミケ")),
+                change("records", UUID.randomUUID(), missing), change("records", UUID.randomUUID(), others)));
+
+        assertThat(reasons(body)).containsExactly(null, "not_found:recordTypeId", "forbidden:recordTypeId");
+    }
+
+    @Test
+    @DisplayName("IT-SY-19 おうちの作成：記録項目の ID がほかのおうちの項目とぶつかったら 409 で、おうちも作らない")
+    void 記録項目のIDの重複() throws Exception {
+        Registered natsu = TestUsers.register(mvc);
+        UUID other = UUID.randomUUID();
+        createHousehold(natsu, other, food).andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("CONFLICT"));
+        assertThat(jdbc.sql("SELECT count(*) FROM households WHERE id = :id").param("id", other).query(Long.class)
+                .single()).isZero();
+    }
 }

@@ -26,6 +26,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * パスワードの再設定（API 設計書 2章、F-AU-03）。メールに6桁の確認コードを送り、コードと新しいパスワードで変える。
@@ -93,17 +95,40 @@ public class PasswordResetService {
                   created_at = :now
                 """).param("id", id).param("hash", hash(id, code))
                 .param("expires", Timestamp.from(now.plus(CODE_TTL))).param("now", Timestamp.from(now)).update();
+        String to = user.get().email();
+        // メールは DB の確定（コミット）の後に送る。SMTP の応答を待つ間、DB の接続を持ち続けないため
+        afterCommit(() -> send(id, to, code));
+    }
+
+    private void send(UUID id, String email, String code) {
         try {
-            mailer.sendCode(user.get().email(), code, CODE_TTL);
+            mailer.sendCode(email, code, CODE_TTL);
         } catch (PasswordResetMailer.MailException e) {
-            // 送れなかったことは応答では教えない（登録の有無が分かってしまうため）。送り直しで直せる
+            // 送れなかったことは応答では教えない（登録の有無が分かってしまうため）。送り直しで直せる。
+            // SMTP の例外の文には送り先のアドレスが入ることがあるので、例外は渡さず、原因の種類だけを残す（ログ設計書 6章）
+            Throwable cause = e.getCause() == null ? e : e.getCause();
             log.atError().addKeyValue("evt.name", "password_reset_request").addKeyValue("evt.outcome", "failure")
                     .addKeyValue("evt.reason", "mail_failed").addKeyValue("usr.id", id.toString())
-                    .log("確認コードのメールを送れなかった", e);
+                    .addKeyValue("error.kind", cause.getClass().getName())
+                    .log("確認コードのメールを送れなかった");
             return;
         }
         log.atInfo().addKeyValue("evt.name", "password_reset_request").addKeyValue("evt.outcome", "success")
                 .addKeyValue("usr.id", id.toString()).log("確認コードを送った");
+    }
+
+    /** トランザクションの中なら確定の後に、外ならすぐに動かす。 */
+    private static void afterCommit(Runnable action) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            action.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                action.run();
+            }
+        });
     }
 
     /**

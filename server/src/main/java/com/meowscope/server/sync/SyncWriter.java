@@ -179,7 +179,9 @@ class SyncWriter {
         UUID typeId = f.uuid("recordTypeId");
         // 猫と記録項目は同じおうちのもので、自分のおうちであること
         UUID household = access.householdOfCat(catId).orElseThrow(() -> new Rejected("not_found", "catId"));
-        if (!access.householdOfRecordType(typeId).map(household::equals).orElse(false)) {
+        UUID typeHousehold = access.householdOfRecordType(typeId)
+                .orElseThrow(() -> new Rejected("not_found", "recordTypeId"));
+        if (!typeHousehold.equals(household)) {
             throw new Rejected("forbidden", "recordTypeId");
         }
         requireMember(userId, household);

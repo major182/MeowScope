@@ -11,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * 写真の本体をサーバーのディスク（Docker のボリューム）に置く（技術選定書 3章：S3 は使わない）。
@@ -57,11 +59,28 @@ public class PhotoStorage {
         return Files.readAllBytes(root.resolve(relative));
     }
 
-    /** 消す。消せなくても処理は続け、後で確かめられるよう warning を残す（ログ設計書 5章）。 */
+    /**
+     * 消す。トランザクションの中で呼ばれたら、DB の変更が確定（コミット）した後に消す。取り消し（ロールバック）されたら消さない
+     * （DB に行が残ったまま、ファイルだけが消えるのを防ぐ）。消せなくても処理は続け、後で確かめられるよう warning を残す
+     * （ログ設計書 5章）。
+     */
     public void delete(String relative) {
         if (relative == null) {
             return;
         }
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    deleteNow(relative);
+                }
+            });
+            return;
+        }
+        deleteNow(relative);
+    }
+
+    private void deleteNow(String relative) {
         try {
             Files.deleteIfExists(root.resolve(relative));
         } catch (IOException e) {
