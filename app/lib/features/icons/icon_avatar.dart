@@ -38,6 +38,34 @@ class IconAvatar extends ConsumerWidget {
   }
 }
 
+/// 小さなアイコンと名前を並べる。猫とユーザーの名前を出す場面で使う（画面設計書 1章「アイコン＋名前」）
+class IconLabel extends StatelessWidget {
+  const IconLabel({
+    super.key,
+    required this.icon,
+    required this.text,
+    this.radius = 12,
+    this.style,
+  });
+
+  final IconRef icon;
+  final String text;
+  final double radius;
+  final TextStyle? style;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconAvatar(icon: icon, radius: radius),
+        const SizedBox(width: 6),
+        Flexible(child: Text(text, style: style)),
+      ],
+    );
+  }
+}
+
 /// 押すとアイコンを選び直せるアイコン（S-45、猫のプロフィール）
 class EditableIcon extends ConsumerWidget {
   const EditableIcon({super.key, required this.icon});

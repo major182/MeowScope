@@ -30,7 +30,8 @@ void main() {
     await waitFor(tester, find.text('猫を登録しましょう'));
     await enter(tester, '名前', 'ミケ');
     await tester.tap(find.widgetWithText(FilledButton, '登録する'));
-    await waitFor(tester, find.widgetWithText(AppBar, 'ホーム'));
+    // ホームの見出しはおうち名（S-10）
+    await waitFor(tester, find.widgetWithText(AppBar, 'E2E家'));
   }
 
   /// 設定の同期の状態から今すぐ同期し、未送信が 0 件になるまで待つ

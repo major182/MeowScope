@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../records/presentation/record_format.dart';
+import '../../icons/icon_avatar.dart';
 import '../../records/domain/record_kind.dart';
 import '../domain/calendar_month.dart';
 import 'calendar_providers.dart';
@@ -66,13 +67,35 @@ class DayRecordList extends ConsumerWidget {
         for (final e in entries)
           ListTile(
             leading: Text(formatTime(e.recordedAt)),
-            title: Text('${e.catName}　${e.typeName}'),
-            trailing: e.hasMemo
-                ? const Image(
-                    image: AssetImage(memoAsset),
-                    width: 24,
-                    height: 24,
-                    semanticLabel: 'メモあり',
+            title: Align(
+              alignment: Alignment.centerLeft,
+              child: IconLabel(
+                icon: e.catIcon,
+                text: '${e.catName}　${e.typeName}',
+              ),
+            ),
+            // メモと写真の印（S-21）。写真の印はイラストがないので、標準のアイコンを使う
+            trailing: e.hasMemo || e.hasPhoto
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (e.hasMemo)
+                        const Image(
+                          image: AssetImage(memoAsset),
+                          width: 24,
+                          height: 24,
+                          semanticLabel: 'メモあり',
+                        ),
+                      if (e.hasPhoto)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 4),
+                          child: Icon(
+                            Icons.photo_camera_outlined,
+                            size: 22,
+                            semanticLabel: '写真あり',
+                          ),
+                        ),
+                    ],
                   )
                 : null,
             onTap: () => context.push('/records/${e.id}'),

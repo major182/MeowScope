@@ -160,7 +160,7 @@ void main() {
     await start(tester);
 
     expect(find.byIcon(Icons.cloud_off), findsOneWidget);
-    expect(find.text('未同期'), findsOneWidget);
+    expect(find.text('未同期  失敗'), findsOneWidget);
     await openStatus(tester);
 
     expect(find.text('前回の同期に失敗しました'), findsOneWidget);
@@ -232,7 +232,7 @@ void main() {
 
     await start(tester);
 
-    expect(find.widgetWithText(AppBar, 'ホーム'), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'みけ家'), findsOneWidget);
     await close(tester);
   });
 

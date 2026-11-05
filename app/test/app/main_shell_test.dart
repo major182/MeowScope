@@ -81,7 +81,11 @@ void main() {
         tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
         index,
       );
-      expect(find.widgetWithText(AppBar, label), findsOneWidget);
+      // ホームの見出しはおうち名（S-10）、ほかは画面の名前
+      expect(
+        find.widgetWithText(AppBar, label == 'ホーム' ? 'みけ家' : label),
+        findsOneWidget,
+      );
     }
     await close(tester);
   });

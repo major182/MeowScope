@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/core/providers.dart';
 import 'package:meowscope/features/household/data/household_repository.dart';
+import 'package:meowscope/features/icons/icon_avatar.dart';
 import 'package:meowscope/features/records/data/record_repository.dart';
 import 'package:meowscope/features/records/domain/record_kind.dart';
 import 'package:meowscope/features/records/presentation/record_detail_screen.dart';
@@ -204,7 +205,7 @@ void main() {
   });
 
   group('記録の詳細と編集（S-22）', () {
-    testWidgets('UT-RS-09 猫・項目・投稿者と、入力した詳細を出す', (tester) async {
+    testWidgets('UT-RS-09 猫・項目・投稿者（猫と投稿者はアイコンと並べる）と、入力した詳細を出す', (tester) async {
       final id = await addRecord(RecordKind.weight);
       await repo.updateRecord(
         id: id,
@@ -217,7 +218,10 @@ void main() {
       await show(tester, '/records/$id');
 
       expect(find.text('ミケ　体重'), findsOneWidget);
-      expect(find.text('11/02 12:00　投稿者：はる'), findsOneWidget);
+      expect(find.text('11/02 12:00'), findsOneWidget);
+      expect(find.text('投稿者：はる'), findsOneWidget);
+      // 猫と投稿者のアイコン（画面設計書 1章）
+      expect(find.byType(IconAvatar), findsNWidgets(2));
       expect(find.text('4.2 kg'), findsOneWidget);
       expect(find.text('毛玉のよう'), findsOneWidget);
       await close(tester);

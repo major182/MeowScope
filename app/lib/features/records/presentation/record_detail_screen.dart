@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
+import '../../auth/data/account_repository.dart';
+import '../../icons/icon_avatar.dart';
+import '../../icons/icon_repository.dart';
 import '../../photos/presentation/photo_widgets.dart';
 import '../../../core/widgets/confirm_delete.dart';
 import '../data/record_repository.dart';
@@ -12,6 +15,12 @@ import '../../../core/widgets/save_guard.dart';
 import 'record_edit_screen.dart';
 import 'record_format.dart';
 import 'record_providers.dart';
+
+/// おうちのメンバー（投稿者のアイコンに使う）
+final _membersProvider = StreamProvider.autoDispose
+    .family<List<Member>, String>(
+      (ref, id) => ref.watch(accountRepositoryProvider).watchMembers(id),
+    );
 
 /// 記録の詳細と編集（S-22）
 class RecordDetailScreen extends ConsumerWidget {
@@ -65,6 +74,20 @@ class _Detail extends ConsumerWidget {
     }
   }
 
+  IconRef _authorIcon(WidgetRef ref, String? authorId) {
+    final session = ref.watch(sessionProvider).value;
+    final members = session == null
+        ? const <Member>[]
+        : ref.watch(_membersProvider(session.householdId)).value ??
+              const <Member>[];
+    for (final m in members) {
+      if (m.userId == authorId) {
+        return m.icon;
+      }
+    }
+    return IconRef(IconOwner.user, authorId ?? '');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final r = view.record;
@@ -88,12 +111,26 @@ class _Detail extends ConsumerWidget {
       body: ListView(
         padding: readablePadding(context, 16),
         children: [
-          Text(
-            '${view.catName}　${view.typeName}',
-            style: Theme.of(context).textTheme.titleLarge,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconLabel(
+              icon: view.catIcon,
+              text: '${view.catName}　${view.typeName}',
+              radius: 16,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ),
           const SizedBox(height: 8),
-          Text('${formatDateTime(r.recordedAt.toLocal())}　投稿者：${r.authorName}'),
+          Text(formatDateTime(r.recordedAt.toLocal())),
+          const SizedBox(height: 4),
+          // 投稿者もアイコンと名前で出す。退会した人などメンバーにいなければ、既定のイラストにする
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconLabel(
+              icon: _authorIcon(ref, r.authorId),
+              text: '投稿者：${r.authorName}',
+            ),
+          ),
           const Divider(height: 32),
           if (level != null) _Row(label: '量', value: level.label),
           if (r.valueNumber != null)

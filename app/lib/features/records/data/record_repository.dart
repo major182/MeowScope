@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
+import '../../icons/icon_repository.dart';
 import '../domain/record_kind.dart';
 
 /// 記録の一覧（今日の記録・カレンダー・日別一覧）に出す1行
@@ -22,7 +23,21 @@ class RecordEntry {
     this.level,
     this.memo,
     this.authorName = '',
+    this.catHasIcon = false,
+    this.catSeq,
+    this.hasPhoto = false,
   });
+
+  /// 猫のアイコンがサーバーにあるか、その版（猫の行の通し番号）
+  final bool catHasIcon;
+  final int? catSeq;
+
+  /// 写真があるか（削除したものを除く）
+  final bool hasPhoto;
+
+  /// 猫のアイコン（名前の横に出す。画面設計書 1章）
+  IconRef get catIcon =>
+      IconRef(IconOwner.cat, catId, hasIcon: catHasIcon, version: catSeq);
 
   final String id;
   final DateTime recordedAt;
@@ -60,11 +75,25 @@ class RecordDetailView {
     required this.catName,
     required this.typeName,
     required this.kind,
+    this.catHasIcon = false,
+    this.catSeq,
   });
 
   final RecordRow record;
   final String catName;
   final String typeName;
+
+  /// 猫のアイコンがサーバーにあるか、その版
+  final bool catHasIcon;
+  final int? catSeq;
+
+  /// 猫のアイコン（名前の横に出す。画面設計書 1章）
+  IconRef get catIcon => IconRef(
+    IconOwner.cat,
+    record.catId,
+    hasIcon: catHasIcon,
+    version: catSeq,
+  );
 
   /// 項目の種類（RecordKind の名前または custom）
   final String kind;
@@ -342,11 +371,18 @@ class RecordRepository {
     if (catId != null) {
       where = where & r.catId.equals(catId);
     }
+    final p = _db.recordPhotos;
+    final hasPhoto = existsQuery(
+      _db.selectOnly(p)
+        ..addColumns([p.id])
+        ..where(p.recordId.equalsExp(r.id) & p.deletedAt.isNull()),
+    );
     final q =
         _db.select(r).join([
             innerJoin(c, c.id.equalsExp(r.catId)),
             innerJoin(t, t.id.equalsExp(r.recordTypeId)),
           ])
+          ..addColumns([hasPhoto])
           ..where(where)
           ..orderBy([
             newestFirst
@@ -370,6 +406,9 @@ class RecordRepository {
             level: row.readTable(r).level,
             memo: row.readTable(r).memo,
             authorName: row.readTable(r).authorName,
+            catHasIcon: row.readTable(c).hasIcon,
+            catSeq: row.readTable(c).serverSeq,
+            hasPhoto: row.read(hasPhoto) ?? false,
           ),
       ],
     );
@@ -400,6 +439,8 @@ class RecordRepository {
       return RecordDetailView(
         record: row.readTable(r),
         catName: row.readTable(c).name,
+        catHasIcon: row.readTable(c).hasIcon,
+        catSeq: row.readTable(c).serverSeq,
         typeName: type.name,
         kind: type.kind,
       );
