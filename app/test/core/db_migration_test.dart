@@ -75,6 +75,12 @@ void main() {
         AppStatesCompanion.insert(key: 'settings.weekStart', value: 'monday'),
       ]),
     );
+    if (version < 10) {
+      await db.customStatement('DROP TABLE rejected_changes');
+      await db.customStatement(
+        "INSERT INTO app_states (key, value) VALUES ('sync.rejected.local-user', '3')",
+      );
+    }
     if (version < 9) {
       await db.customStatement('DROP TABLE widget_buttons');
     }
@@ -148,6 +154,18 @@ void main() {
     addTearDown(db.close);
 
     expect(await db.select(db.widgetButtons).get(), isEmpty);
+    expect(await db.select(db.records).get(), hasLength(1));
+  });
+
+  test('UT-RJ-01 版 9 の DB を開くと、送れなかった変更の表ができ、件数だけの記録は捨てる。ほかのデータは残る', () async {
+    await prepare(9);
+    final db = open();
+    addTearDown(db.close);
+
+    expect(await db.select(db.rejectedChanges).get(), isEmpty);
+    final keys = [for (final s in await db.select(db.appStates).get()) s.key];
+    expect(keys, isNot(contains('sync.rejected.local-user')));
+    expect(keys, contains('settings.weekStart'));
     expect(await db.select(db.records).get(), hasLength(1));
   });
 }

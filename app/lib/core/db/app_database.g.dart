@@ -5952,6 +5952,426 @@ class WidgetButtonsCompanion extends UpdateCompanion<WidgetButtonRow> {
   }
 }
 
+class $RejectedChangesTable extends RejectedChanges
+    with TableInfo<$RejectedChangesTable, RejectedChangeRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RejectedChangesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetTableMeta = const VerificationMeta(
+    'targetTable',
+  );
+  @override
+  late final GeneratedColumn<String> targetTable = GeneratedColumn<String>(
+    'target_table',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rowIdMeta = const VerificationMeta('rowId');
+  @override
+  late final GeneratedColumn<String> rowId = GeneratedColumn<String>(
+    'row_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
+  @override
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _fieldMeta = const VerificationMeta('field');
+  @override
+  late final GeneratedColumn<String> field = GeneratedColumn<String>(
+    'field',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _rejectedAtMeta = const VerificationMeta(
+    'rejectedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> rejectedAt = GeneratedColumn<DateTime>(
+    'rejected_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    userId,
+    targetTable,
+    rowId,
+    reason,
+    field,
+    rejectedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'rejected_changes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RejectedChangeRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('target_table')) {
+      context.handle(
+        _targetTableMeta,
+        targetTable.isAcceptableOrUnknown(
+          data['target_table']!,
+          _targetTableMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetTableMeta);
+    }
+    if (data.containsKey('row_id')) {
+      context.handle(
+        _rowIdMeta,
+        rowId.isAcceptableOrUnknown(data['row_id']!, _rowIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rowIdMeta);
+    }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonMeta);
+    }
+    if (data.containsKey('field')) {
+      context.handle(
+        _fieldMeta,
+        field.isAcceptableOrUnknown(data['field']!, _fieldMeta),
+      );
+    }
+    if (data.containsKey('rejected_at')) {
+      context.handle(
+        _rejectedAtMeta,
+        rejectedAt.isAcceptableOrUnknown(data['rejected_at']!, _rejectedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rejectedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {userId, targetTable, rowId};
+  @override
+  RejectedChangeRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RejectedChangeRow(
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      targetTable: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_table'],
+      )!,
+      rowId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}row_id'],
+      )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      )!,
+      field: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}field'],
+      ),
+      rejectedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}rejected_at'],
+      )!,
+    );
+  }
+
+  @override
+  $RejectedChangesTable createAlias(String alias) {
+    return $RejectedChangesTable(attachedDatabase, alias);
+  }
+}
+
+class RejectedChangeRow extends DataClass
+    implements Insertable<RejectedChangeRow> {
+  final String userId;
+  final String targetTable;
+  final String rowId;
+
+  /// サーバーの理由（unknown_table・forbidden・not_found・invalid・too_many・constraint）
+  final String reason;
+
+  /// 値の誤りのときの項目の名前（例：level）
+  final String? field;
+  final DateTime rejectedAt;
+  const RejectedChangeRow({
+    required this.userId,
+    required this.targetTable,
+    required this.rowId,
+    required this.reason,
+    this.field,
+    required this.rejectedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['user_id'] = Variable<String>(userId);
+    map['target_table'] = Variable<String>(targetTable);
+    map['row_id'] = Variable<String>(rowId);
+    map['reason'] = Variable<String>(reason);
+    if (!nullToAbsent || field != null) {
+      map['field'] = Variable<String>(field);
+    }
+    map['rejected_at'] = Variable<DateTime>(rejectedAt);
+    return map;
+  }
+
+  RejectedChangesCompanion toCompanion(bool nullToAbsent) {
+    return RejectedChangesCompanion(
+      userId: Value(userId),
+      targetTable: Value(targetTable),
+      rowId: Value(rowId),
+      reason: Value(reason),
+      field: field == null && nullToAbsent
+          ? const Value.absent()
+          : Value(field),
+      rejectedAt: Value(rejectedAt),
+    );
+  }
+
+  factory RejectedChangeRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RejectedChangeRow(
+      userId: serializer.fromJson<String>(json['userId']),
+      targetTable: serializer.fromJson<String>(json['targetTable']),
+      rowId: serializer.fromJson<String>(json['rowId']),
+      reason: serializer.fromJson<String>(json['reason']),
+      field: serializer.fromJson<String?>(json['field']),
+      rejectedAt: serializer.fromJson<DateTime>(json['rejectedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'userId': serializer.toJson<String>(userId),
+      'targetTable': serializer.toJson<String>(targetTable),
+      'rowId': serializer.toJson<String>(rowId),
+      'reason': serializer.toJson<String>(reason),
+      'field': serializer.toJson<String?>(field),
+      'rejectedAt': serializer.toJson<DateTime>(rejectedAt),
+    };
+  }
+
+  RejectedChangeRow copyWith({
+    String? userId,
+    String? targetTable,
+    String? rowId,
+    String? reason,
+    Value<String?> field = const Value.absent(),
+    DateTime? rejectedAt,
+  }) => RejectedChangeRow(
+    userId: userId ?? this.userId,
+    targetTable: targetTable ?? this.targetTable,
+    rowId: rowId ?? this.rowId,
+    reason: reason ?? this.reason,
+    field: field.present ? field.value : this.field,
+    rejectedAt: rejectedAt ?? this.rejectedAt,
+  );
+  RejectedChangeRow copyWithCompanion(RejectedChangesCompanion data) {
+    return RejectedChangeRow(
+      userId: data.userId.present ? data.userId.value : this.userId,
+      targetTable: data.targetTable.present
+          ? data.targetTable.value
+          : this.targetTable,
+      rowId: data.rowId.present ? data.rowId.value : this.rowId,
+      reason: data.reason.present ? data.reason.value : this.reason,
+      field: data.field.present ? data.field.value : this.field,
+      rejectedAt: data.rejectedAt.present
+          ? data.rejectedAt.value
+          : this.rejectedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RejectedChangeRow(')
+          ..write('userId: $userId, ')
+          ..write('targetTable: $targetTable, ')
+          ..write('rowId: $rowId, ')
+          ..write('reason: $reason, ')
+          ..write('field: $field, ')
+          ..write('rejectedAt: $rejectedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(userId, targetTable, rowId, reason, field, rejectedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RejectedChangeRow &&
+          other.userId == this.userId &&
+          other.targetTable == this.targetTable &&
+          other.rowId == this.rowId &&
+          other.reason == this.reason &&
+          other.field == this.field &&
+          other.rejectedAt == this.rejectedAt);
+}
+
+class RejectedChangesCompanion extends UpdateCompanion<RejectedChangeRow> {
+  final Value<String> userId;
+  final Value<String> targetTable;
+  final Value<String> rowId;
+  final Value<String> reason;
+  final Value<String?> field;
+  final Value<DateTime> rejectedAt;
+  final Value<int> rowid;
+  const RejectedChangesCompanion({
+    this.userId = const Value.absent(),
+    this.targetTable = const Value.absent(),
+    this.rowId = const Value.absent(),
+    this.reason = const Value.absent(),
+    this.field = const Value.absent(),
+    this.rejectedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RejectedChangesCompanion.insert({
+    required String userId,
+    required String targetTable,
+    required String rowId,
+    required String reason,
+    this.field = const Value.absent(),
+    required DateTime rejectedAt,
+    this.rowid = const Value.absent(),
+  }) : userId = Value(userId),
+       targetTable = Value(targetTable),
+       rowId = Value(rowId),
+       reason = Value(reason),
+       rejectedAt = Value(rejectedAt);
+  static Insertable<RejectedChangeRow> custom({
+    Expression<String>? userId,
+    Expression<String>? targetTable,
+    Expression<String>? rowId,
+    Expression<String>? reason,
+    Expression<String>? field,
+    Expression<DateTime>? rejectedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (userId != null) 'user_id': userId,
+      if (targetTable != null) 'target_table': targetTable,
+      if (rowId != null) 'row_id': rowId,
+      if (reason != null) 'reason': reason,
+      if (field != null) 'field': field,
+      if (rejectedAt != null) 'rejected_at': rejectedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RejectedChangesCompanion copyWith({
+    Value<String>? userId,
+    Value<String>? targetTable,
+    Value<String>? rowId,
+    Value<String>? reason,
+    Value<String?>? field,
+    Value<DateTime>? rejectedAt,
+    Value<int>? rowid,
+  }) {
+    return RejectedChangesCompanion(
+      userId: userId ?? this.userId,
+      targetTable: targetTable ?? this.targetTable,
+      rowId: rowId ?? this.rowId,
+      reason: reason ?? this.reason,
+      field: field ?? this.field,
+      rejectedAt: rejectedAt ?? this.rejectedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (targetTable.present) {
+      map['target_table'] = Variable<String>(targetTable.value);
+    }
+    if (rowId.present) {
+      map['row_id'] = Variable<String>(rowId.value);
+    }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
+    if (field.present) {
+      map['field'] = Variable<String>(field.value);
+    }
+    if (rejectedAt.present) {
+      map['rejected_at'] = Variable<DateTime>(rejectedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RejectedChangesCompanion(')
+          ..write('userId: $userId, ')
+          ..write('targetTable: $targetTable, ')
+          ..write('rowId: $rowId, ')
+          ..write('reason: $reason, ')
+          ..write('field: $field, ')
+          ..write('rejectedAt: $rejectedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5969,6 +6389,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $LocalPhotosTable localPhotos = $LocalPhotosTable(this);
   late final $ClientLogsTable clientLogs = $ClientLogsTable(this);
   late final $WidgetButtonsTable widgetButtons = $WidgetButtonsTable(this);
+  late final $RejectedChangesTable rejectedChanges = $RejectedChangesTable(
+    this,
+  );
   late final Index recordsCatRecordedAt = Index(
     'records_cat_recorded_at',
     'CREATE INDEX records_cat_recorded_at ON records (cat_id, recorded_at)',
@@ -5990,6 +6413,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     localPhotos,
     clientLogs,
     widgetButtons,
+    rejectedChanges,
     recordsCatRecordedAt,
   ];
 }
@@ -10277,6 +10701,244 @@ typedef $$WidgetButtonsTableProcessedTableManager =
       WidgetButtonRow,
       PrefetchHooks Function({bool recordTypeId})
     >;
+typedef $$RejectedChangesTableCreateCompanionBuilder =
+    RejectedChangesCompanion Function({
+      required String userId,
+      required String targetTable,
+      required String rowId,
+      required String reason,
+      Value<String?> field,
+      required DateTime rejectedAt,
+      Value<int> rowid,
+    });
+typedef $$RejectedChangesTableUpdateCompanionBuilder =
+    RejectedChangesCompanion Function({
+      Value<String> userId,
+      Value<String> targetTable,
+      Value<String> rowId,
+      Value<String> reason,
+      Value<String?> field,
+      Value<DateTime> rejectedAt,
+      Value<int> rowid,
+    });
+
+class $$RejectedChangesTableFilterComposer
+    extends Composer<_$AppDatabase, $RejectedChangesTable> {
+  $$RejectedChangesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetTable => $composableBuilder(
+    column: $table.targetTable,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rowId => $composableBuilder(
+    column: $table.rowId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get field => $composableBuilder(
+    column: $table.field,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get rejectedAt => $composableBuilder(
+    column: $table.rejectedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RejectedChangesTableOrderingComposer
+    extends Composer<_$AppDatabase, $RejectedChangesTable> {
+  $$RejectedChangesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetTable => $composableBuilder(
+    column: $table.targetTable,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rowId => $composableBuilder(
+    column: $table.rowId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get field => $composableBuilder(
+    column: $table.field,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get rejectedAt => $composableBuilder(
+    column: $table.rejectedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RejectedChangesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RejectedChangesTable> {
+  $$RejectedChangesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<String> get targetTable => $composableBuilder(
+    column: $table.targetTable,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rowId =>
+      $composableBuilder(column: $table.rowId, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
+
+  GeneratedColumn<String> get field =>
+      $composableBuilder(column: $table.field, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get rejectedAt => $composableBuilder(
+    column: $table.rejectedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$RejectedChangesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RejectedChangesTable,
+          RejectedChangeRow,
+          $$RejectedChangesTableFilterComposer,
+          $$RejectedChangesTableOrderingComposer,
+          $$RejectedChangesTableAnnotationComposer,
+          $$RejectedChangesTableCreateCompanionBuilder,
+          $$RejectedChangesTableUpdateCompanionBuilder,
+          (
+            RejectedChangeRow,
+            BaseReferences<
+              _$AppDatabase,
+              $RejectedChangesTable,
+              RejectedChangeRow
+            >,
+          ),
+          RejectedChangeRow,
+          PrefetchHooks Function()
+        > {
+  $$RejectedChangesTableTableManager(
+    _$AppDatabase db,
+    $RejectedChangesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RejectedChangesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RejectedChangesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RejectedChangesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> userId = const Value.absent(),
+                Value<String> targetTable = const Value.absent(),
+                Value<String> rowId = const Value.absent(),
+                Value<String> reason = const Value.absent(),
+                Value<String?> field = const Value.absent(),
+                Value<DateTime> rejectedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RejectedChangesCompanion(
+                userId: userId,
+                targetTable: targetTable,
+                rowId: rowId,
+                reason: reason,
+                field: field,
+                rejectedAt: rejectedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String userId,
+                required String targetTable,
+                required String rowId,
+                required String reason,
+                Value<String?> field = const Value.absent(),
+                required DateTime rejectedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => RejectedChangesCompanion.insert(
+                userId: userId,
+                targetTable: targetTable,
+                rowId: rowId,
+                reason: reason,
+                field: field,
+                rejectedAt: rejectedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$RejectedChangesTable, RejectedChangeRow>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $RejectedChangesTable,
+                    RejectedChangeRow
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RejectedChangesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RejectedChangesTable,
+      RejectedChangeRow,
+      $$RejectedChangesTableFilterComposer,
+      $$RejectedChangesTableOrderingComposer,
+      $$RejectedChangesTableAnnotationComposer,
+      $$RejectedChangesTableCreateCompanionBuilder,
+      $$RejectedChangesTableUpdateCompanionBuilder,
+      (
+        RejectedChangeRow,
+        BaseReferences<_$AppDatabase, $RejectedChangesTable, RejectedChangeRow>,
+      ),
+      RejectedChangeRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -10304,4 +10966,6 @@ class $AppDatabaseManager {
       $$ClientLogsTableTableManager(_db, _db.clientLogs);
   $$WidgetButtonsTableTableManager get widgetButtons =>
       $$WidgetButtonsTableTableManager(_db, _db.widgetButtons);
+  $$RejectedChangesTableTableManager get rejectedChanges =>
+      $$RejectedChangesTableTableManager(_db, _db.rejectedChanges);
 }

@@ -133,7 +133,7 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('UT-SY-22 失敗したらホームの印を変え、S-46 に理由と、受け付けられなかった件数を出す', (
+  testWidgets('UT-SY-22 失敗したらホームの印を変え、S-46 に理由と、送れなかった件数を出す。押すと S-48 へ進む', (
     tester,
   ) async {
     server.on(
@@ -144,9 +144,19 @@ void main() {
         'requestId': 'req-5',
       }),
     );
-    await db
-        .into(db.appStates)
-        .insert(AppStatesCompanion.insert(key: 'sync.rejected.u1', value: '3'));
+    for (final id in ['r1', 'r2', 'r3']) {
+      await db
+          .into(db.rejectedChanges)
+          .insert(
+            RejectedChangesCompanion.insert(
+              userId: 'u1',
+              targetTable: 'records',
+              rowId: id,
+              reason: 'invalid',
+              rejectedAt: DateTime.utc(2026, 11, 5),
+            ),
+          );
+    }
     await start(tester);
 
     expect(find.byIcon(Icons.cloud_off), findsOneWidget);
@@ -157,6 +167,11 @@ void main() {
     expect(find.textContaining('問い合わせ番号：req-5'), findsOneWidget);
     expect(find.text('送れなかった変更'), findsOneWidget);
     expect(find.text('3件'), findsOneWidget);
+
+    // 押すと、どの変更かと対応の案内（S-48）へ進む
+    await tester.tap(find.text('送れなかった変更'));
+    await tester.pumpAndSettle();
+    expect(find.text('削除された記録'), findsNWidgets(3));
     await close(tester);
   });
 

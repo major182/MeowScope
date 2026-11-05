@@ -32,6 +32,8 @@ void main() {
   /// 送られた変更をすべて [status] にし、[changes] を返すサーバー
   void answer({
     String status = 'applied',
+    String? reason,
+    String? field,
     List<Map<String, Object?>> changes = const [],
     int nextSeq = 10,
     bool hasMore = false,
@@ -41,7 +43,8 @@ void main() {
       final sent = ((r.data as Map)['changes'] as List).cast<Map>();
       return FakeResponse(200, {
         'results': [
-          for (final c in sent) {'id': c['id'], 'status': status},
+          for (final c in sent)
+            {'id': c['id'], 'status': status, 'reason': reason, 'field': field},
         ],
         'changes': changes,
         'nextSeq': nextSeq,
@@ -363,19 +366,34 @@ void main() {
     expect((await states())['sync.lastSeq.u1'], '3');
   });
 
-  test('UT-SY-12 受け付けられなかった変更は送り直さず、件数を足していく', () async {
+  test('UT-SY-12 受け付けられなかった変更は送り直さず、行ごとに理由と項目を残す。同じ行は置き換え、送れたら消す', () async {
     await addHousehold(db, 'h1');
     await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
     await pending('cats', 'c1');
-    answer(status: 'rejected');
+    answer(status: 'rejected', reason: 'invalid', field: 'name');
 
     final outcome = await engine.run('u1');
     expect((outcome as SyncSucceeded).rejected, 1);
-    await pending('cats', 'c1');
-    await engine.run('u1');
-
     expect(await db.select(db.pendingChanges).get(), isEmpty);
-    expect((await states())['sync.rejected.u1'], '2');
+    var rows = await db.select(db.rejectedChanges).get();
+    expect(
+      rows.map((r) => (r.userId, r.targetTable, r.rowId, r.reason, r.field)),
+      [('u1', 'cats', 'c1', 'invalid', 'name')],
+    );
+    expect(rows.single.rejectedAt.isAtSameMomentAs(now), isTrue);
+
+    // 同じ行がまた送れなければ、新しい理由で置き換える
+    await pending('cats', 'c1');
+    answer(status: 'rejected', reason: 'forbidden');
+    await engine.run('u1');
+    rows = await db.select(db.rejectedChanges).get();
+    expect(rows.map((r) => (r.reason, r.field)), [('forbidden', null)]);
+
+    // 送れたら（反映・同じ内容）、送れなかった記録から外す
+    await pending('cats', 'c1');
+    answer(status: 'ignored');
+    await engine.run('u1');
+    expect(await db.select(db.rejectedChanges).get(), isEmpty);
   });
 
   test('UT-SY-13 境界値：500行は1回で、501行は2回に分けて送る', () async {
@@ -462,7 +480,7 @@ void main() {
     expect(await db.select(db.pendingChanges).get(), isEmpty);
   });
 
-  test('UT-SY-15 おうちの作成が 404（他の人の ID）なら受け付けられなかった数に入れ、送り直さない', () async {
+  test('UT-SY-15 おうちの作成が 404（他の人の ID）なら、理由（not_found）を残して送り直さない', () async {
     await addHousehold(db, 'h1');
     await pending('households', 'h1', op: 'create');
     server.on('POST', '/households', (r) => const FakeResponse(404));
@@ -472,6 +490,12 @@ void main() {
 
     expect((outcome as SyncSucceeded).rejected, 1);
     expect(await db.select(db.pendingChanges).get(), isEmpty);
+    expect(
+      (await db.select(db.rejectedChanges).get()).map(
+        (r) => (r.targetTable, r.rowId, r.reason),
+      ),
+      [('households', 'h1', 'not_found')],
+    );
   });
 
   test('UT-SY-16 異常系：おうちの作成がつながらなければ、同期待ちを残して失敗を返す', () async {
@@ -514,6 +538,10 @@ void main() {
 
     await engine.run('u1');
     expect(await db.select(db.pendingChanges).get(), isEmpty);
+    expect(
+      (await db.select(db.rejectedChanges).get()).single.reason,
+      'invalid',
+    );
     expect(server.requests.whereType<RequestOptions>(), hasLength(2));
   });
 

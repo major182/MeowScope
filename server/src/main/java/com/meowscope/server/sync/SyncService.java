@@ -41,12 +41,11 @@ public class SyncService {
     public SyncResponse sync(UUID userId, SyncRequest request) {
         List<ChangeIn> ordered = new ArrayList<>(request.changes());
         ordered.sort(Comparator.comparingInt(c -> SyncWriter.order(c.table())));
-        java.util.Map<ChangeIn, String> statuses = new java.util.IdentityHashMap<>();
+        java.util.Map<ChangeIn, Result> outcomes = new java.util.IdentityHashMap<>();
         for (ChangeIn change : ordered) {
-            statuses.put(change, apply(userId, change));
+            outcomes.put(change, apply(userId, change));
         }
-        List<Result> results = request.changes().stream()
-                .map(c -> new Result(c.id(), statuses.get(c))).toList();
+        List<Result> results = request.changes().stream().map(outcomes::get).toList();
 
         boolean full = reader.fullResyncRequired(userId, request.lastSeq());
         List<ChangeOut> changes = full ? List.of() : reader.read(userId, request.lastSeq(), SyncDtos.MAX_CHANGES);
@@ -66,16 +65,17 @@ public class SyncService {
         return new SyncResponse(results, changes, full ? request.lastSeq() : nextSeq, hasMore, full);
     }
 
-    private String apply(UUID userId, ChangeIn change) {
+    private Result apply(UUID userId, ChangeIn change) {
         try {
-            return transaction.execute(status -> writer.apply(userId, change));
+            return new Result(change.id(), transaction.execute(status -> writer.apply(userId, change)));
         } catch (Rejected e) {
             reject(change, e.reason(), e.getMessage());
+            return new Result(change.id(), REJECTED, e.reason(), e.field());
         } catch (DataIntegrityViolationException e) {
             // 参照先がない・制約に反するなど、端末の内容の誤り
             reject(change, "constraint", null);
+            return new Result(change.id(), REJECTED, "constraint", null);
         }
-        return REJECTED;
     }
 
     /** 受け付けなかった変更は、後で確かめられるよう warning で残す。内容は出さず、表と ID と理由だけ（ログ設計書 6章）。 */
