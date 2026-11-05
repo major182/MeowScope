@@ -202,7 +202,9 @@ void main() {
         snapshot = container.read(widgetSnapshotProvider);
       }
       expect(snapshot!.status, WidgetStatus.ready);
-      expect(snapshot.buttons, [(id: 't1', name: 'ご飯')]);
+      expect(snapshot.buttons, [
+        (id: 't1', name: 'ご飯', icon: 'assets/icons/custom_other.png'),
+      ]);
       expect(snapshot.cats, [(id: 'c1', name: 'ミケ')]);
     });
 

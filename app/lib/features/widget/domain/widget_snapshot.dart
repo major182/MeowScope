@@ -3,6 +3,12 @@ import 'dart:convert';
 /// ウィジェットに出す名前と ID
 typedef WidgetItem = ({String id, String name});
 
+/// ウィジェットのボタン。[icon] はアプリのイラストの場所（assets/icons/...）。Android の側はアプリの中のイラストを読んで出す
+typedef WidgetButton = ({String id, String name, String icon});
+
+/// 猫のボタンに出すイラスト
+const widgetCatIcon = 'assets/icons/default_cat.png';
+
 /// ウィジェットの状態
 enum WidgetStatus {
   /// 記録できる
@@ -36,7 +42,7 @@ class WidgetSnapshot {
   factory WidgetSnapshot.of({
     required bool signedIn,
     required bool householdReady,
-    required List<WidgetItem> buttons,
+    required List<WidgetButton> buttons,
     required List<WidgetItem> cats,
   }) {
     if (!signedIn || !householdReady) {
@@ -56,7 +62,7 @@ class WidgetSnapshot {
   }
 
   final WidgetStatus status;
-  final List<WidgetItem> buttons;
+  final List<WidgetButton> buttons;
   final List<WidgetItem> cats;
 
   /// 猫のページ。1匹なら選ばないので空
@@ -83,17 +89,22 @@ class WidgetSnapshot {
     'status': status.name,
     'message': message,
     'buttons': [
-      for (final b in buttons) {'id': b.id, 'name': b.name},
+      for (final b in buttons) {'id': b.id, 'name': b.name, 'icon': b.icon},
     ],
     'pages': [
       for (final p in pages)
         [
-          for (final c in p) {'id': c.id, 'name': c.name},
+          for (final c in p)
+            {'id': c.id, 'name': c.name, 'icon': widgetCatIcon},
         ],
     ],
     // 1匹のときは、押したらこの猫で記録する
     'onlyCat': cats.length == 1
-        ? {'id': cats.single.id, 'name': cats.single.name}
+        ? {
+            'id': cats.single.id,
+            'name': cats.single.name,
+            'icon': widgetCatIcon,
+          }
         : null,
   });
 }

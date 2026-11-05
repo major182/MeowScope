@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 記録のウィジェット（画面設計書「Android のウィジェット」）。2×2 の枠と、上の見出し、枠の代わりに出す案内 -->
+<!-- 記録のウィジェット（画面設計書「Android のウィジェット」）。2×2 の枠と、上の見出し、枠の代わりに出す案内。
+     枠はアプリのホームの記録のボタンと同じく、イラストの下に名前を出す -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_background"
@@ -28,8 +30,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:paddingBottom="4dp"
+            android:paddingBottom="2dp"
             android:textSize="13sp"
+            android:textStyle="bold"
             android:visibility="gone" />
 
         <LinearLayout
@@ -38,8 +41,38 @@
             android:layout_weight="1"
             android:orientation="horizontal">
 
-            <TextView android:id="@+id/widget_cell0" style="@style/WidgetCell" />
-            <TextView android:id="@+id/widget_cell1" style="@style/WidgetCell" />
+            <LinearLayout
+                android:id="@+id/widget_cell0"
+                style="@style/WidgetCell">
+
+                <ImageView
+                    android:id="@+id/widget_cell0_icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:importantForAccessibility="no"
+                    android:scaleType="fitCenter" />
+
+                <TextView
+                    android:id="@+id/widget_cell0_label"
+                    style="@style/WidgetLabel" />
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/widget_cell1"
+                style="@style/WidgetCell">
+
+                <ImageView
+                    android:id="@+id/widget_cell1_icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:importantForAccessibility="no"
+                    android:scaleType="fitCenter" />
+
+                <TextView
+                    android:id="@+id/widget_cell1_label"
+                    style="@style/WidgetLabel" />
+            </LinearLayout>
         </LinearLayout>
 
         <LinearLayout
@@ -48,8 +81,38 @@
             android:layout_weight="1"
             android:orientation="horizontal">
 
-            <TextView android:id="@+id/widget_cell2" style="@style/WidgetCell" />
-            <TextView android:id="@+id/widget_cell3" style="@style/WidgetCell" />
+            <LinearLayout
+                android:id="@+id/widget_cell2"
+                style="@style/WidgetCell">
+
+                <ImageView
+                    android:id="@+id/widget_cell2_icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:importantForAccessibility="no"
+                    android:scaleType="fitCenter" />
+
+                <TextView
+                    android:id="@+id/widget_cell2_label"
+                    style="@style/WidgetLabel" />
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/widget_cell3"
+                style="@style/WidgetCell">
+
+                <ImageView
+                    android:id="@+id/widget_cell3_icon"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:importantForAccessibility="no"
+                    android:scaleType="fitCenter" />
+
+                <TextView
+                    android:id="@+id/widget_cell3_label"
+                    style="@style/WidgetLabel" />
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

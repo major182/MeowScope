@@ -7,10 +7,13 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
+import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import com.meowscope.meowscope.MainActivity
@@ -126,7 +129,12 @@ class RecordWidgetProvider : HomeWidgetProvider() {
         for ((i, cellId) in CELLS.withIndex()) {
             val cell = screen.cells.getOrNull(i)
             v.setViewVisibility(cellId, if (cell == null) View.INVISIBLE else View.VISIBLE)
-            v.setTextViewText(cellId, cell?.label ?: "")
+            v.setTextViewText(LABELS[i], cell?.label ?: "")
+            val icon = cell?.icon?.let { loadIcon(context, it) }
+            v.setViewVisibility(ICONS[i], if (icon == null) View.GONE else View.VISIBLE)
+            icon?.let { v.setImageViewBitmap(ICONS[i], it) }
+            // イラストのない枠（次へ・やめる）は、文字を大きくして枠の真ん中に出す
+            v.setTextViewTextSize(LABELS[i], TypedValue.COMPLEX_UNIT_SP, if (icon == null) 15f else 13f)
             val click = when {
                 cell == null -> null
                 screen.openApp -> open
@@ -134,7 +142,10 @@ class RecordWidgetProvider : HomeWidgetProvider() {
             }
             v.setOnClickPendingIntent(cellId, click)
         }
-        v.setOnClickPendingIntent(R.id.widget_message, if (screen.openApp) open else null)
+        // 空いている所を押しても何もしない。押し先がないと、ランチャーがアプリを開いてしまう（意図しない動き）
+        val ignore = tap(context, "none")
+        v.setOnClickPendingIntent(R.id.widget_root, ignore)
+        v.setOnClickPendingIntent(R.id.widget_message, if (screen.openApp) open else ignore)
         return v
     }
 
@@ -158,6 +169,28 @@ class RecordWidgetProvider : HomeWidgetProvider() {
         const val KEY_UI = "meowscope.ui"
         const val KEY_PENDING = "meowscope.pending"
         private val CELLS = intArrayOf(R.id.widget_cell0, R.id.widget_cell1, R.id.widget_cell2, R.id.widget_cell3)
+        private val ICONS =
+            intArrayOf(R.id.widget_cell0_icon, R.id.widget_cell1_icon, R.id.widget_cell2_icon, R.id.widget_cell3_icon)
+        private val LABELS =
+            intArrayOf(R.id.widget_cell0_label, R.id.widget_cell1_label, R.id.widget_cell2_label, R.id.widget_cell3_label)
+
+        /** 枠に出すイラストの大きさ（px）。元の画像（512px）のままだとウィジェットに渡せる量を超えるので縮める。 */
+        private const val ICON_PX = 160
+        private val iconCache = HashMap<String, Bitmap?>()
+
+        /**
+         * アプリのイラスト（Flutter の assets/icons）を読む。アプリの中の flutter_assets にあるので、画像を二重に持たない。
+         * 読めなければ null（文字だけで出す）
+         */
+        private fun loadIcon(context: Context, path: String): Bitmap? = iconCache.getOrPut(path) {
+            try {
+                context.assets.open("flutter_assets/$path").use { input ->
+                    BitmapFactory.decodeStream(input)?.let { Bitmap.createScaledBitmap(it, ICON_PX, ICON_PX, true) }
+                }
+            } catch (e: java.io.IOException) {
+                null
+            }
+        }
 
         fun actionPath(action: Action): String = when (action) {
             is Action.Button -> "button/${action.index}"
@@ -226,6 +259,7 @@ class RecordWidgetProvider : HomeWidgetProvider() {
 
         private fun items(array: JSONArray): List<Item> = List(array.length()) { item(array.getJSONObject(it)) }
 
-        private fun item(json: JSONObject) = Item(json.getString("id"), json.getString("name"))
+        private fun item(json: JSONObject) =
+            Item(json.getString("id"), json.getString("name"), json.optString("icon").takeIf { it.isNotEmpty() })
     }
 }

@@ -7,7 +7,7 @@ import org.junit.Test
 
 /** ウィジェットの表示と動き（テスト仕様書 UT-WG）。 */
 class WidgetModelTest {
-    private val food = Item("t1", "ご飯")
+    private val food = Item("t1", "ご飯", "assets/icons/food.png")
     private val water = Item("t2", "水")
     private val mike = Item("c1", "ミケ")
     private val tama = Item("c2", "タマ")
@@ -25,10 +25,12 @@ class WidgetModelTest {
     private fun labels(screen: Screen) = screen.cells.map { it?.label }
 
     @Test
-    fun `UT-WG-01 ボタンの表示：登録した順に4つの枠へ出し、足りない枠は空ける`() {
+    fun `UT-WG-01 ボタンの表示：登録した順に4つの枠へイラストと名前を出し、足りない枠は空ける`() {
         val screen = WidgetModel.screen(ready(mike, tama), Ui(), now)
         assertEquals(listOf("ご飯", "水", null, null), labels(screen))
         assertNull(screen.title)
+        // 項目のイラストを枠に出す。イラストのない項目は文字だけ
+        assertEquals(listOf("assets/icons/food.png", null), screen.cells.take(2).map { it?.icon })
         assertEquals(false, screen.openApp)
     }
 

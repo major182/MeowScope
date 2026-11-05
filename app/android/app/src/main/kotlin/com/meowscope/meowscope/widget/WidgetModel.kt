@@ -8,7 +8,7 @@ package com.meowscope.meowscope.widget
  */
 
 /** 名前と ID。 */
-data class Item(val id: String, val name: String)
+data class Item(val id: String, val name: String, val icon: String? = null)
 
 /** Dart から渡される内容。 */
 data class Snapshot(
@@ -43,8 +43,8 @@ sealed interface Action {
     data object Expire : Action
 }
 
-/** 枠の1つ。action が null なら押せない。 */
-data class Cell(val label: String, val action: Action?)
+/** 枠の1つ。action が null なら押せない。icon はアプリのイラストの場所（なければ文字だけ）。 */
+data class Cell(val label: String, val action: Action?, val icon: String? = null)
 
 /** 描く内容。message があれば枠の代わりに出す。openApp なら、押すとアプリを開く。 */
 data class Screen(
@@ -97,7 +97,7 @@ object WidgetModel {
             Ui.CATS -> catsScreen(snapshot, shown)
             else -> Screen(
                 cells = List(4) { i ->
-                    snapshot.buttons.getOrNull(i)?.let { Cell(it.name, Action.Button(i)) }
+                    snapshot.buttons.getOrNull(i)?.let { Cell(it.name, Action.Button(i), it.icon) }
                 },
                 // 猫がいなければ、ボタンを押すとアプリを開き、ホームで猫の登録を促す
                 openApp = snapshot.status == NO_CATS,
@@ -111,8 +111,8 @@ object WidgetModel {
         return Screen(
             title = "${ui.type?.name}：どの子？",
             cells = listOf(
-                page.getOrNull(0)?.let { Cell(it.name, Action.Cat(0)) },
-                page.getOrNull(1)?.let { Cell(it.name, Action.Cat(1)) },
+                page.getOrNull(0)?.let { Cell(it.name, Action.Cat(0), it.icon) },
+                page.getOrNull(1)?.let { Cell(it.name, Action.Cat(1), it.icon) },
                 next,
                 Cell("やめる", Action.Cancel),
             ),

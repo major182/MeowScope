@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meowscope/features/widget/domain/widget_snapshot.dart';
 
-const _food = (id: 't1', name: 'ご飯');
+const _food = (id: 't1', name: 'ご飯', icon: 'assets/icons/food.png');
 const _mike = (id: 'c1', name: 'ミケ');
 const _tama = (id: 'c2', name: 'タマ');
 const _kuro = (id: 'c3', name: 'クロ');
@@ -13,7 +13,7 @@ const _chacha = (id: 'c5', name: 'チャチャ');
 WidgetSnapshot _of({
   bool signedIn = true,
   bool householdReady = true,
-  List<WidgetItem> buttons = const [_food],
+  List<WidgetButton> buttons = const [_food],
   List<WidgetItem> cats = const [_mike],
 }) => WidgetSnapshot.of(
   signedIn: signedIn,
@@ -63,21 +63,24 @@ void main() {
     );
   });
 
-  test('UT-WG-13 JSON：Android の側が読む形。1匹のときだけ onlyCat を入れる', () {
-    final one = jsonDecode(_of().toJson()) as Map<String, dynamic>;
-    expect(one, {
-      'status': 'ready',
-      'message': null,
-      'buttons': [
-        {'id': 't1', 'name': 'ご飯'},
-      ],
-      'pages': <Object>[],
-      'onlyCat': {'id': 'c1', 'name': 'ミケ'},
-    });
-    final two = jsonDecode(
-      _of(cats: const [_mike, _tama]).toJson(),
-    ) as Map<String, dynamic>;
-    expect(two['onlyCat'], isNull);
-    expect((two['pages'] as List).single, hasLength(2));
-  });
+  test(
+    'UT-WG-13 JSON：Android の側が読む形。ボタンは項目のイラスト、猫は猫のイラスト。1匹のときだけ onlyCat を入れる',
+    () {
+      final one = jsonDecode(_of().toJson()) as Map<String, dynamic>;
+      expect(one, {
+        'status': 'ready',
+        'message': null,
+        'buttons': [
+          {'id': 't1', 'name': 'ご飯', 'icon': 'assets/icons/food.png'},
+        ],
+        'pages': <Object>[],
+        'onlyCat': {'id': 'c1', 'name': 'ミケ', 'icon': widgetCatIcon},
+      });
+      final two = jsonDecode(
+        _of(cats: const [_mike, _tama]).toJson(),
+      ) as Map<String, dynamic>;
+      expect(two['onlyCat'], isNull);
+      expect((two['pages'] as List).single, hasLength(2));
+    },
+  );
 }

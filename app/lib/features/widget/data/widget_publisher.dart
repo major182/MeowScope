@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
+import '../../records/domain/record_kind.dart';
 import '../domain/widget_snapshot.dart';
 import '../presentation/widget_buttons_screen.dart';
 import 'widget_host.dart';
@@ -43,7 +44,12 @@ final widgetSnapshotProvider = Provider.autoDispose<WidgetSnapshot?>((ref) {
     // 非表示の項目のボタンはウィジェットに出さない（S-44）
     buttons: [
       for (final b in buttons.value!)
-        if (!b.type.hidden) (id: b.type.id, name: b.type.name),
+        if (!b.type.hidden)
+          (
+            id: b.type.id,
+            name: b.type.name,
+            icon: iconAsset(b.type.icon) ?? fallbackIconAsset,
+          ),
     ],
     cats: [for (final c in cats.value!) (id: c.id, name: c.name)],
   );
