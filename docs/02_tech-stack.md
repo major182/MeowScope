@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 02 |
-| 版数 | 0.12 |
+| 版数 | 0.13 |
 | 作成日 | 2026-11-01 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md) |
@@ -60,6 +60,7 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 | メール送信 | 未定（Q-26）。第一候補は Gmail の SMTP | - | 無料でドメインが不要だが、アプリパスワードが未発行 | Resend、Amazon SES：送信元の認証にドメインが必要になる可能性がある |
 | CI と配布 | GitHub Actions、GitHub Releases | - | 無料で使える | Google Play：登録料がかかる |
 | E2E テスト | integration_test | Flutter に同梱 | Flutter の公式の方法で、Windows と Android の両方で同じテストを動かせる。追加の道具が不要（NF-MT-02） | Patrol：通知の許可など OS の画面を操作できるが、Windows に対応していない |
+| ウィジェットの単体テスト | JUnit | 4.13.2 | Kotlin の表示の決め方（WidgetModel）を Android の端末なしで確かめる。Android の雛形の標準 | JUnit 5：Android の単体テストでは追加の設定が要る |
 | 脆弱性検査 | OSV-Scanner（google/osv-scanner-action） | 2.7.0 | Google の無料の道具で、`pubspec.lock` と Gradle のロックファイルの両方を1つの道具で検査できる（NF-SC-06）。Gradle は依存関係のロックを有効にする | OWASP Dependency-Check：Java のみで、NVD の API キーが要り遅い。Dependabot：PR の作成が主で、CI の合否にしにくい |
 
 ## 4. 主な設計判断
@@ -113,3 +114,4 @@ Windows 版は、費用がかかるため保留する。署名しない場合、
 | 0.10 | 2026-11-03 | Compose の版、サーバーのイメージ、DB の操作、結合テストの DB を決定 |
 | 0.11 | 2026-11-03 | 写真の選択・縮小・保存先のライブラリを決定 |
 | 0.12 | 2026-11-04 | 招待のリンクのライブラリを決定 |
+| 0.13 | 2026-11-05 | ウィジェットの単体テストの道具（JUnit）を決定 |

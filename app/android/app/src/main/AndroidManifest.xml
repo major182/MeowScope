@@ -37,6 +37,26 @@
                 <data android:scheme="meowscope" android:host="invite"/>
             </intent-filter>
         </activity>
+        <!-- 記録のウィジェット（F-WG-01）。押したときの知らせ（TAP）もここで受け取る -->
+        <receiver
+            android:name=".widget.RecordWidgetProvider"
+            android:exported="false"
+            android:label="MeowScope の記録">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/record_widget_info"/>
+        </receiver>
+        <!-- ウィジェットから記録するとき、アプリの画面を開かずに Dart の処理を動かす（home_widget） -->
+        <receiver
+            android:name="es.antonborri.home_widget.HomeWidgetBackgroundReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="es.antonborri.home_widget.action.BACKGROUND"/>
+            </intent-filter>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

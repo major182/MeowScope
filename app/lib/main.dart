@@ -10,8 +10,10 @@ import 'package:go_router/go_router.dart';
 
 import 'app/router.dart';
 import 'core/providers.dart';
+import 'features/widget/widget_bridge.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   final container = ProviderContainer();
   // 例外とクラッシュを端末のログに残す（F-LG-03）。内容に記録が含まれないよう、種類と場所だけを書く
   FlutterError.onError = (details) {
@@ -29,6 +31,9 @@ void main() {
         .record('critical', '想定外の例外：${error.runtimeType}');
     return true;
   };
+  if (Platform.isAndroid) {
+    startWidgetBridge(container);
+  }
   runApp(
     UncontrolledProviderScope(
       container: container,

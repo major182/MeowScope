@@ -47,3 +47,8 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // ウィジェットの表示の決め方（WidgetModel）の単体テスト
+    testImplementation("junit:junit:4.13.2")
+}

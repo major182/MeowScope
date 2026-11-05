@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ウィジェットの色。アプリの色（#C2662D から作る配色）に合わせる。暗い表示は values-night -->
+    <color name="widget_background">#FFFFF8F5</color>
+    <color name="widget_cell">#FFFFFFFF</color>
+    <color name="widget_cell_border">#FF85736C</color>
+    <color name="widget_text">#FF231915</color>
+    <color name="widget_label">#FF8F4C33</color>
+    <string name="widget_description">ワンボタンで記録する</string>
+
+    <style name="WidgetText">
+        <item name="android:textColor">@color/widget_text</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <!-- 枠。アプリの記録のボタン（角丸12、細い枠線）に合わせる -->
+    <style name="WidgetCell">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_margin">3dp</item>
+        <item name="android:padding">4dp</item>
+        <item name="android:background">@drawable/widget_cell</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <!-- 枠の名前。アプリのボタンと同じく、茶色の文字 -->
+    <style name="WidgetLabel">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/widget_label</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+</resources>

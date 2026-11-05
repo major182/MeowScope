@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_background">#FF1A110E</color>
+    <color name="widget_cell">#FF271D1A</color>
+    <color name="widget_cell_border">#FFA08C84</color>
+    <color name="widget_text">#FFF1DFD9</color>
+    <color name="widget_label">#FFFFB59A</color>
+</resources>
