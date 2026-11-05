@@ -52,6 +52,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  testWidgets('UT-JA-01 アプリは日本語（ja_JP）で表示する。漢字を日本語の字形で出すため', (tester) async {
+    await start(tester);
+    final app = tester.widget<MaterialApp>(find.byType(MaterialApp));
+    expect(app.locale, const Locale('ja', 'JP'));
+    expect(
+      Localizations.localeOf(tester.element(find.text('MeowScope'))),
+      const Locale('ja', 'JP'),
+    );
+    await close(tester);
+  });
+
   testWidgets('UT-AU-22 ログイン：空欄なら送らない', (tester) async {
     await start(tester);
 
@@ -187,7 +198,7 @@ void main() {
     await tester.tap(find.text('パスワード再発行'));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(OutlinedButton, '確認コードを送る'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('問い合わせ'));
@@ -281,6 +292,45 @@ void main() {
       },
     );
 
+    testWidgets('UT-PR-12 送り直し：60秒を毎秒数え下げ、その間は送り直せない。60秒たったら送り直せる（境界値）', (
+      tester,
+    ) async {
+      server.on(
+        'POST',
+        '/auth/password-reset/request',
+        (r) => const FakeResponse(202),
+      );
+      await openReset(tester);
+      await requestCode(tester);
+
+      OutlinedButton resend() => tester.widget<OutlinedButton>(
+        find.widgetWithText(OutlinedButton, '確認コードを送り直す'),
+      );
+      expect(find.textContaining('60秒後に再度実施して下さい'), findsOneWidget);
+      expect(resend().onPressed, isNull);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.textContaining('59秒後に再度実施して下さい'), findsOneWidget);
+
+      await tester.pump(const Duration(seconds: 58));
+      expect(find.textContaining('1秒後に再度実施して下さい'), findsOneWidget);
+      expect(resend().onPressed, isNull);
+
+      await tester.pump(const Duration(seconds: 1));
+      expect(
+        find.text('登録済みのメールアドレスに確認コードを送りました。届かない場合は、メールアドレスをお確かめの上、再度実施して下さい。'),
+        findsOneWidget,
+      );
+      expect(resend().onPressed, isNotNull);
+
+      await tester.tap(find.widgetWithText(OutlinedButton, '確認コードを送り直す'));
+      await tester.pumpAndSettle();
+      expect(server.sentTo('/auth/password-reset/request'), hasLength(2));
+      expect(find.textContaining('60秒後'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 60));
+      await close(tester);
+    });
+
     testWidgets('UT-PR-10 異常系：コードの誤りは案内を出す。つながらないときは通信の文を出す', (tester) async {
       server.on(
         'POST',
@@ -309,6 +359,8 @@ void main() {
           reason: 'offline',
         ),
       );
+      // 送り直しは60秒たってから
+      await tester.pump(const Duration(seconds: 60));
       await tester.tap(find.widgetWithText(OutlinedButton, '確認コードを送り直す'));
       await tester.pumpAndSettle();
       expect(find.textContaining('サーバーにつながりません'), findsOneWidget);

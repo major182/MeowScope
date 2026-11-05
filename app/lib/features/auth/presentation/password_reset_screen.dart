@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,6 +10,14 @@ import '../../../core/providers.dart';
 import '../../../core/widgets/readable_width.dart';
 import '../domain/credentials.dart';
 import 'credential_field.dart';
+
+/// 確認コードを送り直せるまでの秒数（サーバーの送り直しの間隔と同じ）
+const resendWaitSeconds = 60;
+
+/// 確認コードを送った後の案内。送り直せるまでの秒数 [wait] を数え下げて出す
+String sentNotice(int wait) => wait > 0
+    ? '登録済みのメールアドレスに確認コードを送りました。届かない場合は、メールアドレスをお確かめの上、$wait秒後に再度実施して下さい。'
+    : '登録済みのメールアドレスに確認コードを送りました。届かない場合は、メールアドレスをお確かめの上、再度実施して下さい。';
 
 /// 確認コードの形（6桁の数字）を確かめる
 String? validateResetCode(String? value) {
@@ -42,10 +52,14 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
   var _sent = false;
   var _sending = false;
   String? _error;
-  String? _notice;
+
+  /// 送り直せるまでの残りの秒数。0 なら送り直せる
+  var _wait = 0;
+  Timer? _timer;
 
   @override
   void dispose() {
+    _timer?.cancel();
     _email.dispose();
     _code.dispose();
     _password.dispose();
@@ -59,7 +73,6 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
     setState(() {
       _sending = true;
       _error = null;
-      _notice = null;
     });
     try {
       await ref.read(authRepositoryProvider).requestPasswordReset(_email.text);
@@ -67,8 +80,8 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
         setState(() {
           _sending = false;
           _sent = true;
-          _notice = '登録されているメールアドレスなら、確認コードを送りました。届かないときは、1分たってから送り直してください';
         });
+        _startWait();
       }
     } on ApiError catch (e) {
       if (mounted) {
@@ -78,6 +91,22 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
         });
       }
     }
+  }
+
+  /// 送り直せるまで、毎秒数え下げる（サーバーは1分以内の送り直しではメールを送らない）
+  void _startWait() {
+    _timer?.cancel();
+    setState(() => _wait = resendWaitSeconds);
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() => _wait--);
+      if (_wait <= 0) {
+        timer.cancel();
+      }
+    });
   }
 
   Future<void> _reset() async {
@@ -114,7 +143,6 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
   @override
   Widget build(BuildContext context) {
     final error = _error;
-    final notice = _notice;
     return Scaffold(
       appBar: AppBar(title: const Text('パスワード再設定')),
       body: ListView(
@@ -134,13 +162,13 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
                 ),
                 const SizedBox(height: 12),
                 OutlinedButton(
-                  onPressed: _sending ? null : _requestCode,
+                  onPressed: _sending || _wait > 0 ? null : _requestCode,
                   child: Text(_sent ? '確認コードを送り直す' : '確認コードを送る'),
                 ),
               ],
             ),
           ),
-          if (notice != null) ...[const SizedBox(height: 12), Text(notice)],
+          if (_sent) ...[const SizedBox(height: 12), Text(sentNotice(_wait))],
           if (_sent) ...[
             const Divider(height: 40),
             Form(
@@ -148,7 +176,7 @@ class _PasswordResetScreenState extends ConsumerState<PasswordResetScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('メールに届いた確認コード（15分のあいだ有効）と、新しいパスワードを入れてください'),
+                  const Text('メールに届いた確認コード（15分有効）と、新しいパスワードを入れてください'),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _code,

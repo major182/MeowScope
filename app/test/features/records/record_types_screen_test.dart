@@ -112,7 +112,7 @@ void main() {
     expect(saved.icon, 'custom_nail');
     expect(find.text('記録項目'), findsOneWidget);
 
-    await tester.pageBack();
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(OutlinedButton, '爪切り'), findsOneWidget);
     expect(
@@ -182,7 +182,7 @@ void main() {
     await tester.pumpAndSettle();
     expect((await customTypes()).single.hidden, isTrue);
     expect(find.text('非表示中'), findsOneWidget);
-    await tester.pageBack();
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(OutlinedButton, '通院'), findsNothing);
     await close(tester);
@@ -190,7 +190,7 @@ void main() {
     await tester.tap(find.widgetWithText(TextButton, '表示に戻す'));
     await tester.pumpAndSettle();
     expect((await customTypes()).single.hidden, isFalse);
-    await tester.pageBack();
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(OutlinedButton, '通院'), findsOneWidget);
     await close(tester);

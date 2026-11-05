@@ -124,7 +124,7 @@ void main() {
       await tester.tap(find.widgetWithText(TextButton, '追加'));
       await tester.pumpAndSettle();
       expect(find.text('登録画面'), findsOneWidget);
-      await tester.pageBack();
+      await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('ミケ'));

@@ -11,4 +11,16 @@ void main() {
     expect(validateResetCode('012345'), isNull);
     expect(validateResetCode(' 012345 '), isNull);
   });
+
+  test('UT-PR-13 送った後の案内：残りの秒数を入れる。0 秒なら秒数を出さない（境界値 1・0）', () {
+    expect(
+      sentNotice(1),
+      '登録済みのメールアドレスに確認コードを送りました。届かない場合は、メールアドレスをお確かめの上、1秒後に再度実施して下さい。',
+    );
+    expect(
+      sentNotice(0),
+      '登録済みのメールアドレスに確認コードを送りました。届かない場合は、メールアドレスをお確かめの上、再度実施して下さい。',
+    );
+    expect(resendWaitSeconds, 60);
+  });
 }
