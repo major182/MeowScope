@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/account_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
+import '../features/auth/presentation/password_reset_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/calendar/presentation/day_records.dart';
 import '../features/cats/presentation/cat_form_screen.dart';
@@ -28,6 +29,12 @@ GoRouter createRouter() => GoRouter(
     GoRoute(
       path: '/login-help',
       builder: (context, state) => const LoginHelpScreen(),
+      routes: [
+        GoRoute(
+          path: 'password-reset',
+          builder: (context, state) => const PasswordResetScreen(),
+        ),
+      ],
     ),
     GoRoute(
       path: '/account',

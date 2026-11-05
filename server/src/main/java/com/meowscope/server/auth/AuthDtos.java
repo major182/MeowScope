@@ -37,6 +37,17 @@ public final class AuthDtos {
     public record RefreshRequest(@NotBlank @Size(max = 100) String refreshToken) {
     }
 
+    /** パスワードの再設定の受付。 */
+    public record PasswordResetRequest(@NotBlank @Size(max = 254) String email) {
+    }
+
+    /** パスワードの再設定の実行。コードは6桁の数字、新しいパスワードは新規登録と同じ決まり。 */
+    public record PasswordResetConfirm(
+            @NotBlank @Size(max = 254) String email,
+            @NotNull @Pattern(regexp = "^[0-9]{6}$") String code,
+            @NotNull @Size(min = 8, max = 64) @Pattern(regexp = ASCII) String newPassword) {
+    }
+
     /** ログイン・新規登録・更新の応答。 */
     public record AuthResponse(String accessToken, String refreshToken, long expiresIn, UserResponse user) {
     }

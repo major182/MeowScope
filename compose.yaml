@@ -43,6 +43,12 @@ services:
       MEOWSCOPE_ENV: ${MEOWSCOPE_ENV:-local}
       MEOWSCOPE_VERSION: ${MEOWSCOPE_VERSION:-dev}
       PHOTOS_DIR: /data/photos
+      # パスワードの再設定のメール（SMTP）。空なら送らない
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
     volumes:
       # 写真の本体（PC へ移すときは、このボリュームも移す）
       - photos-data:/data/photos

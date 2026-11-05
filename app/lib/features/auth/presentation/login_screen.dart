@@ -117,7 +117,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
 /// ログインに困ったら（S-07）
 ///
-/// パスワードの再設定はメール送信の手段が決まってから（Q-26）押せるようにする。問い合わせは S-06 を開く
+/// パスワード再発行は S-03 を開く。問い合わせは S-06 を開く
 class LoginHelpScreen extends StatelessWidget {
   const LoginHelpScreen({super.key});
 
@@ -128,10 +128,10 @@ class LoginHelpScreen extends StatelessWidget {
       body: ListView(
         padding: readablePadding(context, 16),
         children: [
-          const ListTile(
-            enabled: false,
-            title: Text('パスワード再発行'),
-            subtitle: Text('準備中'),
+          ListTile(
+            title: const Text('パスワード再発行'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push('/login-help/password-reset'),
           ),
           ListTile(
             title: const Text('問い合わせ'),

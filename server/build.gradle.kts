@@ -29,6 +29,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
     // DB：SQL をそのまま書ける JdbcClient を使う。同期は表をまたいだ一括の処理が多く、ORM の自動の動きより見通しがよいため
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
+    // パスワードの再設定のメール（SMTP）。送り先のサービスは設定で切り替える（Q-26）
+    implementation("org.springframework.boot:spring-boot-starter-mail")
     // DB の変更管理（技術選定書 3章）。PostgreSQL 用の部品は別になっている
     implementation("org.springframework.boot:spring-boot-starter-flyway")
     implementation("org.flywaydb:flyway-database-postgresql")

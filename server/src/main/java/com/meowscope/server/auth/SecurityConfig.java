@@ -40,6 +40,7 @@ public class SecurityConfig {
     /** 認証なしで呼べる API。ほかはすべて認証が必要。 */
     private static final String[] PUBLIC_POSTS = {
         "/api/v1/auth/register", "/api/v1/auth/login", "/api/v1/auth/refresh",
+        "/api/v1/auth/password-reset/request", "/api/v1/auth/password-reset/confirm",
     };
 
     @Bean

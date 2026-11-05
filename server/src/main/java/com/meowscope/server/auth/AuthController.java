@@ -2,6 +2,8 @@ package com.meowscope.server.auth;
 
 import com.meowscope.server.auth.AuthDtos.AuthResponse;
 import com.meowscope.server.auth.AuthDtos.LoginRequest;
+import com.meowscope.server.auth.AuthDtos.PasswordResetConfirm;
+import com.meowscope.server.auth.AuthDtos.PasswordResetRequest;
 import com.meowscope.server.auth.AuthDtos.RefreshRequest;
 import com.meowscope.server.auth.AuthDtos.RegisterRequest;
 import jakarta.validation.Valid;
@@ -20,9 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 class AuthController {
 
     private final AuthService auth;
+    private final PasswordResetService passwordReset;
 
-    AuthController(AuthService auth) {
+    AuthController(AuthService auth, PasswordResetService passwordReset) {
         this.auth = auth;
+        this.passwordReset = passwordReset;
     }
 
     @PostMapping("/register")
@@ -39,6 +43,19 @@ class AuthController {
     @PostMapping("/refresh")
     AuthResponse refresh(@Valid @RequestBody RefreshRequest request) {
         return auth.refresh(request.refreshToken());
+    }
+
+    /** 確認コードを送る。登録の有無にかかわらず 202 を返す。 */
+    @PostMapping("/password-reset/request")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    void requestPasswordReset(@Valid @RequestBody PasswordResetRequest request) {
+        passwordReset.request(request.email());
+    }
+
+    /** コードを確かめてパスワードを変え、ログインした状態の応答を返す。 */
+    @PostMapping("/password-reset/confirm")
+    AuthResponse confirmPasswordReset(@Valid @RequestBody PasswordResetConfirm request) {
+        return passwordReset.confirm(request.email(), request.code(), request.newPassword());
     }
 
     @PostMapping("/logout")
