@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 05 |
-| 版数 | 0.22 |
+| 版数 | 0.23 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md) |
@@ -101,7 +101,7 @@ erDiagram
 | `icon_path` | text | | アイコンの場所（サーバーのみ） |
 | `has_icon` | boolean | 既定 false | 端末のみ。アイコンの有無（同期で受け取る）。版は猫の行の通し番号 |
 | `status` | text | 既定 `active` | `active` または `farewell`（お別れ） |
-| `anomaly_thresholds` | jsonb | | 猫ごとのしきい値（BR-20、S-47）。`{"food":{"min":1,"max":5},"weight":{"percent":5}}` の形で、キーは記録項目の種類（`food` `water` `urine` `stool` `vomit` `weight`）。端末では JSON の文字列で持つ |
+| `anomaly_thresholds` | jsonb | | 猫ごとのしきい値（BR-20、S-47）。`{"food":{"min":1,"max":5},"weight":{"percent":5}}` の形で、キーは記録項目の種類（`food` `water` `urine` `stool` `vomit` `weight`）。端末では JSON の文字列で持つ（端末の DB の版 11 で追加）。古いアプリは送らないので、サーバーは送られてきたときだけ変える |
 
 ### record_types（記録項目）
 
@@ -258,3 +258,4 @@ erDiagram
 | 0.20 | 2026-11-06 | 通し番号を確定の順に振ること（V7）、抜けるときのウィジェットのボタン、最後の1人と片付けの後の `sync_purges` を追加。画像のファイルは確定の後に消すこと、片付けを1つのトランザクションで行うことを追加 |
 | 0.21 | 2026-11-06 | 4章を「同期する表」にし、端末に表を作らない users・user_settings の扱い、アイコンの列、記録項目とウィジェットのボタンの並び順の取り違え、同期待ちの操作、端末のログの表を直す（品質チェック） |
 | 0.22 | 2026-11-06 | お薬の予定（medication_schedules）を追加。user_settings の通知の設定と判定方式、cats のしきい値の形、端末の app_states の通知の設定と通知を出した日のキーを記入 |
+| 0.23 | 2026-11-06 | 端末の cats にしきい値の列（版 11）。サーバーは送られたときだけしきい値を変える |

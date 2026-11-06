@@ -151,6 +151,7 @@ void main() {
       'sex': null,
       'conditions': null,
       'status': 'active',
+      'anomalyThresholds': null,
     });
     expect((server.sentTo('/sync').single.data as Map)['lastSeq'], 0);
     expect(await db.select(db.pendingChanges).get(), isEmpty);
@@ -767,5 +768,43 @@ void main() {
     expect(s['settings.reminderHours'], '8');
     expect(s['settings.notifications'], '{"birthday":false}');
     expect(s['settings.anomalyMethod'], 'statistical');
+  });
+
+  test('UT-SY-33 猫のしきい値を送り、受け取る（S-47）。受け取った値がなければ空にする', () async {
+    await addHousehold(db, 'h1');
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    await (db.update(db.cats)..where((c) => c.id.equals('c1'))).write(
+      const CatsCompanion(anomalyThresholds: Value('{"food":{"min":2}}')),
+    );
+    await pending('cats', 'c1');
+    answer(
+      changes: [
+        pulled('cats', 'c2', {
+          'householdId': 'h1',
+          'name': 'タマ',
+          'status': 'active',
+          'anomalyThresholds': {
+            'weight': {'percent': 8},
+          },
+        }, seq: 9),
+        pulled('cats', 'c3', {
+          'householdId': 'h1',
+          'name': 'クロ',
+          'status': 'active',
+          'anomalyThresholds': null,
+        }, seq: 10),
+      ],
+    );
+
+    await engine.run('u1');
+
+    expect((sentChanges().single['data'] as Map)['anomalyThresholds'], {
+      'food': {'min': 2},
+    });
+    final cats = {
+      for (final c in await db.select(db.cats).get()) c.id: c.anomalyThresholds,
+    };
+    expect(cats['c2'], '{"weight":{"percent":8}}');
+    expect(cats['c3'], isNull);
   });
 }

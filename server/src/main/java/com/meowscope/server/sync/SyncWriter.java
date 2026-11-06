@@ -126,26 +126,36 @@ class SyncWriter {
             f.text("name", true, 50), f.date("birthDate"), f.oneOf("sex", false, SEXES),
             f.text("conditions", false, 500), f.oneOf("status", true, CAT_STATUSES),
         };
+        // しきい値（S-47）は送られてきたときだけ変える（古いアプリは送らないので、消さないため）
+        String thresholds = f.thresholds("anomalyThresholds");
+        boolean hasThresholds = f.has("anomalyThresholds");
         if (checkExisting(userId, access.householdOfCat(id), household)) {
             return result(jdbc.sql("""
                     UPDATE cats SET name = :name, birth_date = :birth, sex = :sex, conditions = :conditions,
                       status = :status, deleted_at = :deletedAt, updated_at = :updatedAt,
+                      anomaly_thresholds = CASE WHEN :hasThresholds THEN CAST(:thresholds AS jsonb)
+                        ELSE anomaly_thresholds END,
                       server_seq = nextval('sync_seq')
-                    WHERE id = :id AND ROW(name, birth_date, sex, conditions, status, deleted_at)
+                    WHERE id = :id AND ROW(name, birth_date, sex, conditions, status, deleted_at, anomaly_thresholds)
                       IS DISTINCT FROM ROW(CAST(:name AS text), CAST(:birth AS date), CAST(:sex AS text),
-                        CAST(:conditions AS text), CAST(:status AS text), CAST(:deletedAt AS timestamptz))
+                        CAST(:conditions AS text), CAST(:status AS text), CAST(:deletedAt AS timestamptz),
+                        CASE WHEN :hasThresholds THEN CAST(:thresholds AS jsonb) ELSE anomaly_thresholds END)
                     """)
                     .param("id", id).param("name", values[0]).param("birth", values[1]).param("sex", values[2])
                     .param("conditions", values[3]).param("status", values[4]).param("deletedAt", deletedAt)
+                    .param("hasThresholds", hasThresholds).param("thresholds", thresholds)
                     .param("updatedAt", updatedAt).update());
         }
         jdbc.sql("""
-                INSERT INTO cats (id, household_id, name, birth_date, sex, conditions, status, deleted_at, updated_at)
-                VALUES (:id, :household, :name, :birth, :sex, :conditions, :status, :deletedAt, :updatedAt)
+                INSERT INTO cats (id, household_id, name, birth_date, sex, conditions, status, deleted_at, updated_at,
+                  anomaly_thresholds)
+                VALUES (:id, :household, :name, :birth, :sex, :conditions, :status, :deletedAt, :updatedAt,
+                  CAST(:thresholds AS jsonb))
                 """)
                 .param("id", id).param("household", household).param("name", values[0]).param("birth", values[1])
                 .param("sex", values[2]).param("conditions", values[3]).param("status", values[4])
-                .param("deletedAt", deletedAt).param("updatedAt", updatedAt).update();
+                .param("deletedAt", deletedAt).param("updatedAt", updatedAt).param("thresholds", thresholds)
+                .update();
         return APPLIED;
     }
 

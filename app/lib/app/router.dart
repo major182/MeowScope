@@ -15,6 +15,7 @@ import '../features/records/presentation/record_types_screen.dart';
 import '../features/settings/presentation/contact_screen.dart';
 import '../features/sync/presentation/rejected_changes_screen.dart';
 import '../features/notifications/presentation/notification_settings_screen.dart';
+import '../features/notifications/presentation/thresholds_screen.dart';
 import '../features/sync/presentation/sync_status_screen.dart';
 import '../features/widget/presentation/widget_buttons_screen.dart';
 import 'start_screen.dart';
@@ -110,6 +111,10 @@ GoRouter createRouter() => GoRouter(
     GoRoute(
       path: '/notification-settings',
       builder: (context, state) => const NotificationSettingsScreen(),
+    ),
+    GoRoute(
+      path: '/thresholds',
+      builder: (context, state) => const ThresholdsScreen(),
     ),
     GoRoute(
       path: '/widget-buttons',
