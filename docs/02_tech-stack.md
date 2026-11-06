@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 02 |
-| 版数 | 0.17 |
+| 版数 | 0.18 |
 | 作成日 | 2026-11-01 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md) |
@@ -42,7 +42,7 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 | 写真の選択 | image_picker | 1.2.4 | Flutter チームの公式パッケージで、Android のカメラとアルバム、Windows のファイル選択に対応する | |
 | 写真の縮小 | image | 4.12.0 | Dart だけで動き、Windows と Android で同じ処理になる。向きの反映と縮小、JPEG の保存ができる | flutter_image_compress：Windows に対応していない |
 | 端末のフォルダー | path_provider | 2.1.6 | Flutter チームの公式パッケージで、写真を置くアプリ用フォルダーを得る | |
-| 通知（未導入。通知の機能を作る段階で入れる） | flutter_local_notifications | 22.3.3 | 端末内で通知でき、時刻を予約できる。アプリ未使用時の処理が不要になったので、workmanager は採用しない | workmanager：定期実行が不要になった |
+| 通知（未導入。Ver.2.0 で通知の機能を作るときに入れる） | flutter_local_notifications | 22.3.3 | 端末内で通知でき、時刻を予約できる。アプリ未使用時の処理が不要になったので、workmanager は採用しない | workmanager：定期実行が不要になった |
 | サーバー | Spring Boot | 4.1.2 | 開発者の経験があり、Spring Security で認証と認可を標準的に作れる | 2人の利用には大きいが、経験と安全性を優先した |
 | 認証 | Spring Security（OAuth2 Resource Server） | Spring Boot の管理に従う | アクセストークンは JWT とし、標準の仕組みで検証する。毎回 DB を見ない | すべて DB のトークン：自作の部分が増える |
 | DB の変更管理 | Flyway | Spring Boot の管理に従う | SQL を番号順に流す単純な方式で、Spring Boot が標準で対応する | Liquibase：2人の利用には機能が過剰 |
@@ -119,3 +119,4 @@ Windows 版は、家族での利用の間は署名しない（2026-11-05 決定�
 | 0.15 | 2026-11-05 | メール送信の仕組み（spring-boot-starter-mail と設定の渡し方）を記入 |
 | 0.16 | 2026-11-05 | Windows 版の署名を決定（今は署名せず、一般公開のときに発行する） |
 | 0.17 | 2026-11-06 | 通知と HTTPS（Caddy）が未導入であることと、drift_dev の版を記入（品質チェック） |
+| 0.18 | 2026-11-06 | 段階の呼び方を版の番号（Ver.2.0 など）にそろえる |
