@@ -4,9 +4,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
+import '../../sync/presentation/sync_controller.dart';
+import '../data/anomaly_alerts.dart';
 import '../data/notification_scheduler.dart';
 import '../domain/birthday_plan.dart';
 import '../domain/reminder_plan.dart';
+
+final anomalyAlertsProvider = Provider<AnomalyAlerts>(
+  (ref) => AnomalyAlerts(
+    ref.watch(databaseProvider),
+    ref.watch(recordRepositoryProvider),
+    ref.watch(notifierProvider),
+  ),
+);
 
 final notificationSchedulerProvider = Provider<NotificationScheduler>(
   (ref) => NotificationScheduler(
@@ -80,6 +90,13 @@ final birthdayPlanProvider = Provider.autoDispose<List<PlannedNotification>?>((
   );
 });
 
+/// 同期が終わって成功したところか（実行中から、失敗もログインの期限切れもない状態に変わった）
+bool syncJustSucceeded(SyncState? previous, SyncState next) =>
+    (previous?.running ?? false) &&
+    !next.running &&
+    next.error == null &&
+    !next.needsLogin;
+
 /// 予約の種類と、その予約の計算
 final _plans = {
   'reminder': reminderPlanProvider,
@@ -101,6 +118,9 @@ class NotificationRunner extends ConsumerStatefulWidget {
 class _NotificationRunnerState extends ConsumerState<NotificationRunner> {
   late final NotificationScheduler _scheduler;
 
+  /// 起動してから、いつもとの差を判定したか（起動時の同期のあとに1回だけ。BR-05）
+  var _anomalyChecked = false;
+
   @override
   void initState() {
     super.initState();
@@ -112,6 +132,34 @@ class _NotificationRunnerState extends ConsumerState<NotificationRunner> {
           _scheduler.replace(kind, plan);
         }
       }, fireImmediately: true);
+    }
+    // 起動時の同期が成功したら、いつもとの差を判定する。失敗したら判定せず、次に成功した同期を待つ（BR-05）
+    ref.listenManual(syncControllerProvider, (previous, next) {
+      if (syncJustSucceeded(previous, next) && !_anomalyChecked) {
+        _anomalyChecked = true;
+        _checkAnomalies();
+      }
+    });
+  }
+
+  Future<void> _checkAnomalies() async {
+    final log = ref.read(appLogProvider);
+    try {
+      final session = ref.read(sessionProvider).value;
+      final settings = await ref.read(notificationSettingsProvider.future);
+      if (session == null || !mounted) {
+        return;
+      }
+      await ref
+          .read(anomalyAlertsProvider)
+          .check(
+            householdId: session.householdId,
+            settings: settings,
+            android: defaultTargetPlatform == TargetPlatform.android,
+          );
+    } on Object catch (e) {
+      // 判定に失敗しても、アプリの操作は止めない。例外の種類だけをログに残す
+      await log.record('warning', 'いつもとの差の判定に失敗：${e.runtimeType}');
     }
   }
 

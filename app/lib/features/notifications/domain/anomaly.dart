@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:math';
 
+import '../../records/domain/record_kind.dart';
+import '../data/notifier.dart';
 import 'notification_settings.dart';
+import 'reminder_plan.dart';
 
 /// 回数で判定する記録の種類（BR-31。薬・ブラシ・独自の項目は判定しない）
 const anomalyCountKinds = ['food', 'water', 'urine', 'stool', 'vomit'];
@@ -255,4 +258,36 @@ List<Anomaly> detectAnomalies({
     }
   }
   return result;
+}
+
+/// いつもとの差の通知の文（画面設計書 4章、F-NT-02）
+///
+/// 回数は「ミケのご飯がいつもより少なめです」と、2行目に「きのう 1回（ふだん 3回くらい）」。
+/// しきい値で判定したときは、2行目のかっこを「下限 1回」「上限 5回」にする。
+/// 体重は「ミケの体重がいつもより 6% 増えています」（2行目なし）
+AppNotification anomalyNotification(
+  Anomaly a, {
+  required AnomalyMethod method,
+  required DateTime now,
+}) {
+  final id = notificationId('anomaly', a.key);
+  final low = a.direction == AnomalyDirection.low;
+  if (a.kind == 'weight') {
+    return AppNotification(
+      id: id,
+      title: '${a.catName}の体重がいつもより ${a.observed}% ${low ? '減って' : '増えて'}います',
+      payload: '/',
+    );
+  }
+  final label = RecordKind.values.byName(a.kind).label;
+  final day = _day(a.day) == _day(now) ? 'きょう' : 'きのう';
+  final usual = method == AnomalyMethod.threshold
+      ? '${low ? '下限' : '上限'} ${a.usual}回'
+      : 'ふだん ${a.usual.round()}回くらい';
+  return AppNotification(
+    id: id,
+    title: '${a.catName}の$labelがいつもより${low ? '少なめ' : '多め'}です',
+    body: '$day ${a.observed}回（$usual）',
+    payload: '/',
+  );
 }

@@ -287,7 +287,14 @@ class RecordRepository {
   }
 
   /// 記録できる猫（お別れと削除済みを除く）を見張る
-  Stream<List<CatRow>> watchActiveCats(String householdId) {
+  Stream<List<CatRow>> watchActiveCats(String householdId) =>
+      _activeCats(householdId).watch();
+
+  /// 記録できる猫を一度だけ読む
+  Future<List<CatRow>> activeCats(String householdId) =>
+      _activeCats(householdId).get();
+
+  SimpleSelectStatement<$CatsTable, CatRow> _activeCats(String householdId) {
     final q = _db.select(_db.cats)
       ..where(
         (c) =>
@@ -296,7 +303,7 @@ class RecordRepository {
             c.status.equals('active'),
       )
       ..orderBy([(c) => OrderingTerm(expression: c.createdAt)]);
-    return q.watch();
+    return q;
   }
 
   /// 詳細なしで記録を保存する（BR-01、BR-02）。保存した記録の ID を返す
@@ -359,6 +366,37 @@ class RecordRepository {
     String? catId,
     bool newestFirst = false,
   }) {
+    final (q, map) = _range(
+      householdId,
+      from: from,
+      to: to,
+      catId: catId,
+      newestFirst: newestFirst,
+    );
+    return q.watch().map(map);
+  }
+
+  /// 期間（from 以上 to 未満）の記録を一度だけ読む（古い順）
+  Future<List<RecordEntry>> range(
+    String householdId, {
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    final (q, map) = _range(householdId, from: from, to: to);
+    return map(await q.get());
+  }
+
+  (
+    JoinedSelectStatement<HasResultSet, dynamic>,
+    List<RecordEntry> Function(List<TypedResult>),
+  )
+  _range(
+    String householdId, {
+    required DateTime from,
+    required DateTime to,
+    String? catId,
+    bool newestFirst = false,
+  }) {
     final r = _db.records;
     final c = _db.cats;
     final t = _db.recordTypes;
@@ -389,7 +427,8 @@ class RecordRepository {
                 ? OrderingTerm.desc(r.recordedAt)
                 : OrderingTerm.asc(r.recordedAt),
           ]);
-    return q.watch().map(
+    return (
+      q,
       (rows) => [
         for (final row in rows)
           RecordEntry(
