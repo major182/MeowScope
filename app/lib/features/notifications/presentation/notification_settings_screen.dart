@@ -105,7 +105,8 @@ class _NotificationSettingsScreenState
               dense: true,
               title: Text('Windows では、アプリを開いている間に画面の下でお知らせします'),
             ),
-          for (final kind in NotificationKind.values) ...[
+          // Windows では、記録にかかわる種類（記録忘れ・お薬の時間・家族の記録）は出さない（BR-09）
+          for (final kind in NotificationKind.forDevice(android: android)) ...[
             SwitchListTile(
               title: Text(kind.label),
               value: settings.isOn(kind),

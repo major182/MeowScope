@@ -43,6 +43,25 @@ void main() {
       expect(p.single.notification.title, 'ミケの記録が3時間ありません');
     });
 
+    test('Windows では記録忘れを予約しない（ふだんの記録は Android で行うため。BR-09）', () {
+      final windows = planReminders(
+        cats: const [mike],
+        lastRecordAt: {'c1': DateTime(2026, 11, 6, 8)},
+        settings: const NotificationSettings(),
+        now: now,
+        android: false,
+      );
+      expect(windows, isEmpty);
+      expect(NotificationKind.forDevice(android: false), [
+        NotificationKind.anomaly,
+        NotificationKind.birthday,
+      ]);
+      expect(
+        NotificationKind.forDevice(android: true),
+        NotificationKind.values,
+      );
+    });
+
     test('記録忘れがオフなら予約しない', () {
       final off = const NotificationSettings().toggled(
         NotificationKind.reminder,

@@ -37,8 +37,10 @@ List<PlannedNotification> planReminders({
   required Map<String, DateTime> lastRecordAt,
   required NotificationSettings settings,
   required DateTime now,
+  bool android = true,
 }) {
-  if (!settings.isOn(NotificationKind.reminder)) {
+  // Windows では記録忘れを知らせない（ふだんの記録は Android で行うため。BR-09）
+  if (!settings.shouldNotify(NotificationKind.reminder, android: android)) {
     return const [];
   }
   final hours = settings.reminderHours;

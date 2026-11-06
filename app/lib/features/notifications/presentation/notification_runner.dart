@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -53,6 +54,7 @@ final reminderPlanProvider = Provider.autoDispose<List<PlannedNotification>?>((
     lastRecordAt: last,
     settings: settings,
     now: DateTime.now(),
+    android: defaultTargetPlatform == TargetPlatform.android,
   );
 });
 

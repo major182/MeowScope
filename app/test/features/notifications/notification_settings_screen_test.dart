@@ -140,14 +140,24 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('UT-NS-08 S-49（Windows）：許可の案内は出さず、画面の中で知らせる旨を出す', (tester) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    await show(tester, InAppNotifier());
-    expect(find.text('通知が許可されていません'), findsNothing);
-    expect(find.textContaining('画面の下でお知らせします'), findsOneWidget);
-    await close(tester);
-    debugDefaultTargetPlatformOverride = null;
-  });
+  testWidgets(
+    'UT-NS-08 S-49（Windows）：許可の案内は出さず、画面の中で知らせる旨を出す。記録にかかわる種類（記録忘れ・お薬の時間・家族の記録）は出さない',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      await show(tester, InAppNotifier());
+      expect(find.text('通知が許可されていません'), findsNothing);
+      expect(find.textContaining('画面の下でお知らせします'), findsOneWidget);
+      for (final hidden in ['記録忘れ', 'お薬の時間', '家族の記録']) {
+        expect(find.widgetWithText(SwitchListTile, hidden), findsNothing);
+      }
+      expect(find.byType(TextField), findsNothing);
+      for (final shown in ['いつもとの差', '誕生日']) {
+        expect(find.widgetWithText(SwitchListTile, shown), findsOneWidget);
+      }
+      await close(tester);
+      debugDefaultTargetPlatformOverride = null;
+    },
+  );
 
   testWidgets('UT-NS-09 画面の中で知らせる版（Windows）：知らせた内容を画面の下に出し、開く場所があれば「開く」を出す', (
     tester,

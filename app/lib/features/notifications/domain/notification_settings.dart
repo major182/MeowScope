@@ -2,16 +2,26 @@ import 'dart:convert';
 
 /// 通知の種類（DB 設計書 user_settings.notifications のキー）
 enum NotificationKind {
-  medication('お薬の時間'),
-  anomaly('いつもとの差'),
-  reminder('記録忘れ'),
-  family('家族の記録'),
-  birthday('誕生日');
+  medication('お薬の時間', onWindows: false),
+  anomaly('いつもとの差', onWindows: true),
+  reminder('記録忘れ', onWindows: false),
+  family('家族の記録', onWindows: false),
+  birthday('誕生日', onWindows: true);
 
-  const NotificationKind(this.label);
+  const NotificationKind(this.label, {required this.onWindows});
 
   /// 通知の設定（S-49）に出す名前
   final String label;
+
+  /// Windows でも知らせるか（BR-09）。ふだんの記録は Android で行い、Windows は統計を見る道具なので、
+  /// 記録にかかわる通知（記録忘れ・お薬の時間・家族の記録）は Windows では出さない
+  final bool onWindows;
+
+  /// この端末で扱う種類。[android] でなければ Windows の扱い
+  static List<NotificationKind> forDevice({required bool android}) => [
+    for (final kind in values)
+      if (android || kind.onWindows) kind,
+  ];
 }
 
 /// いつもとの差の判定方式（BR-20）
@@ -52,6 +62,10 @@ class NotificationSettings {
   final AnomalyMethod method;
 
   bool isOn(NotificationKind kind) => enabled[kind] ?? true;
+
+  /// この端末で知らせるか。設定でオンで、かつこの端末で扱う種類のとき（Windows は一部だけ。BR-09）
+  bool shouldNotify(NotificationKind kind, {required bool android}) =>
+      (android || kind.onWindows) && isOn(kind);
 
   NotificationSettings copyWith({
     Map<NotificationKind, bool>? enabled,
