@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 06 |
-| 版数 | 0.21 |
+| 版数 | 0.22 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[05 DB 設計書](05_db-design.md) |
@@ -141,7 +141,7 @@ POST /sync
 | 競合 | サーバーが後から受け取った変更を採用する（BR-10）。受け取った順に `server_seq` を振る。番号は確定の順に振り、読むときは確定を待つので、小さい番号の行を後から取りこぼすことはない（DB 設計書 2章）。`updatedAt` は比べない（表示のためだけに保存する） |
 | 結果の値 | `applied`（反映）、`ignored`（今の内容と同じ。再送など。番号は進めない）、`rejected`（権限や内容の誤り） |
 | 受け付けない理由 | `rejected` のときだけ `reason` を返す。値の誤りのときは、どの項目かを `field` で返す。`unknown_table`（知らない表。アプリとサーバーの版のずれ）、`forbidden`（自分のおうちではない）、`not_found`（参照する猫・項目・記録がない。ほかのおうちの猫・項目なら `forbidden`）、`invalid`（値が決まりに合わない）、`too_many`（写真3枚・ボタン4つの上限超え）、`constraint`（DB の制約に反した）。端末は、理由が空で届いたときは `unknown` として残す |
-| 反映の順 | 1回の要求の中では、おうち → 猫・記録項目 → 記録・ウィジェットのボタン → 写真の情報 → 設定 の順に反映する。1件が `rejected` でも、ほかは反映する |
+| 反映の順 | 1回の要求の中では、おうち → 猫・記録項目 → 記録・ウィジェットのボタン・お薬の予定 → 写真の情報 → 設定 の順に反映する。1件が `rejected` でも、ほかは反映する |
 | 権限 | 行のおうちと変更の後のおうちの両方が、自分の属するおうちであること。おうちの付け替えは `rejected`。記録の投稿者の ID は、端末の申告ではなくトークンのユーザーにする |
 | 再送 | 同じ変更を再送しても結果は同じになる。通信が切れても安全に送り直せる |
 | 分割 | 1回で送受信するのは500件まで。`hasMore` が真なら続けて呼ぶ。`nextSeq` は、続きがあれば返した最後の変更の番号、最後のページならサーバーの最新の番号 |
@@ -156,11 +156,12 @@ POST /sync
 | 表 | `data` の主な列 |
 |---|---|
 | `households` | `name` |
-| `cats` | `householdId`、`name`、`birthDate`、`sex`、`conditions`、`status`。受け取るときは `hasIcon`（アイコンの有無）も入る |
+| `cats` | `householdId`、`name`、`birthDate`、`sex`、`conditions`、`status`、`anomalyThresholds`（しきい値。DB 設計書の形）。受け取るときは `hasIcon`（アイコンの有無）も入る |
 | `record_types` | `householdId`、`name`、`icon`、`kind`、`sortOrder`、`hidden`（非表示） |
 | `records` | `catId`、`recordTypeId`、`recordedAt`、`authorName`、`valueNumber`、`level`、`detail`、`memo`。受け取るときは `authorId`（投稿者の ID。退会した人なら空）も入る |
 | `record_photos` | `recordId`、`sortOrder`（1〜3）。受け取るときは `sizeBytes` と `uploaded`（画像が送られたか）も入る。画像の本体は 6章の API で送受信する |
-| `user_settings` | `weekStart` など。`id` は見ず、自分の行を更新する |
+| `user_settings` | `weekStart`、`reminderHours`（1〜48、空はオフ）、`notifications`（種類ごとのオン・オフ）、`anomalyMethod`（`statistical` か `threshold`）。`id` は見ず、自分の行を更新する |
+| `medication_schedules` | `householdId`、`catId`、`name`（20文字まで）、`dose`（20文字まで）、`timeOfDay`（`HH:mm`）、`enabled`。猫は同じおうちのものであること |
 | `widget_buttons` | `recordTypeId`、`sortOrder`（0〜3）。持ち主はトークンのユーザーで、自分の分だけを送受信する。1人4つまで（超えたら `rejected`）。記録項目は自分の属するおうちのものであること |
 | `household_members`（受け取りのみ） | `householdId`、`userId`、`displayName` |
 | `users`（受け取りのみ） | `displayName`、`hasIcon`。同じおうちのメンバーだけ。メールアドレスは送らない |
@@ -251,3 +252,4 @@ RFC 9457（Problem Details）の形式で返す。
 | 0.19 | 2026-11-06 | おうちの作成の 409、招待をメンバーが受けたとき、記録項目がないときの `not_found` を追加 |
 | 0.20 | 2026-11-06 | 同期する表に写真の情報と受け取る列（`hasIcon`・`authorId` など）、反映の順に写真、おうちの作成の 400、理由の `unknown`、9章に 405・415 と `code`・`title` の一覧を追加（品質チェック） |
 | 0.21 | 2026-11-06 | 段階の呼び方を版の番号（Ver.2.0 など）にそろえる |
+| 0.22 | 2026-11-06 | 同期する表にお薬の予定（medication_schedules）、user_settings の通知の設定と判定方式、cats のしきい値を追加 |

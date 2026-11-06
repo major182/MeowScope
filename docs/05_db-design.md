@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 05 |
-| 版数 | 0.21 |
+| 版数 | 0.22 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md) |
@@ -45,6 +45,8 @@ erDiagram
   record_types ||--o{ records : ""
   record_types ||--o{ widget_buttons : ""
   records ||--o{ record_photos : ""
+  households ||--o{ medication_schedules : ""
+  cats ||--o{ medication_schedules : ""
 ```
 
 ## 4. 同期する表
@@ -66,9 +68,9 @@ erDiagram
 |---|---|---|---|
 | `user_id` | uuid | 一意 | ユーザー |
 | `week_start` | text | 既定 `sunday` | 週の始まり |
-| `reminder_hours` | integer | 既定10、空はオフ | 記録忘れの n 時間 |
-| `notifications` | jsonb | | 通知の種類ごとのオンとオフ |
-| `anomaly_method` | text | 既定 `statistical` | 判定方式（BR-20） |
+| `reminder_hours` | integer | 既定10、1〜48、空はオフ | 記録忘れの n 時間（BR-13） |
+| `notifications` | jsonb | | 通知の種類ごとのオンとオフ。`{"medication":true,"anomaly":true,"reminder":true,"family":true,"birthday":true}` の形で、ない種類はオンとみなす |
+| `anomaly_method` | text | 既定 `statistical` | 判定方式（BR-20）。`statistical`（ふだんの傾向から自動）または `threshold`（自分で決めたしきい値） |
 
 ### households（おうち）
 
@@ -99,7 +101,7 @@ erDiagram
 | `icon_path` | text | | アイコンの場所（サーバーのみ） |
 | `has_icon` | boolean | 既定 false | 端末のみ。アイコンの有無（同期で受け取る）。版は猫の行の通し番号 |
 | `status` | text | 既定 `active` | `active` または `farewell`（お別れ） |
-| `anomaly_thresholds` | jsonb | | 猫ごとのしきい値（BR-20） |
+| `anomaly_thresholds` | jsonb | | 猫ごとのしきい値（BR-20、S-47）。`{"food":{"min":1,"max":5},"weight":{"percent":5}}` の形で、キーは記録項目の種類（`food` `water` `urine` `stool` `vomit` `weight`）。端末では JSON の文字列で持つ |
 
 ### record_types（記録項目）
 
@@ -150,6 +152,19 @@ erDiagram
 
 ボタンはアカウントのもので、端末にも同じ形で置き、同期で送受信する（BR-22）。記録項目はおうちのものなので、端末は今のおうちの項目のボタンだけを使う。おうちのデータを端末から消すときは、そのおうちの項目のボタンも消す。
 
+### medication_schedules（お薬の予定）
+
+| 列 | 型 | 制約 | 説明 |
+|---|---|---|---|
+| `household_id` | uuid | 外部キー | おうち |
+| `cat_id` | uuid | 外部キー（猫の削除で消える） | 猫 |
+| `name` | text | 必須、20文字まで | 薬の名前 |
+| `dose` | text | 20文字まで | 量（例：1錠） |
+| `time_of_day` | text | 必須、`HH:mm`（00:00〜23:59） | 毎日の時刻（端末の時刻＝日本時間） |
+| `enabled` | boolean | 既定 true | オン・オフ |
+
+予定はおうちのもので、家族と共有する（S-50、BR-06）。通知を出すかは各自の `user_settings.notifications` に従う。
+
 ## 5. サーバーだけの表
 
 ### invitations（招待）
@@ -199,7 +214,7 @@ erDiagram
 | `local_photos` | 写真の ID、端末のファイルの場所、保存日時 | 30日で消す写真の管理 |
 | `rejected_changes` | ユーザーの ID、表の名前、行の ID、理由、項目、日時 | サーバーが受け付けなかった変更。同じ行は1件にし、新しい理由で置き換える。送れたら消す。S-48 に出す |
 | `client_logs` | 通し番号、重大度、文、日時、問い合わせ番号 | 端末のログ。同期のときにサーバーへ送り、送れたら消す。最新の1000件まで（ログ設計書 8章） |
-| `app_states` | キー、値 | 端末の状態。同期の位置（`sync.lastSeq.<ユーザーの ID>`）、最終同期時刻、最後の問い合わせ番号（`sync.*`）。ログイン中のユーザーと選んでいるおうち（`session.*`）、ユーザーごとに最後に選んだおうち（`household.<ユーザーの ID>`。ログアウトしても残し、同じ人が入り直したら戻す）。トークンはここに置かず、OS の安全な保管場所に置く（NF-SC-07）。週の始まり（`settings.weekStart`）もここに置き、同期で `user_settings` と送受信する |
+| `app_states` | キー、値 | 端末の状態。同期の位置（`sync.lastSeq.<ユーザーの ID>`）、最終同期時刻、最後の問い合わせ番号（`sync.*`）。ログイン中のユーザーと選んでいるおうち（`session.*`）、ユーザーごとに最後に選んだおうち（`household.<ユーザーの ID>`。ログアウトしても残し、同じ人が入り直したら戻す）。トークンはここに置かず、OS の安全な保管場所に置く（NF-SC-07）。週の始まり（`settings.weekStart`）、記録忘れの時間（`settings.reminderHours`。空の文字はオフ）、通知の種類ごとのオン・オフ（`settings.notifications`。JSON）、判定方式（`settings.anomalyMethod`）もここに置き、同期で `user_settings` と送受信する。いつもとの差の通知を出した日（`notify.anomaly.<猫の ID>.<種類>`。同じ内容を1日1回にする。BR-12）も置く |
 
 ## 7. 削除の扱い
 
@@ -242,3 +257,4 @@ erDiagram
 | 0.19 | 2026-11-05 | 削除から90日を過ぎた行の物理削除を実装（7章）、sync_purges を追加 |
 | 0.20 | 2026-11-06 | 通し番号を確定の順に振ること（V7）、抜けるときのウィジェットのボタン、最後の1人と片付けの後の `sync_purges` を追加。画像のファイルは確定の後に消すこと、片付けを1つのトランザクションで行うことを追加 |
 | 0.21 | 2026-11-06 | 4章を「同期する表」にし、端末に表を作らない users・user_settings の扱い、アイコンの列、記録項目とウィジェットのボタンの並び順の取り違え、同期待ちの操作、端末のログの表を直す（品質チェック） |
+| 0.22 | 2026-11-06 | お薬の予定（medication_schedules）を追加。user_settings の通知の設定と判定方式、cats のしきい値の形、端末の app_states の通知の設定と通知を出した日のキーを記入 |
