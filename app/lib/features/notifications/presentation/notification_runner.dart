@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../data/notification_scheduler.dart';
+import '../domain/birthday_plan.dart';
 import '../domain/reminder_plan.dart';
 
 final notificationSchedulerProvider = Provider<NotificationScheduler>(
@@ -58,6 +59,33 @@ final reminderPlanProvider = Provider.autoDispose<List<PlannedNotification>?>((
   );
 });
 
+/// 誕生日のお祝いの予約（F-NT-06、BR-32）。猫（生年月日・お別れ）と通知の設定が変わるたびに計算し直す
+final birthdayPlanProvider = Provider.autoDispose<List<PlannedNotification>?>((
+  ref,
+) {
+  final cats = ref.watch(_activeCatsProvider).value;
+  final settings = ref.watch(notificationSettingsProvider).value;
+  if (cats == null || settings == null) {
+    return null;
+  }
+  return planBirthdays(
+    cats: [
+      for (final c in cats)
+        if (c.birthDate case final birth?)
+          BirthdayCat(id: c.id, name: c.name, birthDate: birthDateOf(birth)),
+    ],
+    settings: settings,
+    now: DateTime.now(),
+    android: defaultTargetPlatform == TargetPlatform.android,
+  );
+});
+
+/// 予約の種類と、その予約の計算
+final _plans = {
+  'reminder': reminderPlanProvider,
+  'birthday': birthdayPlanProvider,
+};
+
 /// ログイン中に、通知の予約を最新に保つ（F-NT-03 など）
 ///
 /// ログアウトなどでこの部品が消えたら、予約を取り消す（ほかの人の猫について知らせないため）
@@ -77,17 +105,21 @@ class _NotificationRunnerState extends ConsumerState<NotificationRunner> {
   void initState() {
     super.initState();
     _scheduler = ref.read(notificationSchedulerProvider);
-    // 予約の材料が変わるたびに、予約を置き換える。開いた時点の予約も、すぐに作る
-    ref.listenManual(reminderPlanProvider, (_, plan) {
-      if (plan != null) {
-        _scheduler.replace('reminder', plan);
-      }
-    }, fireImmediately: true);
+    // 予約の材料が変わるたびに、種類ごとに予約を置き換える。開いた時点の予約も、すぐに作る
+    for (final MapEntry(key: kind, value: provider) in _plans.entries) {
+      ref.listenManual(provider, (_, plan) {
+        if (plan != null) {
+          _scheduler.replace(kind, plan);
+        }
+      }, fireImmediately: true);
+    }
   }
 
   @override
   void dispose() {
-    _scheduler.clear('reminder');
+    for (final kind in _plans.keys) {
+      _scheduler.clear(kind);
+    }
     super.dispose();
   }
 

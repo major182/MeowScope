@@ -327,4 +327,30 @@ void main() {
       await close(tester);
     });
   });
+
+  testWidgets(
+    'UT-CS-14 猫の誕生日の日のセルに誕生日の印を出す。お別れの猫と生年月日のない猫には出さない（F-VW-05、BR-32）',
+    (tester) async {
+      await (db.update(db.cats)..where((c) => c.id.equals('c1'))).write(
+        CatsCompanion(birthDate: Value(DateTime.utc(2023, 11, 10))),
+      );
+      await (db.update(db.cats)..where((c) => c.id.equals('c2'))).write(
+        CatsCompanion(
+          birthDate: Value(DateTime.utc(2022, 11, 20)),
+          status: const Value('farewell'),
+        ),
+      );
+      await show(tester, CalendarScreen(today: _today));
+
+      expect(find.byIcon(Icons.cake_outlined), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('day-11-10')),
+          matching: find.byIcon(Icons.cake_outlined),
+        ),
+        findsOneWidget,
+      );
+      await close(tester);
+    },
+  );
 }

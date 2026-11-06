@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../app/main_shell.dart';
 import '../../../core/providers.dart';
 import '../../../core/today.dart';
+import '../../../core/db/app_database.dart';
 import '../../cats/presentation/cat_filter.dart';
+import '../../notifications/domain/birthday_plan.dart';
 import '../../records/data/record_repository.dart';
 import '../../records/domain/record_kind.dart';
 import '../domain/calendar_month.dart';
@@ -50,6 +52,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ).toString(),
     );
   }
+
+  /// 誕生日の印を出す猫の生年月日（F-VW-05、BR-32）。お別れの猫と生年月日のない猫は除き、1匹を選んでいればその猫だけ
+  List<DateTime> _birthdays(List<CatRow>? cats) => [
+    for (final c in cats ?? const <CatRow>[])
+      if (c.status != 'farewell' && (_catId == null || c.id == _catId))
+        if (c.birthDate case final birth?) birthDateOf(birth),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -108,6 +117,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             today: widget.today ?? ref.watch(todayProvider).value ?? _today,
             selected: wide ? _selected : null,
             marks: dayMarks(entries),
+            birthdays: _birthdays(ref.watch(filterCatsProvider).value),
             onTap: (d) => _selectDay(d, wide),
           ),
         ),
@@ -174,6 +184,7 @@ class _MonthGrid extends StatelessWidget {
     required this.selected,
     required this.marks,
     required this.onTap,
+    this.birthdays = const [],
   });
 
   final List<DateTime> days;
@@ -181,6 +192,9 @@ class _MonthGrid extends StatelessWidget {
   final DateTime today;
   final DateTime? selected;
   final Map<DateTime, List<CalendarMark>> marks;
+
+  /// 誕生日の印を出す猫の生年月日
+  final List<DateTime> birthdays;
   final ValueChanged<DateTime> onTap;
 
   @override
@@ -209,16 +223,29 @@ class _MonthGrid extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              '${day.day}',
-                              style: TextStyle(
-                                color: day.month != month.month
-                                    ? scheme.outline
-                                    : null,
-                                fontWeight: isSameDay(day, today)
-                                    ? FontWeight.bold
-                                    : null,
-                              ),
+                            Row(
+                              children: [
+                                Text(
+                                  '${day.day}',
+                                  style: TextStyle(
+                                    color: day.month != month.month
+                                        ? scheme.outline
+                                        : null,
+                                    fontWeight: isSameDay(day, today)
+                                        ? FontWeight.bold
+                                        : null,
+                                  ),
+                                ),
+                                const Spacer(),
+                                // 誕生日はセルの右上に印を出す。イラストがないので標準のケーキのアイコンを使う
+                                if (birthdays.any((b) => isBirthday(b, day)))
+                                  Icon(
+                                    Icons.cake_outlined,
+                                    size: 14,
+                                    color: scheme.primary,
+                                    semanticLabel: '誕生日',
+                                  ),
+                              ],
                             ),
                             Expanded(
                               child: ClipRect(
