@@ -414,6 +414,24 @@ class RecordRepository {
     );
   }
 
+  /// 猫ごとの最後の記録の日時を見張る（記録忘れ、BR-13）。家族の記録も含む。削除した記録と猫は除く
+  Stream<Map<String, DateTime>> watchLastRecordTimes(String householdId) {
+    final r = _db.records;
+    final c = _db.cats;
+    final last = r.recordedAt.max();
+    final q = _db.selectOnly(r).join([innerJoin(c, c.id.equalsExp(r.catId))])
+      ..addColumns([r.catId, last])
+      ..where(
+        c.householdId.equals(householdId) &
+            c.deletedAt.isNull() &
+            r.deletedAt.isNull(),
+      )
+      ..groupBy([r.catId]);
+    return q.watch().map(
+      (rows) => {for (final row in rows) row.read(r.catId)!: ?row.read(last)},
+    );
+  }
+
   /// 絞り込みに出す猫（お別れを含み、削除済みを除く）を登録順に見張る
   Stream<List<CatRow>> watchCats(String householdId) {
     final q = _db.select(_db.cats)

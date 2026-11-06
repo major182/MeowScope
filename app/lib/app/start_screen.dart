@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/providers.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/household/presentation/household_setup_screen.dart';
+import '../features/notifications/presentation/notification_runner.dart';
 import '../features/sync/presentation/sync_controller.dart';
 import 'main_shell.dart';
 
@@ -28,10 +29,11 @@ class StartScreen extends ConsumerWidget {
       return const LoginScreen();
     }
     // ログイン中は自動で同期する。おうちがまだなくても、サーバーにあるおうちを探すために同期する
+    // おうちがあれば、通知の予約も最新に保つ（記録忘れなど）
     return SyncScheduler(
       child: session.value == null
           ? const HouseholdSetupScreen()
-          : const MainShell(),
+          : const NotificationRunner(child: MainShell()),
     );
   }
 }
