@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 /// 知らせる内容。[id] は同じ通知を置き換えるときに使う（同じ id なら新しいもので置き換わる）
@@ -89,6 +90,11 @@ class AndroidNotifier implements AppNotifier {
 /// Windows：OS の通知は出さず、アプリの起動中に画面の中で知らせる（BR-09）。
 /// 画面の側は [stream] を聞いて、画面の下に出す
 class InAppNotifier implements AppNotifier {
+  /// [attention] は、知らせたときに利用者の目を引く処理（Windows はタスクバーのアイコンの点滅）
+  InAppNotifier({this.attention});
+
+  final Future<void> Function()? attention;
+
   final _controller = StreamController<AppNotification>.broadcast();
 
   Stream<AppNotification> get stream => _controller.stream;
@@ -100,7 +106,19 @@ class InAppNotifier implements AppNotifier {
   Future<bool> requestPermission() async => true;
 
   @override
-  Future<void> show(AppNotification n) async => _controller.add(n);
+  Future<void> show(AppNotification n) async {
+    _controller.add(n);
+    try {
+      await attention?.call();
+    } on Object {
+      // 点滅できなくても、画面の中では知らせているので続ける
+    }
+  }
 
   Future<void> close() => _controller.close();
 }
+
+/// Windows のタスクバーのアイコンを点滅させる（BR-09）。窓が手前にあれば何もしない。
+/// 窓を手前に出すと点滅は止まる（windows/runner/flutter_window.cpp の FlashWindowEx）
+Future<void> flashTaskbar() =>
+    const MethodChannel('meowscope/taskbar').invokeMethod<bool>('flash');
