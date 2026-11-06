@@ -20,8 +20,11 @@ final _notificationTaps = StreamController<String?>.broadcast();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Android は OS の通知を使う。Windows はアプリの画面の中で知らせる（BR-09。既定の版のまま）
-  final notifier = Platform.isAndroid
+  final AppNotifier? notifier = Platform.isAndroid
       ? await AndroidNotifier.create(onTap: _notificationTaps.add)
+      // Windows は画面の中で知らせ、窓が手前になければタスクバーのアイコンを点滅させる
+      : Platform.isWindows
+      ? InAppNotifier(attention: flashTaskbar)
       : null;
   final container = ProviderContainer(
     overrides: [
