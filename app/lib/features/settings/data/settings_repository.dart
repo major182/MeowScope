@@ -34,17 +34,37 @@ class SettingsRepository {
   static const anomalyMethodKey = 'settings.anomalyMethod';
 
   /// 通知の設定を見張る（S-49）。未設定の項目は既定
+  ///
+  /// 端末の状態の表はほかの値（同期の位置など）でも書かれるので、設定の値が変わったときだけ流す
   Stream<NotificationSettings> watchNotificationSettings() {
     final keys = [notificationsKey, reminderHoursKey, anomalyMethodKey];
     final q = _db.select(_db.appStates)..where((s) => s.key.isIn(keys));
-    return q.watch().map((rows) {
-      final values = {for (final r in rows) r.key: r.value};
-      return NotificationSettings.parse(
-        flagsJson: values[notificationsKey],
-        reminderHours: values[reminderHoursKey],
-        method: values[anomalyMethodKey],
-      );
-    });
+    return q
+        .watch()
+        .map(
+          (rows) => (
+            flags: rows
+                .where((r) => r.key == notificationsKey)
+                .firstOrNull
+                ?.value,
+            hours: rows
+                .where((r) => r.key == reminderHoursKey)
+                .firstOrNull
+                ?.value,
+            method: rows
+                .where((r) => r.key == anomalyMethodKey)
+                .firstOrNull
+                ?.value,
+          ),
+        )
+        .distinct()
+        .map(
+          (v) => NotificationSettings.parse(
+            flagsJson: v.flags,
+            reminderHours: v.hours,
+            method: v.method,
+          ),
+        );
   }
 
   /// 通知の設定を保存する。[userId] を渡すと、同期でアカウントの設定へ送る

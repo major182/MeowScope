@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 /// 知らせる内容。[id] は同じ通知を置き換えるときに使う（同じ id なら新しいもので置き換わる）
 class AppNotification {
@@ -30,6 +31,12 @@ abstract interface class AppNotifier {
 
   /// すぐに知らせる
   Future<void> show(AppNotification notification);
+
+  /// [at] の時刻に知らせるよう予約する。同じ id の予約は置き換える
+  Future<void> schedule(AppNotification notification, DateTime at);
+
+  /// 予約（と出ている通知）を取り消す
+  Future<void> cancel(int id);
 }
 
 /// Android：OS の通知として出す
@@ -78,6 +85,24 @@ class AndroidNotifier implements AppNotifier {
       await _android?.requestNotificationsPermission() ?? false;
 
   @override
+  /// 時刻は UTC で渡す（端末の地域の時刻の表を読まずに済み、同じ瞬間を指せる）。
+  /// 正確な時刻の許可（SCHEDULE_EXACT_ALARM）を求めずに済むよう、数分のずれを許す方式で予約する
+  @override
+  Future<void> schedule(AppNotification n, DateTime at) =>
+      _plugin.zonedSchedule(
+        id: n.id,
+        scheduledDate: tz.TZDateTime.from(at.toUtc(), tz.UTC),
+        notificationDetails: _details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        title: n.title,
+        body: n.body,
+        payload: n.payload,
+      );
+
+  @override
+  Future<void> cancel(int id) => _plugin.cancel(id: id);
+
+  @override
   Future<void> show(AppNotification n) => _plugin.show(
     id: n.id,
     title: n.title,
@@ -115,7 +140,29 @@ class InAppNotifier implements AppNotifier {
     }
   }
 
-  Future<void> close() => _controller.close();
+  /// 予約。OS に予約できないので、アプリの起動中だけタイマーで待つ（BR-09。閉じている間は知らせない）
+  final _timers = <int, Timer>{};
+
+  @override
+  Future<void> schedule(AppNotification n, DateTime at) async {
+    _timers.remove(n.id)?.cancel();
+    final wait = at.difference(DateTime.now());
+    _timers[n.id] = Timer(wait.isNegative ? Duration.zero : wait, () {
+      _timers.remove(n.id);
+      show(n);
+    });
+  }
+
+  @override
+  Future<void> cancel(int id) async => _timers.remove(id)?.cancel();
+
+  Future<void> close() async {
+    for (final t in _timers.values) {
+      t.cancel();
+    }
+    _timers.clear();
+    await _controller.close();
+  }
 }
 
 /// Windows のタスクバーのアイコンを点滅させる（BR-09）。窓が手前にあれば何もしない。
