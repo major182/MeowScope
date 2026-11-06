@@ -472,7 +472,16 @@ class SyncEngine {
               );
       case 'user_settings':
         final week = await _state(SettingsRepository.weekStartKey);
-        return change({'weekStart': week ?? 'sunday'}, updatedAt: _clock());
+        // 通知の設定は、端末で決めたものだけを送る（まだ受け取っていない設定を、既定の値で上書きしないため）
+        final flags = await _state(SettingsRepository.notificationsKey);
+        final hours = await _state(SettingsRepository.reminderHoursKey);
+        final method = await _state(SettingsRepository.anomalyMethodKey);
+        return change({
+          'weekStart': week ?? 'sunday',
+          if (flags != null) 'notifications': jsonDecode(flags),
+          if (hours != null) 'reminderHours': int.tryParse(hours),
+          'anomalyMethod': ?method,
+        }, updatedAt: _clock());
       case 'widget_buttons':
         final w = await (_db.select(
           _db.widgetButtons,
@@ -648,6 +657,22 @@ class SyncEngine {
               final week = data['weekStart'] as String?;
               if (week != null) {
                 await _setState(SettingsRepository.weekStartKey, week);
+              }
+              // 通知の設定（S-49）。サーバーに値があるものだけを置く
+              final flags = data['notifications'];
+              if (flags is Map) {
+                await _setState(
+                  SettingsRepository.notificationsKey,
+                  jsonEncode(flags),
+                );
+              }
+              final hours = data['reminderHours'];
+              if (hours is int) {
+                await _setState(SettingsRepository.reminderHoursKey, '$hours');
+              }
+              final method = data['anomalyMethod'] as String?;
+              if (method != null) {
+                await _setState(SettingsRepository.anomalyMethodKey, method);
               }
             case 'widget_buttons':
               await _db

@@ -12,6 +12,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // 通知の部品（flutter_local_notifications）が新しい Java の日時の機能を使うため、古い Android でも動くよう変換する
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -51,4 +53,6 @@ flutter {
 dependencies {
     // ウィジェットの表示の決め方（WidgetModel）の単体テスト
     testImplementation("junit:junit:4.13.2")
+    // 通知の部品が求める、新しい Java の日時の機能の変換（README の指定の版）
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

@@ -1,8 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- サーバーと同期するため（第2段階） -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 通知を出す（Android 13 以降は利用者の許可が要る。F-NT-01〜06） -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="meowscope"
+        android:label="MeowScope"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

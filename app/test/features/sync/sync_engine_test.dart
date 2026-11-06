@@ -697,4 +697,75 @@ void main() {
       expect(await cats(), ['kept']);
     });
   });
+
+  test('UT-SY-31 通知の設定を送る：端末で決めた項目だけを送り、決めていない項目は送らない（既定で上書きしない）', () async {
+    await pending('user_settings', 'u1');
+    answer();
+    await engine.run('u1');
+    expect(sentChanges().single['data'], {'weekStart': 'sunday'});
+
+    await db
+        .into(db.appStates)
+        .insertOnConflictUpdate(
+          AppStatesCompanion.insert(
+            key: 'settings.notifications',
+            value: '{"family":false}',
+          ),
+        );
+    await db
+        .into(db.appStates)
+        .insertOnConflictUpdate(
+          AppStatesCompanion.insert(key: 'settings.reminderHours', value: '12'),
+        );
+    await db
+        .into(db.appStates)
+        .insertOnConflictUpdate(
+          AppStatesCompanion.insert(
+            key: 'settings.anomalyMethod',
+            value: 'threshold',
+          ),
+        );
+    await pending('user_settings', 'u1');
+    await engine.run('u1');
+    expect(sentChanges(1).single['data'], {
+      'weekStart': 'sunday',
+      'notifications': {'family': false},
+      'reminderHours': 12,
+      'anomalyMethod': 'threshold',
+    });
+  });
+
+  test('UT-SY-32 通知の設定を受け取る：値のある項目だけを置き、記録忘れの時間が空（オフ）なら今の値を残す', () async {
+    answer(
+      changes: [
+        pulled('user_settings', 's1', {
+          'weekStart': 'monday',
+          'notifications': {'birthday': false},
+          'reminderHours': 8,
+          'anomalyMethod': 'threshold',
+        }, seq: 7),
+      ],
+    );
+    await engine.run('u1');
+    var s = await states();
+    expect(s['settings.notifications'], '{"birthday":false}');
+    expect(s['settings.reminderHours'], '8');
+    expect(s['settings.anomalyMethod'], 'threshold');
+
+    answer(
+      changes: [
+        pulled('user_settings', 's1', {
+          'weekStart': 'monday',
+          'notifications': null,
+          'reminderHours': null,
+          'anomalyMethod': 'statistical',
+        }, seq: 8),
+      ],
+    );
+    await engine.run('u1');
+    s = await states();
+    expect(s['settings.reminderHours'], '8');
+    expect(s['settings.notifications'], '{"birthday":false}');
+    expect(s['settings.anomalyMethod'], 'statistical');
+  });
 }

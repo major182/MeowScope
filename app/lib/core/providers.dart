@@ -12,6 +12,8 @@ import '../features/cats/data/cat_repository.dart';
 import '../features/household/data/household_repository.dart';
 import '../features/records/data/record_repository.dart';
 import '../features/icons/icon_repository.dart';
+import '../features/notifications/data/notifier.dart';
+import '../features/notifications/domain/notification_settings.dart';
 import '../features/photos/data/photo_picker.dart';
 import '../features/photos/data/photo_repository.dart';
 import '../features/settings/data/settings_repository.dart';
@@ -146,4 +148,13 @@ final iconRepositoryProvider = Provider<IconRepository>(
     ref.watch(apiClientProvider),
     ref.watch(photoDirectoryProvider),
   ),
+);
+
+/// 通知を出す部品（BR-09）。Android は起動時に OS の通知の版へ差し替える（main.dart）。
+/// それ以外（Windows・テスト）はアプリの画面の中で知らせる版
+final notifierProvider = Provider<AppNotifier>((ref) => InAppNotifier());
+
+/// 通知の設定（S-49）
+final notificationSettingsProvider = StreamProvider<NotificationSettings>(
+  (ref) => ref.watch(settingsRepositoryProvider).watchNotificationSettings(),
 );
