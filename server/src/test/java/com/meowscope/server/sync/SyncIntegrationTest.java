@@ -377,7 +377,7 @@ class SyncIntegrationTest {
                 change("households", UUID.randomUUID(), Map.of("name", "ない"))));
         assertThat(statuses(body)).containsExactly("applied", "applied", "rejected");
         assertThat(changes(body, "user_settings")).singleElement()
-                .satisfies(c -> assertThat(c.get("data")).isEqualTo(Map.of("weekStart", "monday")));
+                .satisfies(c -> assertThat(((Map<?, ?>) c.get("data")).get("weekStart")).isEqualTo("monday"));
         assertThat(changes(body, "households")).singleElement()
                 .satisfies(c -> assertThat(c.get("data")).isEqualTo(Map.of("name", "みけ家2")));
     }
@@ -541,5 +541,53 @@ class SyncIntegrationTest {
                 .andExpect(jsonPath("$.code").value("CONFLICT"));
         assertThat(jdbc.sql("SELECT count(*) FROM households WHERE id = :id").param("id", other).query(Long.class)
                 .single()).isZero();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> settingsOf(Map<String, Object> body) {
+        return (Map<String, Object>) changes(body, "user_settings").getFirst().get("data");
+    }
+
+    @Test
+    @DisplayName("IT-SY-20 通知の設定：記録忘れの時間・種類ごとのオン・オフ・判定方式を保存して返す。送らなかった項目は変えず、null の時間はオフ")
+    void 通知の設定() throws Exception {
+        Map<String, Object> all = new LinkedHashMap<>();
+        all.put("weekStart", "sunday");
+        all.put("reminderHours", 12);
+        all.put("notifications", Map.of("family", false, "birthday", true));
+        all.put("anomalyMethod", "threshold");
+        syncBody(haru, 0, List.of(change("user_settings", UUID.randomUUID(), all)));
+        Map<String, Object> saved = settingsOf(syncBody(haru, 0, List.of()));
+        assertThat(saved).containsEntry("reminderHours", 12).containsEntry("anomalyMethod", "threshold")
+                .containsEntry("notifications", Map.of("birthday", true, "family", false));
+
+        // 古いアプリは週の始まりだけを送る。ほかの設定は消さない
+        syncBody(haru, 0, List.of(change("user_settings", UUID.randomUUID(), Map.of("weekStart", "monday"))));
+        assertThat(settingsOf(syncBody(haru, 0, List.of()))).containsEntry("weekStart", "monday")
+                .containsEntry("reminderHours", 12).containsEntry("anomalyMethod", "threshold");
+
+        // 記録忘れをオフにする（null）
+        Map<String, Object> off = new LinkedHashMap<>();
+        off.put("weekStart", "monday");
+        off.put("reminderHours", null);
+        syncBody(haru, 0, List.of(change("user_settings", UUID.randomUUID(), off)));
+        assertThat(settingsOf(syncBody(haru, 0, List.of()))).containsEntry("reminderHours", null);
+    }
+
+    @Test
+    @DisplayName("IT-SY-21 通知の設定の入力の検証：時間は 1〜48（境界値 0・49 は rejected）、知らない種類・真偽値でない値・知らない判定方式は rejected")
+    void 通知の設定の検証() throws Exception {
+        Map<String, Object> body = syncBody(haru, 0, List.of(
+                change("user_settings", UUID.randomUUID(), Map.of("weekStart", "sunday", "reminderHours", 1)),
+                change("user_settings", UUID.randomUUID(), Map.of("weekStart", "sunday", "reminderHours", 48)),
+                change("user_settings", UUID.randomUUID(), Map.of("weekStart", "sunday", "reminderHours", 0)),
+                change("user_settings", UUID.randomUUID(), Map.of("weekStart", "sunday", "reminderHours", 49)),
+                change("user_settings", UUID.randomUUID(),
+                        Map.of("weekStart", "sunday", "notifications", Map.of("unknown", true))),
+                change("user_settings", UUID.randomUUID(),
+                        Map.of("weekStart", "sunday", "notifications", Map.of("family", "yes"))),
+                change("user_settings", UUID.randomUUID(), Map.of("weekStart", "sunday", "anomalyMethod", "ai"))));
+        assertThat(reasons(body)).containsExactly(null, null, "invalid:reminderHours", "invalid:reminderHours",
+                "invalid:notifications", "invalid:notifications", "invalid:anomalyMethod");
     }
 }

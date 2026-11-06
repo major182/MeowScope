@@ -141,6 +141,24 @@ final class Fields {
         return text;
     }
 
+    /** 項目が送られてきたか（値が null でも、キーがあれば true）。送られていない項目は今の値のままにするのに使う。 */
+    boolean has(String name) {
+        return data.containsKey(name);
+    }
+
+    /** 名前ごとのオン・オフ（例：通知の種類）。決まった名前と真偽値だけを受け付け、jsonb に入れる文字列にする。 */
+    String flags(String name, Set<String> allowed) {
+        Object value = data.get(name);
+        if (value == null) {
+            return null;
+        }
+        if (!(value instanceof Map<?, ?> map)
+                || !map.entrySet().stream().allMatch(e -> allowed.contains(e.getKey()) && e.getValue() instanceof Boolean)) {
+            throw new Rejected("invalid", name);
+        }
+        return json.writeValueAsString(new java.util.TreeMap<>(map));
+    }
+
     /** 変更を受け付けないときの理由。ログの {@code evt.reason} に出す（内容は出さない）。 */
     static final class Rejected extends RuntimeException {
         private final String reason;

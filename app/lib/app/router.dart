@@ -14,6 +14,7 @@ import '../features/records/presentation/record_edit_screen.dart';
 import '../features/records/presentation/record_types_screen.dart';
 import '../features/settings/presentation/contact_screen.dart';
 import '../features/sync/presentation/rejected_changes_screen.dart';
+import '../features/notifications/presentation/notification_settings_screen.dart';
 import '../features/sync/presentation/sync_status_screen.dart';
 import '../features/widget/presentation/widget_buttons_screen.dart';
 import 'start_screen.dart';
@@ -105,6 +106,10 @@ GoRouter createRouter() => GoRouter(
               RecordTypeFormScreen(typeId: state.pathParameters['id']),
         ),
       ],
+    ),
+    GoRoute(
+      path: '/notification-settings',
+      builder: (context, state) => const NotificationSettingsScreen(),
     ),
     GoRoute(
       path: '/widget-buttons',

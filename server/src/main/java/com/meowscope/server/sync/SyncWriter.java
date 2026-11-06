@@ -37,6 +37,12 @@ class SyncWriter {
     private static final Set<String> CAT_STATUSES = Set.of("active", "farewell");
     private static final Set<String> WEEK_STARTS = Set.of("sunday", "monday");
 
+    /** 通知の種類（DB 設計書 user_settings.notifications）。 */
+    static final Set<String> NOTIFICATION_KINDS = Set.of("medication", "anomaly", "reminder", "family", "birthday");
+
+    /** いつもとの差の判定方式（BR-20）。 */
+    private static final Set<String> ANOMALY_METHODS = Set.of("statistical", "threshold");
+
     private final JdbcClient jdbc;
     private final HouseholdAccess access;
     private final JsonMapper json;
@@ -312,13 +318,31 @@ class SyncWriter {
         return APPLIED;
     }
 
-    /** 自分の設定。行は登録のときにできているので、ID は見ずに自分の行を更新する。 */
+    /**
+     * 自分の設定。行は登録のときにできているので、ID は見ずに自分の行を更新する。
+     *
+     * <p>週の始まり以外は、送られてきた項目だけを変える（古いアプリが週の始まりだけを送っても、ほかの設定を消さないため）。
+     * 記録忘れの時間は null でオフ（BR-13）。
+     */
     private String userSettings(UUID userId, Fields f, Timestamp updatedAt) {
         String weekStart = f.oneOf("weekStart", true, WEEK_STARTS);
+        Integer reminderHours = f.integer("reminderHours", 1, 48);
+        String notifications = f.flags("notifications", NOTIFICATION_KINDS);
+        String anomalyMethod = f.oneOf("anomalyMethod", false, ANOMALY_METHODS);
         return result(jdbc.sql("""
-                UPDATE user_settings SET week_start = :weekStart, updated_at = :updatedAt,
-                  server_seq = nextval('sync_seq')
-                WHERE user_id = :user AND week_start IS DISTINCT FROM :weekStart
-                """).param("user", userId).param("weekStart", weekStart).param("updatedAt", updatedAt).update());
+                UPDATE user_settings SET week_start = :weekStart,
+                  reminder_hours = CASE WHEN :hasReminder THEN CAST(:reminder AS integer) ELSE reminder_hours END,
+                  notifications = CASE WHEN :hasNotifications THEN CAST(:notifications AS jsonb) ELSE notifications END,
+                  anomaly_method = COALESCE(:anomaly, anomaly_method),
+                  updated_at = :updatedAt, server_seq = nextval('sync_seq')
+                WHERE user_id = :user AND ROW(week_start, reminder_hours, notifications, anomaly_method)
+                  IS DISTINCT FROM ROW(CAST(:weekStart AS text),
+                    CASE WHEN :hasReminder THEN CAST(:reminder AS integer) ELSE reminder_hours END,
+                    CASE WHEN :hasNotifications THEN CAST(:notifications AS jsonb) ELSE notifications END,
+                    COALESCE(:anomaly, anomaly_method))
+                """).param("user", userId).param("weekStart", weekStart)
+                .param("hasReminder", f.has("reminderHours")).param("reminder", reminderHours)
+                .param("hasNotifications", f.has("notifications")).param("notifications", notifications)
+                .param("anomaly", anomalyMethod).param("updatedAt", updatedAt).update());
     }
 }
