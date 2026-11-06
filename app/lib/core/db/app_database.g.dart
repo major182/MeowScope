@@ -1194,6 +1194,18 @@ class $CatsTable extends Cats with TableInfo<$CatsTable, CatRow> {
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _anomalyThresholdsMeta = const VerificationMeta(
+    'anomalyThresholds',
+  );
+  @override
+  late final GeneratedColumn<String> anomalyThresholds =
+      GeneratedColumn<String>(
+        'anomaly_thresholds',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1209,6 +1221,7 @@ class $CatsTable extends Cats with TableInfo<$CatsTable, CatRow> {
     iconPath,
     status,
     hasIcon,
+    anomalyThresholds,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1310,6 +1323,15 @@ class $CatsTable extends Cats with TableInfo<$CatsTable, CatRow> {
         hasIcon.isAcceptableOrUnknown(data['has_icon']!, _hasIconMeta),
       );
     }
+    if (data.containsKey('anomaly_thresholds')) {
+      context.handle(
+        _anomalyThresholdsMeta,
+        anomalyThresholds.isAcceptableOrUnknown(
+          data['anomaly_thresholds']!,
+          _anomalyThresholdsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1371,6 +1393,10 @@ class $CatsTable extends Cats with TableInfo<$CatsTable, CatRow> {
         DriftSqlType.bool,
         data['${effectivePrefix}has_icon'],
       )!,
+      anomalyThresholds: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}anomaly_thresholds'],
+      ),
     );
   }
 
@@ -1400,6 +1426,9 @@ class CatRow extends DataClass implements Insertable<CatRow> {
 
   /// サーバーにアイコンがあるか（同期で受け取る）。版は猫の行の通し番号（serverSeq）を使う
   final bool hasIcon;
+
+  /// いつもとの差のしきい値（S-47、BR-20）。DB 設計書の形の JSON。版 11 で追加
+  final String? anomalyThresholds;
   const CatRow({
     required this.id,
     required this.createdAt,
@@ -1414,6 +1443,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
     this.iconPath,
     required this.status,
     required this.hasIcon,
+    this.anomalyThresholds,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1443,6 +1473,9 @@ class CatRow extends DataClass implements Insertable<CatRow> {
     }
     map['status'] = Variable<String>(status);
     map['has_icon'] = Variable<bool>(hasIcon);
+    if (!nullToAbsent || anomalyThresholds != null) {
+      map['anomaly_thresholds'] = Variable<String>(anomalyThresholds);
+    }
     return map;
   }
 
@@ -1471,6 +1504,9 @@ class CatRow extends DataClass implements Insertable<CatRow> {
           : Value(iconPath),
       status: Value(status),
       hasIcon: Value(hasIcon),
+      anomalyThresholds: anomalyThresholds == null && nullToAbsent
+          ? const Value.absent()
+          : Value(anomalyThresholds),
     );
   }
 
@@ -1493,6 +1529,9 @@ class CatRow extends DataClass implements Insertable<CatRow> {
       iconPath: serializer.fromJson<String?>(json['iconPath']),
       status: serializer.fromJson<String>(json['status']),
       hasIcon: serializer.fromJson<bool>(json['hasIcon']),
+      anomalyThresholds: serializer.fromJson<String?>(
+        json['anomalyThresholds'],
+      ),
     );
   }
   @override
@@ -1512,6 +1551,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
       'iconPath': serializer.toJson<String?>(iconPath),
       'status': serializer.toJson<String>(status),
       'hasIcon': serializer.toJson<bool>(hasIcon),
+      'anomalyThresholds': serializer.toJson<String?>(anomalyThresholds),
     };
   }
 
@@ -1529,6 +1569,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
     Value<String?> iconPath = const Value.absent(),
     String? status,
     bool? hasIcon,
+    Value<String?> anomalyThresholds = const Value.absent(),
   }) => CatRow(
     id: id ?? this.id,
     createdAt: createdAt ?? this.createdAt,
@@ -1543,6 +1584,9 @@ class CatRow extends DataClass implements Insertable<CatRow> {
     iconPath: iconPath.present ? iconPath.value : this.iconPath,
     status: status ?? this.status,
     hasIcon: hasIcon ?? this.hasIcon,
+    anomalyThresholds: anomalyThresholds.present
+        ? anomalyThresholds.value
+        : this.anomalyThresholds,
   );
   CatRow copyWithCompanion(CatsCompanion data) {
     return CatRow(
@@ -1563,6 +1607,9 @@ class CatRow extends DataClass implements Insertable<CatRow> {
       iconPath: data.iconPath.present ? data.iconPath.value : this.iconPath,
       status: data.status.present ? data.status.value : this.status,
       hasIcon: data.hasIcon.present ? data.hasIcon.value : this.hasIcon,
+      anomalyThresholds: data.anomalyThresholds.present
+          ? data.anomalyThresholds.value
+          : this.anomalyThresholds,
     );
   }
 
@@ -1581,7 +1628,8 @@ class CatRow extends DataClass implements Insertable<CatRow> {
           ..write('conditions: $conditions, ')
           ..write('iconPath: $iconPath, ')
           ..write('status: $status, ')
-          ..write('hasIcon: $hasIcon')
+          ..write('hasIcon: $hasIcon, ')
+          ..write('anomalyThresholds: $anomalyThresholds')
           ..write(')'))
         .toString();
   }
@@ -1601,6 +1649,7 @@ class CatRow extends DataClass implements Insertable<CatRow> {
     iconPath,
     status,
     hasIcon,
+    anomalyThresholds,
   );
   @override
   bool operator ==(Object other) =>
@@ -1618,7 +1667,8 @@ class CatRow extends DataClass implements Insertable<CatRow> {
           other.conditions == this.conditions &&
           other.iconPath == this.iconPath &&
           other.status == this.status &&
-          other.hasIcon == this.hasIcon);
+          other.hasIcon == this.hasIcon &&
+          other.anomalyThresholds == this.anomalyThresholds);
 }
 
 class CatsCompanion extends UpdateCompanion<CatRow> {
@@ -1635,6 +1685,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
   final Value<String?> iconPath;
   final Value<String> status;
   final Value<bool> hasIcon;
+  final Value<String?> anomalyThresholds;
   final Value<int> rowid;
   const CatsCompanion({
     this.id = const Value.absent(),
@@ -1650,6 +1701,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
     this.iconPath = const Value.absent(),
     this.status = const Value.absent(),
     this.hasIcon = const Value.absent(),
+    this.anomalyThresholds = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   CatsCompanion.insert({
@@ -1666,6 +1718,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
     this.iconPath = const Value.absent(),
     this.status = const Value.absent(),
     this.hasIcon = const Value.absent(),
+    this.anomalyThresholds = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        createdAt = Value(createdAt),
@@ -1686,6 +1739,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
     Expression<String>? iconPath,
     Expression<String>? status,
     Expression<bool>? hasIcon,
+    Expression<String>? anomalyThresholds,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1702,6 +1756,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
       if (iconPath != null) 'icon_path': iconPath,
       if (status != null) 'status': status,
       if (hasIcon != null) 'has_icon': hasIcon,
+      if (anomalyThresholds != null) 'anomaly_thresholds': anomalyThresholds,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1720,6 +1775,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
     Value<String?>? iconPath,
     Value<String>? status,
     Value<bool>? hasIcon,
+    Value<String?>? anomalyThresholds,
     Value<int>? rowid,
   }) {
     return CatsCompanion(
@@ -1736,6 +1792,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
       iconPath: iconPath ?? this.iconPath,
       status: status ?? this.status,
       hasIcon: hasIcon ?? this.hasIcon,
+      anomalyThresholds: anomalyThresholds ?? this.anomalyThresholds,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1782,6 +1839,9 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
     if (hasIcon.present) {
       map['has_icon'] = Variable<bool>(hasIcon.value);
     }
+    if (anomalyThresholds.present) {
+      map['anomaly_thresholds'] = Variable<String>(anomalyThresholds.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1804,6 +1864,7 @@ class CatsCompanion extends UpdateCompanion<CatRow> {
           ..write('iconPath: $iconPath, ')
           ..write('status: $status, ')
           ..write('hasIcon: $hasIcon, ')
+          ..write('anomalyThresholds: $anomalyThresholds, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4285,11 +4346,13 @@ class PendingChangeRow extends DataClass
   final String targetTable;
   final String rowId;
 
-  /// `upsert` または `delete`
+  /// `create`（おうちの作成。POST /households で送る）、`upsert`、`delete`
   final String operation;
 
   /// 送る内容（JSON）
   final String payload;
+
+  /// 送るのに失敗した回数。記録のためだけに持ち、再送の打ち切りや表示には使わない
   final int attempts;
   const PendingChangeRow({
     required this.seq,
@@ -7159,6 +7222,7 @@ typedef $$CatsTableCreateCompanionBuilder = CatsCompanion Function({
   Value<String?> iconPath,
   Value<String> status,
   Value<bool> hasIcon,
+  Value<String?> anomalyThresholds,
   Value<int> rowid,
 });
 typedef $$CatsTableUpdateCompanionBuilder = CatsCompanion Function({
@@ -7175,6 +7239,7 @@ typedef $$CatsTableUpdateCompanionBuilder = CatsCompanion Function({
   Value<String?> iconPath,
   Value<String> status,
   Value<bool> hasIcon,
+  Value<String?> anomalyThresholds,
   Value<int> rowid,
 });
 
@@ -7284,6 +7349,11 @@ class $$CatsTableFilterComposer extends Composer<_$AppDatabase, $CatsTable> {
 
   ColumnFilters<bool> get hasIcon => $composableBuilder(
     column: $table.hasIcon,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get anomalyThresholds => $composableBuilder(
+    column: $table.anomalyThresholds,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7404,6 +7474,11 @@ class $$CatsTableOrderingComposer extends Composer<_$AppDatabase, $CatsTable> {
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get anomalyThresholds => $composableBuilder(
+    column: $table.anomalyThresholds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$HouseholdsTableOrderingComposer get householdId {
     final $$HouseholdsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -7474,6 +7549,11 @@ class $$CatsTableAnnotationComposer
 
   GeneratedColumn<bool> get hasIcon =>
       $composableBuilder(column: $table.hasIcon, builder: (column) => column);
+
+  GeneratedColumn<String> get anomalyThresholds => $composableBuilder(
+    column: $table.anomalyThresholds,
+    builder: (column) => column,
+  );
 
   $$HouseholdsTableAnnotationComposer get householdId {
     final $$HouseholdsTableAnnotationComposer composer = $composerBuilder(
@@ -7565,6 +7645,7 @@ class $$CatsTableTableManager
                 Value<String?> iconPath = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> hasIcon = const Value.absent(),
+                Value<String?> anomalyThresholds = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CatsCompanion(
                 id: id,
@@ -7580,6 +7661,7 @@ class $$CatsTableTableManager
                 iconPath: iconPath,
                 status: status,
                 hasIcon: hasIcon,
+                anomalyThresholds: anomalyThresholds,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -7597,6 +7679,7 @@ class $$CatsTableTableManager
                 Value<String?> iconPath = const Value.absent(),
                 Value<String> status = const Value.absent(),
                 Value<bool> hasIcon = const Value.absent(),
+                Value<String?> anomalyThresholds = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CatsCompanion.insert(
                 id: id,
@@ -7612,6 +7695,7 @@ class $$CatsTableTableManager
                 iconPath: iconPath,
                 status: status,
                 hasIcon: hasIcon,
+                anomalyThresholds: anomalyThresholds,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

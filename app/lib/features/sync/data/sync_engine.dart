@@ -413,6 +413,10 @@ class SyncEngine {
                   'sex': c.sex,
                   'conditions': c.conditions,
                   'status': c.status,
+                  // しきい値（S-47）。行の今の内容を丸ごと送る（ほかの列と同じ）
+                  'anomalyThresholds': c.anomalyThresholds == null
+                      ? null
+                      : jsonDecode(c.anomalyThresholds!),
                 },
                 updatedAt: c.updatedAt,
                 deletedAt: c.deletedAt,
@@ -590,6 +594,11 @@ class SyncEngine {
                       conditions: Value(data['conditions'] as String?),
                       status: Value(data['status'] as String? ?? 'active'),
                       hasIcon: Value(data['hasIcon'] as bool? ?? false),
+                      anomalyThresholds: Value(
+                        data['anomalyThresholds'] is Map
+                            ? jsonEncode(data['anomalyThresholds'])
+                            : null,
+                      ),
                     ),
                   );
             case 'record_types':

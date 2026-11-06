@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/widgets/readable_width.dart';
@@ -161,12 +162,11 @@ class _NotificationSettingsScreenState
             ),
           ),
           if (settings.method == AnomalyMethod.threshold)
-            const ListTile(
-              contentPadding: EdgeInsets.only(left: 32, right: 16),
-              title: Text('しきい値の設定'),
-              // しきい値の設定（S-47）は、いつもとの差の検知（計画の5）で作る
-              subtitle: Text('準備中'),
-              enabled: false,
+            ListTile(
+              contentPadding: const EdgeInsets.only(left: 32, right: 16),
+              title: const Text('しきい値の設定'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/thresholds'),
             ),
         ],
       ),

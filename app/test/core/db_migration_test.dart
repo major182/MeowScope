@@ -75,6 +75,11 @@ void main() {
         AppStatesCompanion.insert(key: 'settings.weekStart', value: 'monday'),
       ]),
     );
+    if (version < 11) {
+      await db.customStatement(
+        'ALTER TABLE cats DROP COLUMN anomaly_thresholds',
+      );
+    }
     if (version < 10) {
       await db.customStatement('DROP TABLE rejected_changes');
       await db.customStatement(
@@ -166,6 +171,17 @@ void main() {
     final keys = [for (final s in await db.select(db.appStates).get()) s.key];
     expect(keys, isNot(contains('sync.rejected.local-user')));
     expect(keys, contains('settings.weekStart'));
+    expect(await db.select(db.records).get(), hasLength(1));
+  });
+
+  test('UT-AN-06 版 10 の DB を開くと、猫にしきい値の列が足され、猫と記録は残る', () async {
+    await prepare(10);
+    final db = open();
+    addTearDown(db.close);
+
+    final cat = await db.select(db.cats).getSingle();
+    expect(cat.name, 'ミケ');
+    expect(cat.anomalyThresholds, isNull);
     expect(await db.select(db.records).get(), hasLength(1));
   });
 }

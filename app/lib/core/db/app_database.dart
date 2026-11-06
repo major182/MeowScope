@@ -36,7 +36,8 @@ class AppDatabase extends _$AppDatabase {
   // 7：端末のログの表を追加
   // 8：アイコンの有無を追加　9：ウィジェットのボタンの表を追加
   // 10：送れなかった変更の表を追加（件数だけの記録は、どの行か分からないので捨てる）
-  int get schemaVersion => 10;
+  // 11：猫にいつもとの差のしきい値を追加
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -88,6 +89,9 @@ class AppDatabase extends _$AppDatabase {
         await (delete(
           appStates,
         )..where((s) => s.key.like('sync.rejected.%'))).go();
+      }
+      if (from < 11) {
+        await m.addColumn(cats, cats.anomalyThresholds);
       }
     },
     beforeOpen: (details) async {

@@ -121,6 +121,18 @@ class CatRepository {
     );
   }
 
+  /// いつもとの差のしきい値を保存する（S-47、BR-20）。[thresholds] は DB 設計書の形の JSON（空なら null）
+  Future<void> setThresholds({
+    required String id,
+    required String userId,
+    required String? thresholds,
+  }) => _write(
+    id,
+    userId,
+    CatsCompanion(anomalyThresholds: Value(thresholds)),
+    {'anomalyThresholds': thresholds},
+  );
+
   /// お別れにする、または取り消す（BR-25）。記録はそのまま残す
   Future<void> setFarewell({
     required String id,

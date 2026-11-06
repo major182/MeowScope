@@ -159,6 +159,60 @@ final class Fields {
         return json.writeValueAsString(new java.util.TreeMap<>(map));
     }
 
+    /** しきい値の対象の回数の種類（BR-31、DB 設計書 cats.anomaly_thresholds）。 */
+    static final Set<String> COUNT_KINDS = Set.of("food", "water", "urine", "stool", "vomit");
+
+    /**
+     * 猫ごとのしきい値（S-47）。回数の種類は {@code {"min":0〜99,"max":0〜99}}（どちらも任意、min は max 以下）、
+     * 体重は {@code {"percent":1〜50}}。決まった形だけを受け付け、jsonb に入れる文字列にする。
+     */
+    String thresholds(String name) {
+        Object value = data.get(name);
+        if (value == null) {
+            return null;
+        }
+        if (!(value instanceof Map<?, ?> map)) {
+            throw new Rejected("invalid", name);
+        }
+        Map<String, Object> clean = new java.util.TreeMap<>();
+        for (Map.Entry<?, ?> e : map.entrySet()) {
+            if (!(e.getKey() instanceof String kind) || !(e.getValue() instanceof Map<?, ?> rule)) {
+                throw new Rejected("invalid", name);
+            }
+            if (COUNT_KINDS.contains(kind)) {
+                Integer min = bound(rule.get("min"), 0, 99, name);
+                Integer max = bound(rule.get("max"), 0, 99, name);
+                if (!Set.of("min", "max").containsAll(rule.keySet()) || (min != null && max != null && min > max)) {
+                    throw new Rejected("invalid", name);
+                }
+                Map<String, Integer> c = new java.util.TreeMap<>();
+                if (min != null) {
+                    c.put("min", min);
+                }
+                if (max != null) {
+                    c.put("max", max);
+                }
+                clean.put(kind, c);
+            } else if ("weight".equals(kind) && rule.keySet().equals(Set.of("percent"))
+                    && bound(rule.get("percent"), 1, 50, name) instanceof Integer percent) {
+                clean.put(kind, Map.of("percent", percent));
+            } else {
+                throw new Rejected("invalid", name);
+            }
+        }
+        return json.writeValueAsString(clean);
+    }
+
+    private static Integer bound(Object value, int min, int max, String name) {
+        if (value == null) {
+            return null;
+        }
+        if (!(value instanceof Integer i) || i < min || i > max) {
+            throw new Rejected("invalid", name);
+        }
+        return i;
+    }
+
     /** 変更を受け付けないときの理由。ログの {@code evt.reason} に出す（内容は出さない）。 */
     static final class Rejected extends RuntimeException {
         private final String reason;

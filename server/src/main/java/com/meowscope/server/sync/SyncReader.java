@@ -43,7 +43,8 @@ class SyncReader {
                             + MY_HOUSEHOLDS + "))"),
             new Source("cats",
                     "json_build_object('householdId', household_id, 'name', name, 'birthDate', birth_date,"
-                            + " 'sex', sex, 'conditions', conditions, 'status', status, 'hasIcon', icon_path IS NOT NULL)",
+                            + " 'sex', sex, 'conditions', conditions, 'status', status, 'hasIcon', icon_path IS NOT NULL,"
+                            + " 'anomalyThresholds', anomaly_thresholds)",
                     "household_id IN (" + MY_HOUSEHOLDS + ")"),
             new Source("record_types",
                     "json_build_object('householdId', household_id, 'name', name, 'icon', icon, 'kind', kind,"

@@ -590,4 +590,56 @@ class SyncIntegrationTest {
         assertThat(reasons(body)).containsExactly(null, null, "invalid:reminderHours", "invalid:reminderHours",
                 "invalid:notifications", "invalid:notifications", "invalid:anomalyMethod");
     }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> catData(Map<String, Object> body, UUID id) {
+        return (Map<String, Object>) changes(body, "cats").stream().filter(c -> c.get("id").equals(id.toString()))
+                .findFirst().orElseThrow().get("data");
+    }
+
+    @Test
+    @DisplayName("IT-SY-22 しきい値：猫のしきい値を保存して返し、家族にも届く。送らなかったときは変えず、null で消す")
+    void しきい値() throws Exception {
+        UUID catId = UUID.randomUUID();
+        Map<String, Object> withRule = new LinkedHashMap<>(cat("ミケ"));
+        withRule.put("anomalyThresholds", Map.of("food", Map.of("min", 2, "max", 5), "weight", Map.of("percent", 8)));
+        assertThat(statuses(syncBody(haru, 0, List.of(change("cats", catId, withRule))))).containsExactly("applied");
+        assertThat(catData(syncBody(haru, 0, List.of()), catId).get("anomalyThresholds"))
+                .isEqualTo(Map.of("food", Map.of("max", 5, "min", 2), "weight", Map.of("percent", 8)));
+
+        // 古いアプリはしきい値を送らない。名前を変えても、しきい値は残る
+        syncBody(haru, 0, List.of(change("cats", catId, cat("ミケ2"))));
+        assertThat(catData(syncBody(haru, 0, List.of()), catId).get("anomalyThresholds")).isNotNull();
+
+        Map<String, Object> cleared = new LinkedHashMap<>(cat("ミケ2"));
+        cleared.put("anomalyThresholds", null);
+        syncBody(haru, 0, List.of(change("cats", catId, cleared)));
+        assertThat(catData(syncBody(haru, 0, List.of()), catId).get("anomalyThresholds")).isNull();
+    }
+
+    @Test
+    @DisplayName("IT-SY-23 しきい値の入力の検証：回数は 0〜99（境界値 -1・100）で下限は上限以下、体重は 1〜50（0・51）、知らない種類・項目は rejected")
+    void しきい値の検証() throws Exception {
+        List<Map<String, Object>> rules = List.of(
+                Map.of("food", Map.of("min", 0, "max", 99)),
+                Map.of("weight", Map.of("percent", 1)),
+                Map.of("weight", Map.of("percent", 50)),
+                Map.of("food", Map.of("min", -1)),
+                Map.of("food", Map.of("max", 100)),
+                Map.of("food", Map.of("min", 3, "max", 2)),
+                Map.of("weight", Map.of("percent", 0)),
+                Map.of("weight", Map.of("percent", 51)),
+                Map.of("medicine", Map.of("min", 1)),
+                Map.of("food", Map.of("avg", 1)));
+        List<Map<String, Object>> sent = new ArrayList<>();
+        for (Map<String, Object> rule : rules) {
+            Map<String, Object> data = new LinkedHashMap<>(cat("ミケ"));
+            data.put("anomalyThresholds", rule);
+            sent.add(change("cats", UUID.randomUUID(), data));
+        }
+        Map<String, Object> body = syncBody(haru, 0, sent);
+        assertThat(reasons(body)).containsExactly(null, null, null, "invalid:anomalyThresholds",
+                "invalid:anomalyThresholds", "invalid:anomalyThresholds", "invalid:anomalyThresholds",
+                "invalid:anomalyThresholds", "invalid:anomalyThresholds", "invalid:anomalyThresholds");
+    }
 }

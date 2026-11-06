@@ -50,6 +50,9 @@ class Cats extends Table with SyncColumns {
 
   /// サーバーにアイコンがあるか（同期で受け取る）。版は猫の行の通し番号（serverSeq）を使う
   BoolColumn get hasIcon => boolean().withDefault(const Constant(false))();
+
+  /// いつもとの差のしきい値（S-47、BR-20）。DB 設計書の形の JSON。版 11 で追加
+  TextColumn get anomalyThresholds => text().nullable()();
 }
 
 @DataClassName('RecordTypeRow')
