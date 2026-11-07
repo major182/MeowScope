@@ -2,16 +2,23 @@ import 'dart:convert';
 
 /// 通知の種類（DB 設計書 user_settings.notifications のキー）
 enum NotificationKind {
-  medication('お薬の時間', onWindows: false),
-  anomaly('いつもとの差', onWindows: true),
-  reminder('記録忘れ', onWindows: false),
-  family('家族の記録', onWindows: false),
-  birthday('誕生日', onWindows: true);
+  medication('お薬の時間', 'お薬の予定の時刻に、毎日通知します', onWindows: false),
+  anomaly('いつもとの差', 'アプリを開いて同期したとき、記録の回数や体重がふだんと違えば通知します', onWindows: true),
+  reminder('記録忘れ', '猫ごとに、最後の記録から決めた時間がたっても記録がなければ通知します', onWindows: false),
+  family('家族の記録', '同期した際に家族が記録を行っていた場合、通知します（アプリを開いている間）', onWindows: false),
+  birthday('猫の誕生日', '猫の誕生日の当日、朝9時に通知します', onWindows: true);
 
-  const NotificationKind(this.label, {required this.onWindows});
+  const NotificationKind(
+    this.label,
+    this.description, {
+    required this.onWindows,
+  });
 
   /// 通知の設定（S-49）に出す名前
   final String label;
+
+  /// 通知の設定で、名前の下に小さく出す説明（どんなときに知らせるか）
+  final String description;
 
   /// Windows でも知らせるか（BR-09）。ふだんの記録は Android で行い、Windows は統計を見る道具なので、
   /// 記録にかかわる通知（記録忘れ・お薬の時間・家族の記録）は Windows では出さない
