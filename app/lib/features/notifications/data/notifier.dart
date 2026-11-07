@@ -55,7 +55,7 @@ class AndroidNotifier implements AppNotifier {
     android: AndroidNotificationDetails(
       'meowscope',
       'MeowScope の通知',
-      channelDescription: 'お薬の時間・いつもとの差・記録忘れ・家族の記録・誕生日',
+      channelDescription: 'お薬の時間・いつもとの差・記録忘れ・家族の記録・猫の誕生日',
       importance: Importance.high,
       priority: Priority.high,
     ),

@@ -85,26 +85,37 @@ void main() {
     );
   }
 
-  testWidgets('UT-NS-05 S-49：種類ごとのオン・オフと判定方式を変えるとすぐ保存する。しきい値を選ぶと入口を出す', (
-    tester,
-  ) async {
-    await show(tester, InAppNotifier());
-    for (final kind in NotificationKind.values) {
-      expect(find.widgetWithText(SwitchListTile, kind.label), findsOneWidget);
-    }
-    expect(find.text('しきい値の設定'), findsNothing);
+  testWidgets(
+    'UT-NS-05 S-49：種類ごとの名前と説明を出す。オン・オフと判定方式を変えるとすぐ保存する。しきい値を選ぶと入口を出す',
+    (tester) async {
+      await show(tester, InAppNotifier());
+      for (final kind in NotificationKind.values) {
+        expect(find.widgetWithText(SwitchListTile, kind.label), findsOneWidget);
+        // 名前の下に、どんなときに知らせるかを出す
+        expect(
+          find.widgetWithText(SwitchListTile, kind.description),
+          findsOneWidget,
+        );
+      }
+      expect(find.text('猫の誕生日の当日、朝9時に通知します'), findsOneWidget);
+      expect(
+        find.text('同期した際に家族が記録を行っていた場合、通知します（アプリを開いている間）'),
+        findsOneWidget,
+      );
+      expect(find.text('しきい値の設定'), findsNothing);
 
-    await tester.tap(find.widgetWithText(SwitchListTile, '家族の記録'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('自分で決めたしきい値'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(SwitchListTile, '家族の記録'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('自分で決めたしきい値'));
+      await tester.pumpAndSettle();
 
-    final s = await saved();
-    expect(s.isOn(NotificationKind.family), isFalse);
-    expect(s.method, AnomalyMethod.threshold);
-    expect(find.text('しきい値の設定'), findsOneWidget);
-    await close(tester);
-  });
+      final s = await saved();
+      expect(s.isOn(NotificationKind.family), isFalse);
+      expect(s.method, AnomalyMethod.threshold);
+      expect(find.text('しきい値の設定'), findsOneWidget);
+      await close(tester);
+    },
+  );
 
   testWidgets('UT-NS-06 S-49：記録忘れの時間は 1〜48 だけを保存する（境界値）。記録忘れをオフにすると欄を隠す', (
     tester,
@@ -155,7 +166,7 @@ void main() {
         expect(find.widgetWithText(SwitchListTile, hidden), findsNothing);
       }
       expect(find.byType(TextField), findsNothing);
-      for (final shown in ['いつもとの差', '誕生日']) {
+      for (final shown in ['いつもとの差', '猫の誕生日']) {
         expect(find.widgetWithText(SwitchListTile, shown), findsOneWidget);
       }
       await close(tester);
