@@ -402,6 +402,7 @@ class SyncEngine {
       await drop('record_photos', _db.recordPhotos);
       await drop('records', _db.records);
       await drop('widget_buttons', _db.widgetButtons);
+      await drop('medication_schedules', _db.medicationSchedules);
       await drop('record_types', _db.recordTypes);
       await drop('cats', _db.cats);
       await drop('household_members', _db.householdMembers);
@@ -531,6 +532,24 @@ class SyncEngine {
                 {'recordTypeId': w.recordTypeId, 'sortOrder': w.sortOrder},
                 updatedAt: w.updatedAt,
                 deletedAt: w.deletedAt,
+              );
+      case 'medication_schedules':
+        final m = await (_db.select(
+          _db.medicationSchedules,
+        )..where((t) => t.id.equals(id))).getSingleOrNull();
+        return m == null
+            ? null
+            : change(
+                {
+                  'householdId': m.householdId,
+                  'catId': m.catId,
+                  'name': m.name,
+                  'dose': m.dose,
+                  'timeOfDay': m.timeOfDay,
+                  'enabled': m.enabled,
+                },
+                updatedAt: m.updatedAt,
+                deletedAt: m.deletedAt,
               );
     }
     return null;
@@ -752,6 +771,24 @@ class SyncEngine {
                       userId: userId,
                       recordTypeId: data['recordTypeId'] as String,
                       sortOrder: Value(data['sortOrder'] as int? ?? 0),
+                    ),
+                  );
+            case 'medication_schedules':
+              await _db
+                  .into(_db.medicationSchedules)
+                  .insertOnConflictUpdate(
+                    MedicationSchedulesCompanion.insert(
+                      id: id,
+                      createdAt: updatedAt,
+                      updatedAt: updatedAt,
+                      deletedAt: Value(deletedAt),
+                      serverSeq: Value(seq),
+                      householdId: data['householdId'] as String,
+                      catId: data['catId'] as String,
+                      name: data['name'] as String,
+                      dose: Value(data['dose'] as String?),
+                      timeOfDay: data['timeOfDay'] as String,
+                      enabled: Value(data['enabled'] as bool? ?? true),
                     ),
                   );
           }

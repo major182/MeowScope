@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
@@ -69,6 +70,7 @@ class SyncWriter {
             case "record_photos" -> photo(userId, change.id(), f, updatedAt, deletedAt);
             case "user_settings" -> userSettings(userId, f, updatedAt);
             case "widget_buttons" -> widgetButton(userId, change.id(), f, updatedAt, deletedAt);
+            case "medication_schedules" -> medication(userId, change.id(), f, updatedAt, deletedAt);
             default -> throw new Rejected("unknown_table", null);
         };
     }
@@ -78,7 +80,7 @@ class SyncWriter {
         return switch (table) {
             case "households" -> 0;
             case "cats", "record_types" -> 1;
-            case "records", "widget_buttons" -> 2;
+            case "records", "widget_buttons", "medication_schedules" -> 2;
             case "record_photos" -> 3;
             default -> 4;
         };
@@ -325,6 +327,53 @@ class SyncWriter {
                 VALUES (:id, :user, :type, :sort, :deletedAt, :updatedAt)
                 """).param("id", id).param("user", userId).param("type", typeId).param("sort", sort)
                 .param("deletedAt", deletedAt).param("updatedAt", updatedAt).update();
+        return APPLIED;
+    }
+
+    /** お薬の予定の時刻（`HH:mm`、00:00〜23:59）。 */
+    private static final Pattern TIME_OF_DAY =
+            Pattern.compile("([01][0-9]|2[0-3]):[0-5][0-9]");
+
+    /**
+     * お薬の予定（F-MD-02、BR-06）。おうちのもので、猫は同じおうちのもの、自分の属するおうちであること。
+     * オン・オフ（enabled）は送られてこなければオン。
+     */
+    private String medication(UUID userId, UUID id, Fields f, Timestamp updatedAt, Timestamp deletedAt) {
+        UUID household = f.uuid("householdId");
+        UUID catId = f.uuid("catId");
+        requireMember(userId, household);
+        UUID catHousehold = access.householdOfCat(catId).orElseThrow(() -> new Rejected("not_found", "catId"));
+        if (!catHousehold.equals(household)) {
+            throw new Rejected("forbidden", "catId");
+        }
+        String name = f.text("name", true, 20);
+        String dose = f.text("dose", false, 20);
+        String time = f.text("timeOfDay", true, 5);
+        if (!TIME_OF_DAY.matcher(time).matches()) {
+            throw new Rejected("invalid", "timeOfDay");
+        }
+        boolean enabled = !f.has("enabled") || f.bool("enabled");
+        Optional<UUID> existing = jdbc.sql("SELECT household_id FROM medication_schedules WHERE id = :id")
+                .param("id", id).query(UUID.class).optional();
+        if (checkExisting(userId, existing, household)) {
+            return result(jdbc.sql("""
+                    UPDATE medication_schedules SET cat_id = :cat, name = :name, dose = :dose, time_of_day = :time,
+                      enabled = :enabled, deleted_at = :deletedAt, updated_at = :updatedAt,
+                      server_seq = nextval('sync_seq')
+                    WHERE id = :id AND ROW(cat_id, name, dose, time_of_day, enabled, deleted_at)
+                      IS DISTINCT FROM ROW(CAST(:cat AS uuid), CAST(:name AS text), CAST(:dose AS text),
+                        CAST(:time AS text), CAST(:enabled AS boolean), CAST(:deletedAt AS timestamptz))
+                    """).param("id", id).param("cat", catId).param("name", name).param("dose", dose)
+                    .param("time", time).param("enabled", enabled).param("deletedAt", deletedAt)
+                    .param("updatedAt", updatedAt).update());
+        }
+        jdbc.sql("""
+                INSERT INTO medication_schedules (id, household_id, cat_id, name, dose, time_of_day, enabled,
+                  deleted_at, updated_at)
+                VALUES (:id, :household, :cat, :name, :dose, :time, :enabled, :deletedAt, :updatedAt)
+                """).param("id", id).param("household", household).param("cat", catId).param("name", name)
+                .param("dose", dose).param("time", time).param("enabled", enabled).param("deletedAt", deletedAt)
+                .param("updatedAt", updatedAt).update();
         return APPLIED;
     }
 

@@ -75,6 +75,9 @@ void main() {
         AppStatesCompanion.insert(key: 'settings.weekStart', value: 'monday'),
       ]),
     );
+    if (version < 12) {
+      await db.customStatement('DROP TABLE medication_schedules');
+    }
     if (version < 11) {
       await db.customStatement(
         'ALTER TABLE cats DROP COLUMN anomaly_thresholds',
@@ -182,6 +185,16 @@ void main() {
     final cat = await db.select(db.cats).getSingle();
     expect(cat.name, 'ミケ');
     expect(cat.anomalyThresholds, isNull);
+    expect(await db.select(db.records).get(), hasLength(1));
+  });
+
+  test('UT-MD-01 版 11 の DB を開くと、お薬の予定の表ができ、猫と記録は残る', () async {
+    await prepare(11);
+    final db = open();
+    addTearDown(db.close);
+
+    expect(await db.select(db.medicationSchedules).get(), isEmpty);
+    expect((await db.select(db.cats).getSingle()).name, 'ミケ');
     expect(await db.select(db.records).get(), hasLength(1));
   });
 }

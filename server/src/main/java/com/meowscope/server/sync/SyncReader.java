@@ -67,7 +67,12 @@ class SyncReader {
                     "user_id = :user"),
             // ウィジェットのボタンはアカウントのもの。自分の分だけを返す（BR-22）
             new Source("widget_buttons",
-                    "json_build_object('recordTypeId', record_type_id, 'sortOrder', sort_order)", "user_id = :user"));
+                    "json_build_object('recordTypeId', record_type_id, 'sortOrder', sort_order)", "user_id = :user"),
+            // お薬の予定はおうちのもの。家族と共有する（S-50）
+            new Source("medication_schedules",
+                    "json_build_object('householdId', household_id, 'catId', cat_id, 'name', name, 'dose', dose,"
+                            + " 'timeOfDay', time_of_day, 'enabled', enabled)",
+                    "household_id IN (" + MY_HOUSEHOLDS + ")"));
 
     private final JdbcClient jdbc;
     private final JsonMapper json;

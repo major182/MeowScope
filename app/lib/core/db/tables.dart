@@ -172,6 +172,23 @@ class WidgetButtons extends Table with SyncColumns {
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
 }
 
+/// お薬の予定（DB 設計書 4章、F-MD-02、BR-06）。おうちのもので、家族と共有する
+@DataClassName('MedicationScheduleRow')
+class MedicationSchedules extends Table with SyncColumns {
+  TextColumn get householdId => text().references(Households, #id)();
+  TextColumn get catId => text().references(Cats, #id)();
+
+  /// 薬の名前（20文字まで）
+  TextColumn get name => text()();
+
+  /// 量（例：1錠。20文字まで）
+  TextColumn get dose => text().nullable()();
+
+  /// 毎日の時刻（`HH:mm`、端末の時刻）
+  TextColumn get timeOfDay => text()();
+  BoolColumn get enabled => boolean().withDefault(const Constant(true))();
+}
+
 /// サーバーが受け付けなかった変更（端末だけの表、Issue #83）。どの行が、なぜ送れなかったかを S-48 に出す。
 /// 同じ行がまた送れなかったときは、新しい理由で置き換える
 @DataClassName('RejectedChangeRow')
