@@ -18,10 +18,32 @@ sealed class SyncOutcome {
 }
 
 class SyncSucceeded extends SyncOutcome {
-  const SyncSucceeded({required this.rejected});
+  const SyncSucceeded({required this.rejected, this.familyRecords = const []});
 
   /// 今回 `rejected` になった変更の数
   final int rejected;
+
+  /// 今回受け取った、家族（自分以外）の新しい記録（BR-08）。最初の同期と全件の取り直しでは空
+  final List<ReceivedRecord> familyRecords;
+}
+
+/// 同期で受け取った家族の新しい記録（家族の記録の通知に使う。F-NT-04）
+class ReceivedRecord {
+  const ReceivedRecord({
+    required this.id,
+    required this.catId,
+    required this.recordTypeId,
+    required this.recordedAt,
+    required this.authorId,
+    required this.authorName,
+  });
+
+  final String id;
+  final String catId;
+  final String recordTypeId;
+  final DateTime recordedAt;
+  final String? authorId;
+  final String authorName;
 }
 
 class SyncFailed extends SyncOutcome {
@@ -66,6 +88,12 @@ class SyncEngine {
   /// 続きの取得を繰り返す上限。サーバーの誤りで止まらなくなるのを防ぐ
   static const maxRounds = 50;
 
+  /// 今回の同期で受け取った家族の新しい記録
+  final _familyRecords = <ReceivedRecord>[];
+
+  /// 今回の同期が最初の同期か（受け取った記録を知らせない）
+  var _initialSync = false;
+
   Future<SyncOutcome> run(String userId) async {
     if (await _tokens.read() == null) {
       return const SyncNeedsLogin();
@@ -73,6 +101,10 @@ class SyncEngine {
     var rejected = 0;
     _resyncReceived = null;
     _sentThisRun.clear();
+    _familyRecords.clear();
+    // 最初の同期（ログイン直後・機種変更）は過去の記録をまとめて受け取るので、家族の記録として知らせない
+    _initialSync =
+        (int.tryParse(await _state(SyncKeys.lastSeq(userId)) ?? '') ?? 0) == 0;
     try {
       rejected += await _createHouseholds(userId);
       var finished = false;
@@ -106,7 +138,10 @@ class SyncEngine {
     );
     await _setState(SyncKeys.lastRequestId(userId), null);
     await _chooseHousehold(userId);
-    return SyncSucceeded(rejected: rejected);
+    return SyncSucceeded(
+      rejected: rejected,
+      familyRecords: List.unmodifiable(_familyRecords),
+    );
   }
 
   /// 端末で作ったおうちを登録する。標準の項目も ID ごと送る（API 設計書 4章）
@@ -620,6 +655,27 @@ class SyncEngine {
                     ),
                   );
             case 'records':
+              final authorId = data['authorId'] as String?;
+              // 家族の新しい記録か（BR-08）。全件の取り直しの間は、もう持っている記録も届くので知らせない
+              if (!_initialSync &&
+                  _resyncReceived == null &&
+                  deletedAt == null &&
+                  authorId != userId &&
+                  await (_db.select(
+                        _db.records,
+                      )..where((r) => r.id.equals(id))).getSingleOrNull() ==
+                      null) {
+                _familyRecords.add(
+                  ReceivedRecord(
+                    id: id,
+                    catId: data['catId'] as String,
+                    recordTypeId: data['recordTypeId'] as String,
+                    recordedAt: DateTime.parse(data['recordedAt'] as String),
+                    authorId: authorId,
+                    authorName: data['authorName'] as String,
+                  ),
+                );
+              }
               await _db
                   .into(_db.records)
                   .insertOnConflictUpdate(

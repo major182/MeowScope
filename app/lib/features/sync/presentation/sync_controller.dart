@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:drift/drift.dart' show TableUpdateQuery;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_error.dart';
 import '../../../core/providers.dart';
+import '../../notifications/data/family_alerts.dart';
 import '../data/sync_engine.dart';
 
 /// 同期の状態（画面に出すもの）
@@ -47,9 +49,12 @@ class SyncController extends Notifier<SyncState> {
     }
     final log = ref.read(appLogProvider);
     switch (outcome) {
-      case SyncSucceeded():
+      case SyncSucceeded(:final familyRecords):
         // 同期できたときに、たまっている端末のログも送る（F-LG-03）
         await log.send(ref.read(apiClientProvider));
+        if (familyRecords.isNotEmpty && ref.mounted) {
+          await _notifyFamily(familyRecords);
+        }
       case SyncFailed(:final error) when !error.isOffline && !unexpected:
         // つながらないのはよくあることなので記録しない。サーバーの応答があった失敗だけを残す
         await log.record(
@@ -68,6 +73,25 @@ class SyncController extends Notifier<SyncState> {
       SyncFailed(:final error) => SyncState(error: error),
       SyncNeedsLogin() => const SyncState(needsLogin: true),
     };
+  }
+
+  /// 受け取った家族の記録を知らせる（F-NT-04、BR-08）。失敗しても同期の結果は変えない
+  Future<void> _notifyFamily(List<ReceivedRecord> records) async {
+    try {
+      final settings = await ref.read(notificationSettingsProvider.future);
+      await ref
+          .read(familyAlertsProvider)
+          .notify(
+            records,
+            settings: settings,
+            android: defaultTargetPlatform == TargetPlatform.android,
+          );
+    } on Object catch (e) {
+      // 例外の種類だけをログに残す
+      await ref
+          .read(appLogProvider)
+          .record('warning', '家族の記録の通知に失敗：${e.runtimeType}');
+    }
   }
 }
 
