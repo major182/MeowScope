@@ -34,7 +34,11 @@ class _FakeNotifier implements AppNotifier {
   Future<void> show(AppNotification notification) async {}
 
   @override
-  Future<void> schedule(AppNotification notification, DateTime at) async {}
+  Future<void> schedule(
+    AppNotification notification,
+    DateTime at, {
+    bool daily = false,
+  }) async {}
 
   @override
   Future<void> cancel(int id) async {}

@@ -6,7 +6,8 @@ import 'notifier.dart';
 
 /// 予約した通知を、種類ごとに置き換える
 ///
-/// 予約した id と時刻は端末の状態（app_states の `notify.scheduled.<種類>`）に残す。
+/// 予約した id と時刻は端末の状態（app_states の `notify.scheduled.<種類>`）に残す。毎日の繰り返しは時刻の代わりに
+/// [dailyMark] を残す（時刻が過ぎても次の日にまた出るので、要らなくなったらいつでも取り消す）。
 /// Android の予約はアプリを閉じても残るので、次に起動したときも、要らなくなった予約を取り消せるようにするため
 class NotificationScheduler {
   NotificationScheduler(this._db, this._notifier, {DateTime Function()? clock})
@@ -18,6 +19,9 @@ class NotificationScheduler {
 
   static String key(String kind) => 'notify.scheduled.$kind';
 
+  /// 毎日の繰り返しの予約の印
+  static const dailyMark = -1;
+
   /// [kind] の予約を [plan] に置き換える。前の予約のうち、[plan] になく、まだ時刻の来ていないものは取り消す
   ///
   /// 時刻を過ぎた予約は、もう知らせている。取り消すと出ている通知まで消えてしまうので、覚えておくのをやめるだけにする
@@ -25,15 +29,17 @@ class NotificationScheduler {
     final now = _clock();
     final before = await _scheduled(kind);
     final after = {
-      for (final p in plan) p.notification.id: p.at.millisecondsSinceEpoch,
+      for (final p in plan)
+        p.notification.id: p.daily ? dailyMark : p.at.millisecondsSinceEpoch,
     };
     for (final MapEntry(key: id, value: at) in before.entries) {
-      if (!after.containsKey(id) && at > now.millisecondsSinceEpoch) {
+      if (!after.containsKey(id) &&
+          (at == dailyMark || at > now.millisecondsSinceEpoch)) {
         await _notifier.cancel(id);
       }
     }
     for (final p in plan) {
-      await _notifier.schedule(p.notification, p.at);
+      await _notifier.schedule(p.notification, p.at, daily: p.daily);
     }
     // 予約が変わらなければ書かない。端末の状態の表を書くと、同じ表を見張る通知の設定が流れ直し、
     // 予約の計算と書き込みを繰り返してしまうため
