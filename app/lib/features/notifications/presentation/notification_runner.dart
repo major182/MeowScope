@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
+import '../../medication/data/medication_repository.dart';
+import '../../medication/domain/medication_plan.dart';
 import '../../sync/presentation/sync_controller.dart';
 import '../data/anomaly_alerts.dart';
 import '../data/notification_scheduler.dart';
@@ -90,6 +92,48 @@ final birthdayPlanProvider = Provider.autoDispose<List<PlannedNotification>?>((
   );
 });
 
+/// おうちのお薬の予定（家族の追加・変更も同期で届く）
+final _medicationsProvider = StreamProvider.autoDispose<List<MedicationEntry>>((
+  ref,
+) {
+  final session = ref.watch(sessionProvider).value;
+  if (session == null) {
+    return Stream.value(const []);
+  }
+  return ref
+      .watch(medicationRepositoryProvider)
+      .watchSchedules(session.householdId);
+});
+
+/// お薬の時間の予約（F-NT-01、BR-06）。予定・猫（お別れ）・通知の設定が変わるたびに計算し直す
+final medicationPlanProvider = Provider.autoDispose<List<PlannedNotification>?>(
+  (ref) {
+    final entries = ref.watch(_medicationsProvider).value;
+    final settings = ref.watch(notificationSettingsProvider).value;
+    if (entries == null || settings == null) {
+      return null;
+    }
+    return planMedications(
+      schedules: [
+        for (final e in entries)
+          // お別れの猫の予定は知らせない（S-50）
+          if (e.cat.status == 'active')
+            MedicationPlanItem(
+              id: e.schedule.id,
+              catName: e.cat.name,
+              name: e.schedule.name,
+              dose: e.schedule.dose,
+              timeOfDay: e.schedule.timeOfDay,
+              enabled: e.schedule.enabled,
+            ),
+      ],
+      settings: settings,
+      now: DateTime.now(),
+      android: defaultTargetPlatform == TargetPlatform.android,
+    );
+  },
+);
+
 /// 同期が終わって成功したところか（実行中から、失敗もログインの期限切れもない状態に変わった）
 bool syncJustSucceeded(SyncState? previous, SyncState next) =>
     (previous?.running ?? false) &&
@@ -101,6 +145,7 @@ bool syncJustSucceeded(SyncState? previous, SyncState next) =>
 final _plans = {
   'reminder': reminderPlanProvider,
   'birthday': birthdayPlanProvider,
+  'medication': medicationPlanProvider,
 };
 
 /// ログイン中に、通知の予約を最新に保つ（F-NT-03 など）

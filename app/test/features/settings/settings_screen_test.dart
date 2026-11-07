@@ -80,13 +80,12 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('UT-SE-03 Android：「ウィジェットのボタン」でボタンの設定（S-44）へ進む。準備中はお薬の予定だけ', (
+  testWidgets('UT-SE-03 Android：「ウィジェットのボタン」でボタンの設定（S-44）へ進む。準備中の項目はない', (
     tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.android;
     await show(tester);
-    // お薬の予定（S-50）は計画の8で作るまで準備中
-    expect(find.text('準備中'), findsOneWidget);
+    expect(find.text('準備中'), findsNothing);
     expect(find.widgetWithText(ListTile, 'お薬の予定'), findsOneWidget);
 
     await tester.tap(find.text('ウィジェットのボタン'));

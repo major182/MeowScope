@@ -25,12 +25,7 @@ class SettingsScreen extends ConsumerWidget {
           _Link(label: '猫の一覧とプロフィール', path: '/cats'),
           _Link(label: 'おうちの管理', path: '/household'),
           _Link(label: '記録項目の設定', path: '/record-types'),
-          // お薬の予定（S-50）は計画の8で作る。それまでは押せない
-          const ListTile(
-            title: Text('お薬の予定'),
-            subtitle: Text('準備中'),
-            enabled: false,
-          ),
+          _Link(label: 'お薬の予定', path: '/medications'),
           _Link(label: '通知の設定', path: '/notification-settings'),
           if (android) _Link(label: 'ウィジェットのボタン', path: '/widget-buttons'),
           _Link(label: 'アカウント', path: '/account'),

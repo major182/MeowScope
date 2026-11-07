@@ -4,6 +4,9 @@ import 'package:meowscope/features/notifications/data/notifier.dart';
 class RecordingNotifier implements AppNotifier {
   final shown = <AppNotification>[];
   final scheduled = <int, (AppNotification, DateTime)>{};
+
+  /// 毎日の繰り返しで予約した id
+  final daily = <int>{};
   final cancelled = <int>[];
 
   @override
@@ -17,12 +20,23 @@ class RecordingNotifier implements AppNotifier {
       shown.add(notification);
 
   @override
-  Future<void> schedule(AppNotification notification, DateTime at) async =>
-      scheduled[notification.id] = (notification, at);
+  Future<void> schedule(
+    AppNotification notification,
+    DateTime at, {
+    bool daily = false,
+  }) async {
+    scheduled[notification.id] = (notification, at);
+    if (daily) {
+      this.daily.add(notification.id);
+    } else {
+      this.daily.remove(notification.id);
+    }
+  }
 
   @override
   Future<void> cancel(int id) async {
     cancelled.add(id);
     scheduled.remove(id);
+    daily.remove(id);
   }
 }

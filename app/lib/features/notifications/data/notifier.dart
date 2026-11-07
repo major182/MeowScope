@@ -32,8 +32,13 @@ abstract interface class AppNotifier {
   /// すぐに知らせる
   Future<void> show(AppNotification notification);
 
-  /// [at] の時刻に知らせるよう予約する。同じ id の予約は置き換える
-  Future<void> schedule(AppNotification notification, DateTime at);
+  /// [at] の時刻に知らせるよう予約する。同じ id の予約は置き換える。
+  /// [daily] なら、その後も毎日同じ時刻に知らせる（お薬の時間。BR-06）
+  Future<void> schedule(
+    AppNotification notification,
+    DateTime at, {
+    bool daily = false,
+  });
 
   /// 予約（と出ている通知）を取り消す
   Future<void> cancel(int id);
@@ -87,13 +92,16 @@ class AndroidNotifier implements AppNotifier {
   @override
   /// 時刻は UTC で渡す（端末の地域の時刻の表を読まずに済み、同じ瞬間を指せる）。
   /// 正確な時刻の許可（SCHEDULE_EXACT_ALARM）を求めずに済むよう、数分のずれを許す方式で予約する
+  ///
+  /// 毎日の繰り返しは、時刻（UTC の時・分）が同じになるたびに出す。日本は夏時間がないので、毎日同じ端末の時刻になる
   @override
-  Future<void> schedule(AppNotification n, DateTime at) =>
+  Future<void> schedule(AppNotification n, DateTime at, {bool daily = false}) =>
       _plugin.zonedSchedule(
         id: n.id,
         scheduledDate: tz.TZDateTime.from(at.toUtc(), tz.UTC),
         notificationDetails: _details,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: daily ? DateTimeComponents.time : null,
         title: n.title,
         body: n.body,
         payload: n.payload,
@@ -144,12 +152,19 @@ class InAppNotifier implements AppNotifier {
   final _timers = <int, Timer>{};
 
   @override
-  Future<void> schedule(AppNotification n, DateTime at) async {
+  Future<void> schedule(
+    AppNotification n,
+    DateTime at, {
+    bool daily = false,
+  }) async {
     _timers.remove(n.id)?.cancel();
     final wait = at.difference(DateTime.now());
     _timers[n.id] = Timer(wait.isNegative ? Duration.zero : wait, () {
       _timers.remove(n.id);
       show(n);
+      if (daily) {
+        schedule(n, at.add(const Duration(days: 1)), daily: true);
+      }
     });
   }
 

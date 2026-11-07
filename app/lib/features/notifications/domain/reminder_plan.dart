@@ -1,12 +1,13 @@
 import '../data/notifier.dart';
 import 'notification_settings.dart';
 
-/// 予約する通知。[at] の時刻に [notification] を知らせる
+/// 予約する通知。[at] の時刻に [notification] を知らせる。[daily] なら、その後も毎日同じ時刻に知らせる
 class PlannedNotification {
-  const PlannedNotification(this.notification, this.at);
+  const PlannedNotification(this.notification, this.at, {this.daily = false});
 
   final AppNotification notification;
   final DateTime at;
+  final bool daily;
 }
 
 /// 記録忘れの対象の猫（お別れの猫は渡さない）

@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../features/medication/data/medication_repository.dart';
 import '../features/auth/data/account_repository.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/data/token_store.dart';
@@ -32,6 +33,11 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 
 final recordRepositoryProvider = Provider<RecordRepository>(
   (ref) => RecordRepository(ref.watch(databaseProvider)),
+);
+
+/// お薬の予定（S-50）
+final medicationRepositoryProvider = Provider<MedicationRepository>(
+  (ref) => MedicationRepository(ref.watch(databaseProvider)),
 );
 
 final householdRepositoryProvider = Provider<HouseholdRepository>(
