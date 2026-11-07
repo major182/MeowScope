@@ -6435,6 +6435,679 @@ class RejectedChangesCompanion extends UpdateCompanion<RejectedChangeRow> {
   }
 }
 
+class $MedicationSchedulesTable extends MedicationSchedules
+    with TableInfo<$MedicationSchedulesTable, MedicationScheduleRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MedicationSchedulesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedAtMeta = const VerificationMeta(
+    'deletedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+    'deleted_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverSeqMeta = const VerificationMeta(
+    'serverSeq',
+  );
+  @override
+  late final GeneratedColumn<int> serverSeq = GeneratedColumn<int>(
+    'server_seq',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _householdIdMeta = const VerificationMeta(
+    'householdId',
+  );
+  @override
+  late final GeneratedColumn<String> householdId = GeneratedColumn<String>(
+    'household_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES households (id)',
+    ),
+  );
+  static const VerificationMeta _catIdMeta = const VerificationMeta('catId');
+  @override
+  late final GeneratedColumn<String> catId = GeneratedColumn<String>(
+    'cat_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES cats (id)',
+    ),
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _doseMeta = const VerificationMeta('dose');
+  @override
+  late final GeneratedColumn<String> dose = GeneratedColumn<String>(
+    'dose',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _timeOfDayMeta = const VerificationMeta(
+    'timeOfDay',
+  );
+  @override
+  late final GeneratedColumn<String> timeOfDay = GeneratedColumn<String>(
+    'time_of_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
+  @override
+  late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
+    'enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    serverSeq,
+    householdId,
+    catId,
+    name,
+    dose,
+    timeOfDay,
+    enabled,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'medication_schedules';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MedicationScheduleRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(
+        _deletedAtMeta,
+        deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta),
+      );
+    }
+    if (data.containsKey('server_seq')) {
+      context.handle(
+        _serverSeqMeta,
+        serverSeq.isAcceptableOrUnknown(data['server_seq']!, _serverSeqMeta),
+      );
+    }
+    if (data.containsKey('household_id')) {
+      context.handle(
+        _householdIdMeta,
+        householdId.isAcceptableOrUnknown(
+          data['household_id']!,
+          _householdIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_householdIdMeta);
+    }
+    if (data.containsKey('cat_id')) {
+      context.handle(
+        _catIdMeta,
+        catId.isAcceptableOrUnknown(data['cat_id']!, _catIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_catIdMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('dose')) {
+      context.handle(
+        _doseMeta,
+        dose.isAcceptableOrUnknown(data['dose']!, _doseMeta),
+      );
+    }
+    if (data.containsKey('time_of_day')) {
+      context.handle(
+        _timeOfDayMeta,
+        timeOfDay.isAcceptableOrUnknown(data['time_of_day']!, _timeOfDayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timeOfDayMeta);
+    }
+    if (data.containsKey('enabled')) {
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  MedicationScheduleRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MedicationScheduleRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deletedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}deleted_at'],
+      ),
+      serverSeq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_seq'],
+      ),
+      householdId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}household_id'],
+      )!,
+      catId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cat_id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      dose: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dose'],
+      ),
+      timeOfDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}time_of_day'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+    );
+  }
+
+  @override
+  $MedicationSchedulesTable createAlias(String alias) {
+    return $MedicationSchedulesTable(attachedDatabase, alias);
+  }
+}
+
+class MedicationScheduleRow extends DataClass
+    implements Insertable<MedicationScheduleRow> {
+  final String id;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+
+  /// サーバーが振る通し番号。端末では作らない
+  final int? serverSeq;
+  final String householdId;
+  final String catId;
+
+  /// 薬の名前（20文字まで）
+  final String name;
+
+  /// 量（例：1錠。20文字まで）
+  final String? dose;
+
+  /// 毎日の時刻（`HH:mm`、端末の時刻）
+  final String timeOfDay;
+  final bool enabled;
+  const MedicationScheduleRow({
+    required this.id,
+    required this.createdAt,
+    required this.updatedAt,
+    this.deletedAt,
+    this.serverSeq,
+    required this.householdId,
+    required this.catId,
+    required this.name,
+    this.dose,
+    required this.timeOfDay,
+    required this.enabled,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || serverSeq != null) {
+      map['server_seq'] = Variable<int>(serverSeq);
+    }
+    map['household_id'] = Variable<String>(householdId);
+    map['cat_id'] = Variable<String>(catId);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || dose != null) {
+      map['dose'] = Variable<String>(dose);
+    }
+    map['time_of_day'] = Variable<String>(timeOfDay);
+    map['enabled'] = Variable<bool>(enabled);
+    return map;
+  }
+
+  MedicationSchedulesCompanion toCompanion(bool nullToAbsent) {
+    return MedicationSchedulesCompanion(
+      id: Value(id),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      serverSeq: serverSeq == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverSeq),
+      householdId: Value(householdId),
+      catId: Value(catId),
+      name: Value(name),
+      dose: dose == null && nullToAbsent ? const Value.absent() : Value(dose),
+      timeOfDay: Value(timeOfDay),
+      enabled: Value(enabled),
+    );
+  }
+
+  factory MedicationScheduleRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MedicationScheduleRow(
+      id: serializer.fromJson<String>(json['id']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      serverSeq: serializer.fromJson<int?>(json['serverSeq']),
+      householdId: serializer.fromJson<String>(json['householdId']),
+      catId: serializer.fromJson<String>(json['catId']),
+      name: serializer.fromJson<String>(json['name']),
+      dose: serializer.fromJson<String?>(json['dose']),
+      timeOfDay: serializer.fromJson<String>(json['timeOfDay']),
+      enabled: serializer.fromJson<bool>(json['enabled']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'serverSeq': serializer.toJson<int?>(serverSeq),
+      'householdId': serializer.toJson<String>(householdId),
+      'catId': serializer.toJson<String>(catId),
+      'name': serializer.toJson<String>(name),
+      'dose': serializer.toJson<String?>(dose),
+      'timeOfDay': serializer.toJson<String>(timeOfDay),
+      'enabled': serializer.toJson<bool>(enabled),
+    };
+  }
+
+  MedicationScheduleRow copyWith({
+    String? id,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    Value<DateTime?> deletedAt = const Value.absent(),
+    Value<int?> serverSeq = const Value.absent(),
+    String? householdId,
+    String? catId,
+    String? name,
+    Value<String?> dose = const Value.absent(),
+    String? timeOfDay,
+    bool? enabled,
+  }) => MedicationScheduleRow(
+    id: id ?? this.id,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+    serverSeq: serverSeq.present ? serverSeq.value : this.serverSeq,
+    householdId: householdId ?? this.householdId,
+    catId: catId ?? this.catId,
+    name: name ?? this.name,
+    dose: dose.present ? dose.value : this.dose,
+    timeOfDay: timeOfDay ?? this.timeOfDay,
+    enabled: enabled ?? this.enabled,
+  );
+  MedicationScheduleRow copyWithCompanion(MedicationSchedulesCompanion data) {
+    return MedicationScheduleRow(
+      id: data.id.present ? data.id.value : this.id,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      serverSeq: data.serverSeq.present ? data.serverSeq.value : this.serverSeq,
+      householdId: data.householdId.present
+          ? data.householdId.value
+          : this.householdId,
+      catId: data.catId.present ? data.catId.value : this.catId,
+      name: data.name.present ? data.name.value : this.name,
+      dose: data.dose.present ? data.dose.value : this.dose,
+      timeOfDay: data.timeOfDay.present ? data.timeOfDay.value : this.timeOfDay,
+      enabled: data.enabled.present ? data.enabled.value : this.enabled,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MedicationScheduleRow(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverSeq: $serverSeq, ')
+          ..write('householdId: $householdId, ')
+          ..write('catId: $catId, ')
+          ..write('name: $name, ')
+          ..write('dose: $dose, ')
+          ..write('timeOfDay: $timeOfDay, ')
+          ..write('enabled: $enabled')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    createdAt,
+    updatedAt,
+    deletedAt,
+    serverSeq,
+    householdId,
+    catId,
+    name,
+    dose,
+    timeOfDay,
+    enabled,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MedicationScheduleRow &&
+          other.id == this.id &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt &&
+          other.serverSeq == this.serverSeq &&
+          other.householdId == this.householdId &&
+          other.catId == this.catId &&
+          other.name == this.name &&
+          other.dose == this.dose &&
+          other.timeOfDay == this.timeOfDay &&
+          other.enabled == this.enabled);
+}
+
+class MedicationSchedulesCompanion
+    extends UpdateCompanion<MedicationScheduleRow> {
+  final Value<String> id;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int?> serverSeq;
+  final Value<String> householdId;
+  final Value<String> catId;
+  final Value<String> name;
+  final Value<String?> dose;
+  final Value<String> timeOfDay;
+  final Value<bool> enabled;
+  final Value<int> rowid;
+  const MedicationSchedulesCompanion({
+    this.id = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.serverSeq = const Value.absent(),
+    this.householdId = const Value.absent(),
+    this.catId = const Value.absent(),
+    this.name = const Value.absent(),
+    this.dose = const Value.absent(),
+    this.timeOfDay = const Value.absent(),
+    this.enabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MedicationSchedulesCompanion.insert({
+    required String id,
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.deletedAt = const Value.absent(),
+    this.serverSeq = const Value.absent(),
+    required String householdId,
+    required String catId,
+    required String name,
+    this.dose = const Value.absent(),
+    required String timeOfDay,
+    this.enabled = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt),
+       householdId = Value(householdId),
+       catId = Value(catId),
+       name = Value(name),
+       timeOfDay = Value(timeOfDay);
+  static Insertable<MedicationScheduleRow> custom({
+    Expression<String>? id,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? serverSeq,
+    Expression<String>? householdId,
+    Expression<String>? catId,
+    Expression<String>? name,
+    Expression<String>? dose,
+    Expression<String>? timeOfDay,
+    Expression<bool>? enabled,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (serverSeq != null) 'server_seq': serverSeq,
+      if (householdId != null) 'household_id': householdId,
+      if (catId != null) 'cat_id': catId,
+      if (name != null) 'name': name,
+      if (dose != null) 'dose': dose,
+      if (timeOfDay != null) 'time_of_day': timeOfDay,
+      if (enabled != null) 'enabled': enabled,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MedicationSchedulesCompanion copyWith({
+    Value<String>? id,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime?>? deletedAt,
+    Value<int?>? serverSeq,
+    Value<String>? householdId,
+    Value<String>? catId,
+    Value<String>? name,
+    Value<String?>? dose,
+    Value<String>? timeOfDay,
+    Value<bool>? enabled,
+    Value<int>? rowid,
+  }) {
+    return MedicationSchedulesCompanion(
+      id: id ?? this.id,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      serverSeq: serverSeq ?? this.serverSeq,
+      householdId: householdId ?? this.householdId,
+      catId: catId ?? this.catId,
+      name: name ?? this.name,
+      dose: dose ?? this.dose,
+      timeOfDay: timeOfDay ?? this.timeOfDay,
+      enabled: enabled ?? this.enabled,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (serverSeq.present) {
+      map['server_seq'] = Variable<int>(serverSeq.value);
+    }
+    if (householdId.present) {
+      map['household_id'] = Variable<String>(householdId.value);
+    }
+    if (catId.present) {
+      map['cat_id'] = Variable<String>(catId.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (dose.present) {
+      map['dose'] = Variable<String>(dose.value);
+    }
+    if (timeOfDay.present) {
+      map['time_of_day'] = Variable<String>(timeOfDay.value);
+    }
+    if (enabled.present) {
+      map['enabled'] = Variable<bool>(enabled.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MedicationSchedulesCompanion(')
+          ..write('id: $id, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverSeq: $serverSeq, ')
+          ..write('householdId: $householdId, ')
+          ..write('catId: $catId, ')
+          ..write('name: $name, ')
+          ..write('dose: $dose, ')
+          ..write('timeOfDay: $timeOfDay, ')
+          ..write('enabled: $enabled, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6455,6 +7128,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RejectedChangesTable rejectedChanges = $RejectedChangesTable(
     this,
   );
+  late final $MedicationSchedulesTable medicationSchedules =
+      $MedicationSchedulesTable(this);
   late final Index recordsCatRecordedAt = Index(
     'records_cat_recorded_at',
     'CREATE INDEX records_cat_recorded_at ON records (cat_id, recorded_at)',
@@ -6477,6 +7152,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     clientLogs,
     widgetButtons,
     rejectedChanges,
+    medicationSchedules,
     recordsCatRecordedAt,
   ];
 }
@@ -6536,6 +7212,30 @@ final class $$HouseholdsTableReferences
     ).filter((f) => f.householdId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_recordTypesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $MedicationSchedulesTable,
+    List<MedicationScheduleRow>
+  >
+  _medicationSchedulesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.medicationSchedules,
+        aliasName: 'households__id__medication_schedules__household_id',
+      );
+
+  $$MedicationSchedulesTableProcessedTableManager get medicationSchedulesRefs {
+    final manager = $$MedicationSchedulesTableTableManager(
+      $_db,
+      $_db.medicationSchedules,
+    ).filter((f) => f.householdId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _medicationSchedulesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -6622,6 +7322,31 @@ class $$HouseholdsTableFilterComposer
           }) => $$RecordTypesTableFilterComposer(
             $db: $db,
             $table: $db.recordTypes,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> medicationSchedulesRefs(
+    Expression<bool> Function($$MedicationSchedulesTableFilterComposer f) f,
+  ) {
+    final $$MedicationSchedulesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.medicationSchedules,
+      getReferencedColumn: (t) => t.householdId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MedicationSchedulesTableFilterComposer(
+            $db: $db,
+            $table: $db.medicationSchedules,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -6748,6 +7473,32 @@ class $$HouseholdsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> medicationSchedulesRefs<T extends Object>(
+    Expression<T> Function($$MedicationSchedulesTableAnnotationComposer a) f,
+  ) {
+    final $$MedicationSchedulesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.medicationSchedules,
+          getReferencedColumn: (t) => t.householdId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MedicationSchedulesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.medicationSchedules,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$HouseholdsTableTableManager
@@ -6763,7 +7514,11 @@ class $$HouseholdsTableTableManager
           $$HouseholdsTableUpdateCompanionBuilder,
           (HouseholdRow, $$HouseholdsTableReferences),
           HouseholdRow,
-          PrefetchHooks Function({bool catsRefs, bool recordTypesRefs})
+          PrefetchHooks Function({
+            bool catsRefs,
+            bool recordTypesRefs,
+            bool medicationSchedulesRefs,
+          })
         > {
   $$HouseholdsTableTableManager(_$AppDatabase db, $HouseholdsTable table)
     : super(
@@ -6820,56 +7575,86 @@ class $$HouseholdsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({catsRefs = false, recordTypesRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [
-                if (catsRefs) db.cats,
-                if (recordTypesRefs) db.recordTypes,
-              ],
-              addJoins: null,
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (catsRefs)
-                    await $_getPrefetchedDataByColumns<
-                      HouseholdRow,
-                      $HouseholdsTable,
-                      CatRow,
-                      $CatsTable
-                    >(
-                      currentTable: table,
-                      referencedTable: $$HouseholdsTableReferences
-                          ._catsRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$HouseholdsTableReferences(db, table, p0).catsRefs,
-                      currentColumn: 'id',
-                      referencedColumn: 'household_id',
-                      typedResults: items,
-                    ),
-                  if (recordTypesRefs)
-                    await $_getPrefetchedDataByColumns<
-                      HouseholdRow,
-                      $HouseholdsTable,
-                      RecordTypeRow,
-                      $RecordTypesTable
-                    >(
-                      currentTable: table,
-                      referencedTable: $$HouseholdsTableReferences
-                          ._recordTypesRefsTable(db),
-                      managerFromTypedResult: (p0) =>
-                          $$HouseholdsTableReferences(
-                            db,
-                            table,
-                            p0,
-                          ).recordTypesRefs,
-                      currentColumn: 'id',
-                      referencedColumn: 'household_id',
-                      typedResults: items,
-                    ),
-                ];
+          prefetchHooksCallback:
+              ({
+                catsRefs = false,
+                recordTypesRefs = false,
+                medicationSchedulesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (catsRefs) db.cats,
+                    if (recordTypesRefs) db.recordTypes,
+                    if (medicationSchedulesRefs) db.medicationSchedules,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (catsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          HouseholdRow,
+                          $HouseholdsTable,
+                          CatRow,
+                          $CatsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$HouseholdsTableReferences
+                              ._catsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$HouseholdsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).catsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'household_id',
+                          typedResults: items,
+                        ),
+                      if (recordTypesRefs)
+                        await $_getPrefetchedDataByColumns<
+                          HouseholdRow,
+                          $HouseholdsTable,
+                          RecordTypeRow,
+                          $RecordTypesTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$HouseholdsTableReferences
+                              ._recordTypesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$HouseholdsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).recordTypesRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'household_id',
+                          typedResults: items,
+                        ),
+                      if (medicationSchedulesRefs)
+                        await $_getPrefetchedDataByColumns<
+                          HouseholdRow,
+                          $HouseholdsTable,
+                          MedicationScheduleRow,
+                          $MedicationSchedulesTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$HouseholdsTableReferences
+                              ._medicationSchedulesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$HouseholdsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).medicationSchedulesRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'household_id',
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -6886,7 +7671,11 @@ typedef $$HouseholdsTableProcessedTableManager =
       $$HouseholdsTableUpdateCompanionBuilder,
       (HouseholdRow, $$HouseholdsTableReferences),
       HouseholdRow,
-      PrefetchHooks Function({bool catsRefs, bool recordTypesRefs})
+      PrefetchHooks Function({
+        bool catsRefs,
+        bool recordTypesRefs,
+        bool medicationSchedulesRefs,
+      })
     >;
 typedef $$HouseholdMembersTableCreateCompanionBuilder =
     HouseholdMembersCompanion Function({
@@ -7282,6 +8071,30 @@ final class $$CatsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $MedicationSchedulesTable,
+    List<MedicationScheduleRow>
+  >
+  _medicationSchedulesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.medicationSchedules,
+        aliasName: 'cats__id__medication_schedules__cat_id',
+      );
+
+  $$MedicationSchedulesTableProcessedTableManager get medicationSchedulesRefs {
+    final manager = $$MedicationSchedulesTableTableManager(
+      $_db,
+      $_db.medicationSchedules,
+    ).filter((f) => f.catId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _medicationSchedulesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$CatsTableFilterComposer extends Composer<_$AppDatabase, $CatsTable> {
@@ -7396,6 +8209,31 @@ class $$CatsTableFilterComposer extends Composer<_$AppDatabase, $CatsTable> {
           }) => $$RecordsTableFilterComposer(
             $db: $db,
             $table: $db.records,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> medicationSchedulesRefs(
+    Expression<bool> Function($$MedicationSchedulesTableFilterComposer f) f,
+  ) {
+    final $$MedicationSchedulesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.medicationSchedules,
+      getReferencedColumn: (t) => t.catId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$MedicationSchedulesTableFilterComposer(
+            $db: $db,
+            $table: $db.medicationSchedules,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -7602,6 +8440,32 @@ class $$CatsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> medicationSchedulesRefs<T extends Object>(
+    Expression<T> Function($$MedicationSchedulesTableAnnotationComposer a) f,
+  ) {
+    final $$MedicationSchedulesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.medicationSchedules,
+          getReferencedColumn: (t) => t.catId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$MedicationSchedulesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.medicationSchedules,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$CatsTableTableManager
@@ -7617,7 +8481,11 @@ class $$CatsTableTableManager
           $$CatsTableUpdateCompanionBuilder,
           (CatRow, $$CatsTableReferences),
           CatRow,
-          PrefetchHooks Function({bool householdId, bool recordsRefs})
+          PrefetchHooks Function({
+            bool householdId,
+            bool recordsRefs,
+            bool medicationSchedulesRefs,
+          })
         > {
   $$CatsTableTableManager(_$AppDatabase db, $CatsTable table)
     : super(
@@ -7706,63 +8574,89 @@ class $$CatsTableTableManager
                 ),
               )
               .toList(),
-          prefetchHooksCallback: ({householdId = false, recordsRefs = false}) {
-            return PrefetchHooks(
-              db: db,
-              explicitlyWatchedTables: [if (recordsRefs) db.records],
-              addJoins:
-                  <
-                    T extends TableManagerState<
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic,
-                      dynamic
-                    >
-                  >(state) {
-                    if (householdId) {
-                      state = state.withJoin(
-                        currentTable: table,
-                        currentColumn: table.householdId,
-                        referencedTable: $$CatsTableReferences
-                            ._householdIdTable(db),
-                        referencedColumn: $$CatsTableReferences
-                            ._householdIdTable(db)
-                            .id,
-                      ) as T;
-                    }
+          prefetchHooksCallback:
+              ({
+                householdId = false,
+                recordsRefs = false,
+                medicationSchedulesRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (recordsRefs) db.records,
+                    if (medicationSchedulesRefs) db.medicationSchedules,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (householdId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.householdId,
+                            referencedTable: $$CatsTableReferences
+                                ._householdIdTable(db),
+                            referencedColumn: $$CatsTableReferences
+                                ._householdIdTable(db)
+                                .id,
+                          ) as T;
+                        }
 
-                    return state;
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (recordsRefs)
+                        await $_getPrefetchedDataByColumns<
+                          CatRow,
+                          $CatsTable,
+                          RecordRow,
+                          $RecordsTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CatsTableReferences
+                              ._recordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$CatsTableReferences(db, table, p0).recordsRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'cat_id',
+                          typedResults: items,
+                        ),
+                      if (medicationSchedulesRefs)
+                        await $_getPrefetchedDataByColumns<
+                          CatRow,
+                          $CatsTable,
+                          MedicationScheduleRow,
+                          $MedicationSchedulesTable
+                        >(
+                          currentTable: table,
+                          referencedTable: $$CatsTableReferences
+                              ._medicationSchedulesRefsTable(db),
+                          managerFromTypedResult: (p0) => $$CatsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).medicationSchedulesRefs,
+                          currentColumn: 'id',
+                          referencedColumn: 'cat_id',
+                          typedResults: items,
+                        ),
+                    ];
                   },
-              getPrefetchedDataCallback: (items) async {
-                return [
-                  if (recordsRefs)
-                    await $_getPrefetchedDataByColumns<
-                      CatRow,
-                      $CatsTable,
-                      RecordRow,
-                      $RecordsTable
-                    >(
-                      currentTable: table,
-                      referencedTable: $$CatsTableReferences._recordsRefsTable(
-                        db,
-                      ),
-                      managerFromTypedResult: (p0) =>
-                          $$CatsTableReferences(db, table, p0).recordsRefs,
-                      currentColumn: 'id',
-                      referencedColumn: 'cat_id',
-                      typedResults: items,
-                    ),
-                ];
+                );
               },
-            );
-          },
         ),
       );
 }
@@ -7779,7 +8673,11 @@ typedef $$CatsTableProcessedTableManager =
       $$CatsTableUpdateCompanionBuilder,
       (CatRow, $$CatsTableReferences),
       CatRow,
-      PrefetchHooks Function({bool householdId, bool recordsRefs})
+      PrefetchHooks Function({
+        bool householdId,
+        bool recordsRefs,
+        bool medicationSchedulesRefs,
+      })
     >;
 typedef $$RecordTypesTableCreateCompanionBuilder =
     RecordTypesCompanion Function({
@@ -11023,6 +11921,538 @@ typedef $$RejectedChangesTableProcessedTableManager =
       RejectedChangeRow,
       PrefetchHooks Function()
     >;
+typedef $$MedicationSchedulesTableCreateCompanionBuilder =
+    MedicationSchedulesCompanion Function({
+      required String id,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int?> serverSeq,
+      required String householdId,
+      required String catId,
+      required String name,
+      Value<String?> dose,
+      required String timeOfDay,
+      Value<bool> enabled,
+      Value<int> rowid,
+    });
+typedef $$MedicationSchedulesTableUpdateCompanionBuilder =
+    MedicationSchedulesCompanion Function({
+      Value<String> id,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime?> deletedAt,
+      Value<int?> serverSeq,
+      Value<String> householdId,
+      Value<String> catId,
+      Value<String> name,
+      Value<String?> dose,
+      Value<String> timeOfDay,
+      Value<bool> enabled,
+      Value<int> rowid,
+    });
+
+final class $$MedicationSchedulesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $MedicationSchedulesTable,
+          MedicationScheduleRow
+        > {
+  $$MedicationSchedulesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $HouseholdsTable _householdIdTable(_$AppDatabase db) => db.households
+      .createAlias('medication_schedules__household_id__households__id');
+
+  $$HouseholdsTableProcessedTableManager get householdId {
+    final $_column = $_itemColumn<String>('household_id')!;
+
+    final manager = $$HouseholdsTableTableManager(
+      $_db,
+      $_db.households,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_householdIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $CatsTable _catIdTable(_$AppDatabase db) =>
+      db.cats.createAlias('medication_schedules__cat_id__cats__id');
+
+  $$CatsTableProcessedTableManager get catId {
+    final $_column = $_itemColumn<String>('cat_id')!;
+
+    final manager = $$CatsTableTableManager(
+      $_db,
+      $_db.cats,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_catIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$MedicationSchedulesTableFilterComposer
+    extends Composer<_$AppDatabase, $MedicationSchedulesTable> {
+  $$MedicationSchedulesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverSeq => $composableBuilder(
+    column: $table.serverSeq,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dose => $composableBuilder(
+    column: $table.dose,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timeOfDay => $composableBuilder(
+    column: $table.timeOfDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$HouseholdsTableFilterComposer get householdId {
+    final $$HouseholdsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.householdId,
+      referencedTable: $db.households,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HouseholdsTableFilterComposer(
+            $db: $db,
+            $table: $db.households,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CatsTableFilterComposer get catId {
+    final $$CatsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.catId,
+      referencedTable: $db.cats,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CatsTableFilterComposer(
+            $db: $db,
+            $table: $db.cats,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MedicationSchedulesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MedicationSchedulesTable> {
+  $$MedicationSchedulesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+    column: $table.deletedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverSeq => $composableBuilder(
+    column: $table.serverSeq,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dose => $composableBuilder(
+    column: $table.dose,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timeOfDay => $composableBuilder(
+    column: $table.timeOfDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$HouseholdsTableOrderingComposer get householdId {
+    final $$HouseholdsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.householdId,
+      referencedTable: $db.households,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HouseholdsTableOrderingComposer(
+            $db: $db,
+            $table: $db.households,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CatsTableOrderingComposer get catId {
+    final $$CatsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.catId,
+      referencedTable: $db.cats,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CatsTableOrderingComposer(
+            $db: $db,
+            $table: $db.cats,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MedicationSchedulesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MedicationSchedulesTable> {
+  $$MedicationSchedulesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get serverSeq =>
+      $composableBuilder(column: $table.serverSeq, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get dose =>
+      $composableBuilder(column: $table.dose, builder: (column) => column);
+
+  GeneratedColumn<String> get timeOfDay =>
+      $composableBuilder(column: $table.timeOfDay, builder: (column) => column);
+
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
+
+  $$HouseholdsTableAnnotationComposer get householdId {
+    final $$HouseholdsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.householdId,
+      referencedTable: $db.households,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$HouseholdsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.households,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$CatsTableAnnotationComposer get catId {
+    final $$CatsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.catId,
+      referencedTable: $db.cats,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$CatsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.cats,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$MedicationSchedulesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MedicationSchedulesTable,
+          MedicationScheduleRow,
+          $$MedicationSchedulesTableFilterComposer,
+          $$MedicationSchedulesTableOrderingComposer,
+          $$MedicationSchedulesTableAnnotationComposer,
+          $$MedicationSchedulesTableCreateCompanionBuilder,
+          $$MedicationSchedulesTableUpdateCompanionBuilder,
+          (MedicationScheduleRow, $$MedicationSchedulesTableReferences),
+          MedicationScheduleRow,
+          PrefetchHooks Function({bool householdId, bool catId})
+        > {
+  $$MedicationSchedulesTableTableManager(
+    _$AppDatabase db,
+    $MedicationSchedulesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MedicationSchedulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MedicationSchedulesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$MedicationSchedulesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int?> serverSeq = const Value.absent(),
+                Value<String> householdId = const Value.absent(),
+                Value<String> catId = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> dose = const Value.absent(),
+                Value<String> timeOfDay = const Value.absent(),
+                Value<bool> enabled = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MedicationSchedulesCompanion(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                serverSeq: serverSeq,
+                householdId: householdId,
+                catId: catId,
+                name: name,
+                dose: dose,
+                timeOfDay: timeOfDay,
+                enabled: enabled,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<DateTime?> deletedAt = const Value.absent(),
+                Value<int?> serverSeq = const Value.absent(),
+                required String householdId,
+                required String catId,
+                required String name,
+                Value<String?> dose = const Value.absent(),
+                required String timeOfDay,
+                Value<bool> enabled = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MedicationSchedulesCompanion.insert(
+                id: id,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deletedAt: deletedAt,
+                serverSeq: serverSeq,
+                householdId: householdId,
+                catId: catId,
+                name: name,
+                dose: dose,
+                timeOfDay: timeOfDay,
+                enabled: enabled,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$MedicationSchedulesTable, MedicationScheduleRow>(
+                    table,
+                  ),
+                  $$MedicationSchedulesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({householdId = false, catId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (householdId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.householdId,
+                        referencedTable: $$MedicationSchedulesTableReferences
+                            ._householdIdTable(db),
+                        referencedColumn: $$MedicationSchedulesTableReferences
+                            ._householdIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+                    if (catId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.catId,
+                        referencedTable: $$MedicationSchedulesTableReferences
+                            ._catIdTable(db),
+                        referencedColumn: $$MedicationSchedulesTableReferences
+                            ._catIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$MedicationSchedulesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MedicationSchedulesTable,
+      MedicationScheduleRow,
+      $$MedicationSchedulesTableFilterComposer,
+      $$MedicationSchedulesTableOrderingComposer,
+      $$MedicationSchedulesTableAnnotationComposer,
+      $$MedicationSchedulesTableCreateCompanionBuilder,
+      $$MedicationSchedulesTableUpdateCompanionBuilder,
+      (MedicationScheduleRow, $$MedicationSchedulesTableReferences),
+      MedicationScheduleRow,
+      PrefetchHooks Function({bool householdId, bool catId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -11052,4 +12482,6 @@ class $AppDatabaseManager {
       $$WidgetButtonsTableTableManager(_db, _db.widgetButtons);
   $$RejectedChangesTableTableManager get rejectedChanges =>
       $$RejectedChangesTableTableManager(_db, _db.rejectedChanges);
+  $$MedicationSchedulesTableTableManager get medicationSchedules =>
+      $$MedicationSchedulesTableTableManager(_db, _db.medicationSchedules);
 }

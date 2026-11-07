@@ -35,8 +35,8 @@ public class PurgeService {
     static final Duration RETENTION = Duration.ofDays(90);
 
     /** 消す順番（参照する側から）。 */
-    static final List<String> TABLES = List.of("record_photos", "records", "widget_buttons", "record_types", "cats",
-            "household_members", "households");
+    static final List<String> TABLES = List.of("record_photos", "records", "widget_buttons",
+            "medication_schedules", "record_types", "cats", "household_members", "households");
 
     private final JdbcClient jdbc;
     private final PhotoStorage storage;

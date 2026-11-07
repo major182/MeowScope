@@ -20,6 +20,7 @@ part 'app_database.g.dart';
     ClientLogs,
     WidgetButtons,
     RejectedChanges,
+    MedicationSchedules,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -36,8 +37,8 @@ class AppDatabase extends _$AppDatabase {
   // 7：端末のログの表を追加
   // 8：アイコンの有無を追加　9：ウィジェットのボタンの表を追加
   // 10：送れなかった変更の表を追加（件数だけの記録は、どの行か分からないので捨てる）
-  // 11：猫にいつもとの差のしきい値を追加
-  int get schemaVersion => 11;
+  // 11：猫にいつもとの差のしきい値を追加　12：お薬の予定の表を追加
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -92,6 +93,9 @@ class AppDatabase extends _$AppDatabase {
       }
       if (from < 11) {
         await m.addColumn(cats, cats.anomalyThresholds);
+      }
+      if (from < 12) {
+        await m.createTable(medicationSchedules);
       }
     },
     beforeOpen: (details) async {

@@ -808,6 +808,57 @@ void main() {
     expect(cats['c3'], isNull);
   });
 
+  test('UT-SY-35 お薬の予定を送り、受け取る（F-MD-02）。オン・オフがなければオン', () async {
+    await addHousehold(db, 'h1');
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    await db
+        .into(db.medicationSchedules)
+        .insert(
+          MedicationSchedulesCompanion.insert(
+            id: 'm1',
+            createdAt: testTime,
+            updatedAt: testTime,
+            householdId: 'h1',
+            catId: 'c1',
+            name: '○○錠',
+            dose: const Value('1錠'),
+            timeOfDay: '08:00',
+            enabled: const Value(false),
+          ),
+        );
+    await pending('medication_schedules', 'm1');
+    answer(
+      changes: [
+        pulled('medication_schedules', 'm2', {
+          'householdId': 'h1',
+          'catId': 'c1',
+          'name': '目薬',
+          'dose': null,
+          'timeOfDay': '09:30',
+        }, seq: 9),
+      ],
+    );
+
+    await engine.run('u1');
+
+    expect(sentChanges().single['data'], {
+      'householdId': 'h1',
+      'catId': 'c1',
+      'name': '○○錠',
+      'dose': '1錠',
+      'timeOfDay': '08:00',
+      'enabled': false,
+    });
+    final got = await (db.select(
+      db.medicationSchedules,
+    )..where((m) => m.id.equals('m2'))).getSingle();
+    expect(got.name, '目薬');
+    expect(got.dose, isNull);
+    expect(got.timeOfDay, '09:30');
+    expect(got.enabled, isTrue);
+    expect(got.serverSeq, 9);
+  });
+
   group('UT-SY-34 家族の新しい記録を返す（F-NT-04、BR-08）', () {
     Map<String, Object?> record(
       String id, {

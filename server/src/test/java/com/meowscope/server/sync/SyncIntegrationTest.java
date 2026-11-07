@@ -642,4 +642,110 @@ class SyncIntegrationTest {
                 "invalid:anomalyThresholds", "invalid:anomalyThresholds", "invalid:anomalyThresholds",
                 "invalid:anomalyThresholds", "invalid:anomalyThresholds", "invalid:anomalyThresholds");
     }
+
+    private Map<String, Object> medication(UUID catId, String name, String dose, String time) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("householdId", household.toString());
+        data.put("catId", catId.toString());
+        data.put("name", name);
+        data.put("dose", dose);
+        data.put("timeOfDay", time);
+        return data;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> dataOf(Map<String, Object> body, String table, UUID id) {
+        return changes(body, table).stream().filter(c -> c.get("id").equals(id.toString())).findFirst()
+                .map(c -> (Map<String, Object>) c.get("data")).orElseThrow();
+    }
+
+    @Test
+    @DisplayName("IT-SY-24 お薬の予定：保存して家族にも届く。オン・オフを送らなければオン。変更と削除も届く（F-MD-02）")
+    void お薬の予定() throws Exception {
+        Registered natsu = TestUsers.register(mvc, TestUsers.uniqueEmail(), "なつ");
+        join(natsu, household);
+        UUID catId = UUID.randomUUID();
+        UUID id = UUID.randomUUID();
+        assertThat(statuses(syncBody(haru, 0, List.of(change("cats", catId, cat("ミケ")),
+                change("medication_schedules", id, medication(catId, "○○錠", "1錠", "08:00"))))))
+                .containsExactly("applied", "applied");
+
+        assertThat(dataOf(syncBody(natsu, 0, List.of()), "medication_schedules", id))
+                .containsEntry("householdId", household.toString()).containsEntry("catId", catId.toString())
+                .containsEntry("name", "○○錠").containsEntry("dose", "1錠").containsEntry("timeOfDay", "08:00")
+                .containsEntry("enabled", true);
+
+        Map<String, Object> off = medication(catId, "○○錠", null, "20:00");
+        off.put("enabled", false);
+        assertThat(statuses(syncBody(natsu, 0, List.of(change("medication_schedules", id, off)))))
+                .containsExactly("applied");
+        Map<String, Object> changed = dataOf(syncBody(haru, 0, List.of()), "medication_schedules", id);
+        assertThat(changed).containsEntry("timeOfDay", "20:00").containsEntry("enabled", false);
+        assertThat(changed.get("dose")).isNull();
+
+        // 同じ内容の送り直しは ignored
+        assertThat(statuses(syncBody(natsu, 0, List.of(change("medication_schedules", id, off)))))
+                .containsExactly("ignored");
+
+        syncBody(haru, 0, List.of(change("medication_schedules", id, off, "2026-11-07T00:00:00Z")));
+        assertThat(changes(syncBody(natsu, 0, List.of()), "medication_schedules").getFirst().get("deletedAt"))
+                .isNotNull();
+    }
+
+    @Test
+    @DisplayName("IT-SY-25 お薬の予定の入力の検証：名前は必須・20文字まで（境界値 20・21）、量は20文字まで、時刻は 00:00〜23:59（24:00・8:00・08:60 は rejected）")
+    void お薬の予定の検証() throws Exception {
+        UUID catId = UUID.randomUUID();
+        syncBody(haru, 0, List.of(change("cats", catId, cat("ミケ"))));
+        String twenty = "あ".repeat(20);
+        List<Map<String, Object>> data = List.of(
+                medication(catId, twenty, twenty, "00:00"),
+                medication(catId, "薬", null, "23:59"),
+                medication(catId, twenty + "あ", null, "08:00"),
+                medication(catId, " ", null, "08:00"),
+                medication(catId, "薬", twenty + "あ", "08:00"),
+                medication(catId, "薬", null, "24:00"),
+                medication(catId, "薬", null, "8:00"),
+                medication(catId, "薬", null, "08:60"),
+                medication(catId, "薬", null, null));
+        List<Map<String, Object>> sent = new ArrayList<>();
+        for (Map<String, Object> d : data) {
+            sent.add(change("medication_schedules", UUID.randomUUID(), d));
+        }
+        assertThat(reasons(syncBody(haru, 0, sent))).containsExactly(null, null, "invalid:name", "invalid:name",
+                "invalid:dose", "invalid:timeOfDay", "invalid:timeOfDay", "invalid:timeOfDay", "invalid:timeOfDay");
+    }
+
+    @Test
+    @DisplayName("IT-SY-26 お薬の予定の権限：ほかのおうちの猫・おうちは rejected、知らない猫は not_found、おうちの付け替えは受け付けず、ほかのおうちの予定は届かない")
+    void お薬の予定の権限() throws Exception {
+        UUID catId = UUID.randomUUID();
+        syncBody(haru, 0, List.of(change("cats", catId, cat("ミケ"))));
+        Registered other = TestUsers.register(mvc);
+        UUID otherHousehold = UUID.randomUUID();
+        createHousehold(other, otherHousehold, UUID.randomUUID()).andExpect(status().isCreated());
+        UUID otherCat = UUID.randomUUID();
+        Map<String, Object> otherCatData = Map.of("householdId", otherHousehold.toString(), "name", "タマ",
+                "status", "active");
+        syncBody(other, 0, List.of(change("cats", otherCat, otherCatData)));
+
+        UUID mine = UUID.randomUUID();
+        Map<String, Object> intoOther = medication(catId, "薬", null, "08:00");
+        intoOther.put("householdId", otherHousehold.toString());
+        Map<String, Object> moved = medication(catId, "薬", null, "08:00");
+        moved.put("householdId", otherHousehold.toString());
+        Map<String, Object> body = syncBody(haru, 0, List.of(
+                change("medication_schedules", mine, medication(catId, "薬", null, "08:00")),
+                change("medication_schedules", UUID.randomUUID(), medication(otherCat, "薬", null, "08:00")),
+                change("medication_schedules", UUID.randomUUID(), intoOther),
+                change("medication_schedules", UUID.randomUUID(), medication(UUID.randomUUID(), "薬", null, "08:00"))));
+        assertThat(reasons(body)).containsExactly(null, "forbidden:catId", "forbidden", "not_found:catId");
+
+        // ほかの人が、自分のおうちに付け替えようとしても受け付けない
+        Map<String, Object> steal = new LinkedHashMap<>(medication(otherCat, "薬", null, "08:00"));
+        steal.put("householdId", otherHousehold.toString());
+        assertThat(statuses(syncBody(other, 0, List.of(change("medication_schedules", mine, steal)))))
+                .containsExactly("rejected");
+        assertThat(changes(syncBody(other, 0, List.of()), "medication_schedules")).isEmpty();
+    }
 }

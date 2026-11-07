@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 06 |
-| 版数 | 0.22 |
+| 版数 | 0.23 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[05 DB 設計書](05_db-design.md) |
@@ -161,7 +161,7 @@ POST /sync
 | `records` | `catId`、`recordTypeId`、`recordedAt`、`authorName`、`valueNumber`、`level`、`detail`、`memo`。受け取るときは `authorId`（投稿者の ID。退会した人なら空）も入る |
 | `record_photos` | `recordId`、`sortOrder`（1〜3）。受け取るときは `sizeBytes` と `uploaded`（画像が送られたか）も入る。画像の本体は 6章の API で送受信する |
 | `user_settings` | `weekStart`、`reminderHours`（1〜48、空はオフ）、`notifications`（種類ごとのオン・オフ）、`anomalyMethod`（`statistical` か `threshold`）。`id` は見ず、自分の行を更新する |
-| `medication_schedules` | `householdId`、`catId`、`name`（20文字まで）、`dose`（20文字まで）、`timeOfDay`（`HH:mm`）、`enabled`。猫は同じおうちのものであること |
+| `medication_schedules` | `householdId`、`catId`、`name`（20文字まで）、`dose`（20文字まで）、`timeOfDay`（`HH:mm`、00:00〜23:59）、`enabled`（送らなければオン）。猫は同じおうちのものであること |
 | `widget_buttons` | `recordTypeId`、`sortOrder`（0〜3）。持ち主はトークンのユーザーで、自分の分だけを送受信する。1人4つまで（超えたら `rejected`）。記録項目は自分の属するおうちのものであること |
 | `household_members`（受け取りのみ） | `householdId`、`userId`、`displayName` |
 | `users`（受け取りのみ） | `displayName`、`hasIcon`。同じおうちのメンバーだけ。メールアドレスは送らない |
@@ -253,3 +253,4 @@ RFC 9457（Problem Details）の形式で返す。
 | 0.20 | 2026-11-06 | 同期する表に写真の情報と受け取る列（`hasIcon`・`authorId` など）、反映の順に写真、おうちの作成の 400、理由の `unknown`、9章に 405・415 と `code`・`title` の一覧を追加（品質チェック） |
 | 0.21 | 2026-11-06 | 段階の呼び方を版の番号（Ver.2.0 など）にそろえる |
 | 0.22 | 2026-11-06 | 同期する表にお薬の予定（medication_schedules）、user_settings の通知の設定と判定方式、cats のしきい値を追加 |
+| 0.23 | 2026-11-07 | お薬の予定の時刻の範囲と、オン・オフを送らないときの扱いを記入 |
