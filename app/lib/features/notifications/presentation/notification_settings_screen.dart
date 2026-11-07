@@ -110,6 +110,7 @@ class _NotificationSettingsScreenState
           for (final kind in NotificationKind.forDevice(android: android)) ...[
             SwitchListTile(
               title: Text(kind.label),
+              subtitle: Text(kind.description),
               value: settings.isOn(kind),
               onChanged: (on) => _save(settings.toggled(kind, on)),
             ),
