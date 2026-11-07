@@ -807,4 +807,105 @@ void main() {
     expect(cats['c2'], '{"weight":{"percent":8}}');
     expect(cats['c3'], isNull);
   });
+
+  group('UT-SY-34 家族の新しい記録を返す（F-NT-04、BR-08）', () {
+    Map<String, Object?> record(
+      String id, {
+      String? authorId = 'u2',
+      String? deletedAt,
+    }) => pulled(
+      'records',
+      id,
+      {
+        'catId': 'c1',
+        'recordTypeId': 't1',
+        'recordedAt': '2026-11-03T00:30:00Z',
+        'authorId': authorId,
+        'authorName': 'なつ',
+      },
+      seq: 11,
+      deletedAt: deletedAt,
+    );
+
+    Future<void> synced() => db
+        .into(db.appStates)
+        .insert(
+          AppStatesCompanion.insert(key: SyncKeys.lastSeq('u1'), value: '5'),
+        );
+
+    test('2回目からの同期：自分以外の新しい記録だけを返す（自分・削除・もう持っている記録は返さない）', () async {
+      await addHousehold(db, 'h1');
+      await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+      await synced();
+      await db
+          .into(db.recordTypes)
+          .insert(
+            RecordTypesCompanion.insert(
+              id: 't1',
+              createdAt: testTime,
+              updatedAt: testTime,
+              householdId: 'h1',
+              name: 'ご飯',
+              kind: 'food',
+            ),
+          );
+      await db
+          .into(db.records)
+          .insert(
+            RecordsCompanion.insert(
+              id: 'old',
+              createdAt: testTime,
+              updatedAt: testTime,
+              catId: 'c1',
+              recordTypeId: 't1',
+              recordedAt: testTime,
+              authorName: 'なつ',
+              authorId: const Value('u2'),
+            ),
+          );
+      answer(
+        changes: [
+          record('new'),
+          record('mine', authorId: 'u1'),
+          record('gone', deletedAt: '2026-11-03T01:00:00Z'),
+          record('old'),
+          record('left', authorId: null),
+        ],
+      );
+
+      final outcome = await engine.run('u1') as SyncSucceeded;
+
+      expect([for (final r in outcome.familyRecords) r.id], ['new', 'left']);
+      final r = outcome.familyRecords.first;
+      expect(r.catId, 'c1');
+      expect(r.recordTypeId, 't1');
+      expect(r.authorId, 'u2');
+      expect(r.authorName, 'なつ');
+      expect(r.recordedAt, DateTime.utc(2026, 11, 3, 0, 30));
+    });
+
+    test('最初の同期（lastSeq が 0）では返さない', () async {
+      answer(changes: [record('new')]);
+      final outcome = await engine.run('u1') as SyncSucceeded;
+      expect(outcome.familyRecords, isEmpty);
+    });
+
+    test('全件の取り直しの間に受け取った記録は返さない', () async {
+      await synced();
+      var calls = 0;
+      server.on('POST', '/sync', (r) {
+        calls++;
+        return FakeResponse(200, {
+          'results': const <Object>[],
+          'changes': calls == 1 ? const <Object>[] : [record('new')],
+          'nextSeq': 12,
+          'hasMore': false,
+          'fullResyncRequired': calls == 1,
+        });
+      });
+      final outcome = await engine.run('u1') as SyncSucceeded;
+      expect(calls, 2);
+      expect(outcome.familyRecords, isEmpty);
+    });
+  });
 }
