@@ -184,4 +184,95 @@ void main() {
       await app.close(tester);
     },
   );
+
+  testWidgets('E2E-04 お薬の予定：画面で予定を作ると、毎日の通知が予約され、同期でサーバーに届く', (tester) async {
+    final app = E2eApp();
+    final email = ServerApi.uniqueEmail('medication');
+    await app.start(tester);
+    await register(tester, email, 'はる');
+    await createHouseholdAndCat(tester);
+
+    // 猫が1匹なので、猫は選んだ状態で開く。時刻は初めの 08:00 のまま
+    await tapText(tester, '設定');
+    await tapText(tester, 'お薬の予定');
+    await tapText(tester, '予定を追加');
+    await enter(tester, '薬の名前', '○○錠');
+    await enter(tester, '量（任意。例：1錠）', '1錠');
+    await tester.tap(find.widgetWithText(FilledButton, '保存する'));
+    await waitFor(tester, find.text('○○錠 1錠'));
+
+    // 毎日 8:00 の通知が予約される
+    await waitUntil(
+      tester,
+      () => app.notifier.scheduled.any(
+        (s) => s.notification.title == 'ミケのお薬の時間です',
+      ),
+    );
+    final booked = app.notifier.scheduled.lastWhere(
+      (s) => s.notification.title == 'ミケのお薬の時間です',
+    );
+    expect(booked.daily, isTrue);
+    expect((booked.at.hour, booked.at.minute), (8, 0));
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    await syncNow(tester);
+    final changes = await api.sync(await api.login(email, password));
+    final schedules = [
+      for (final c in changes)
+        if (c['table'] == 'medication_schedules') c['data'] as Map,
+    ];
+    expect(schedules, hasLength(1));
+    expect(schedules.single['name'], '○○錠');
+    expect(schedules.single['dose'], '1錠');
+    expect(schedules.single['timeOfDay'], '08:00');
+    await app.close(tester);
+  });
+
+  testWidgets('E2E-05 家族の記録の通知（Android）：家族がサーバーに記録し、同期すると「○○さんが…を記録しました」が出る', (
+    tester,
+  ) async {
+    final familyToken = await api.register(
+      ServerApi.uniqueEmail('family'),
+      password,
+      'なつ',
+    );
+    final ids = await api.createHousehold(familyToken, 'なつ家');
+    final cat = await api.addCatAndRecord(
+      familyToken,
+      household: ids.household,
+      catName: 'タマ',
+      typeId: ids.food,
+      authorName: 'なつ',
+    );
+    final link = await api.invite(familyToken, ids.household);
+
+    final app = E2eApp();
+    await app.start(tester);
+    await register(tester, ServerApi.uniqueEmail('member'), 'はる');
+    await tapText(tester, '招待されたおうちに参加');
+    await tester.enterText(find.byType(TextField), 'なつ家に招待されました\n$link');
+    await tester.tap(find.widgetWithText(FilledButton, '参加する'));
+    await waitFor(tester, find.text('タマ　ご飯'));
+
+    // 参加した後に、家族が水を記録する
+    await api.addRecord(
+      familyToken,
+      catId: cat,
+      typeId: ids.water,
+      authorName: 'なつ',
+    );
+    // 同期の後は設定にいるので、ホームに戻って家族の記録を見る
+    await syncNow(tester);
+    await tapText(tester, 'ホーム');
+    await waitFor(tester, find.text('タマ　水'));
+    const title = 'なつさんがタマの水を記録しました';
+    await waitUntil(
+      tester,
+      () => app.notifier.shown.any((n) => n.title == title),
+    );
+    // 通知の文に、メモや記録の詳細は入れない
+    expect(app.notifier.shown.firstWhere((n) => n.title == title).body, isNull);
+    await app.close(tester);
+  }, skip: !android);
 }

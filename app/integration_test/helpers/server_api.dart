@@ -72,8 +72,8 @@ class ServerApi {
     return ids;
   }
 
-  /// 猫と、その猫の記録を1件作る
-  Future<void> addCatAndRecord(
+  /// 猫と、その猫の記録を1件作る。猫の ID を返す
+  Future<String> addCatAndRecord(
     String token, {
     required String household,
     required String catName,
@@ -97,6 +97,31 @@ class ServerApi {
         'deletedAt': null,
         'data': {
           'catId': cat,
+          'recordTypeId': typeId,
+          'recordedAt': now,
+          'authorName': authorName,
+        },
+      },
+    ]);
+    return cat;
+  }
+
+  /// 記録を1件作る
+  Future<void> addRecord(
+    String token, {
+    required String catId,
+    required String typeId,
+    required String authorName,
+  }) async {
+    final now = DateTime.now().toUtc().toIso8601String();
+    await sync(token, [
+      {
+        'table': 'records',
+        'id': _uuid.v4(),
+        'updatedAt': now,
+        'deletedAt': null,
+        'data': {
+          'catId': catId,
           'recordTypeId': typeId,
           'recordedAt': now,
           'authorName': authorName,
