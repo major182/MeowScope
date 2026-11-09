@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
+import 'package:meowscope/features/notifications/data/notifier.dart'
+    show AppNotification;
+
 import 'helpers/e2e_app.dart';
 import 'helpers/server_api.dart';
 
@@ -201,18 +204,20 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, '保存する'));
     await waitFor(tester, find.text('○○錠 1錠'));
 
-    // 毎日 8:00 の通知が予約される
-    await waitUntil(
-      tester,
-      () => app.notifier.scheduled.any(
-        (s) => s.notification.title == 'ミケのお薬の時間です',
-      ),
-    );
-    final booked = app.notifier.scheduled.lastWhere(
-      (s) => s.notification.title == 'ミケのお薬の時間です',
-    );
-    expect(booked.daily, isTrue);
-    expect((booked.at.hour, booked.at.minute), (8, 0));
+    bool isMedication(
+      ({AppNotification notification, DateTime at, bool daily}) s,
+    ) => s.notification.title == 'ミケのお薬の時間です';
+    if (android) {
+      // 毎日 8:00 の通知が予約される
+      await waitUntil(tester, () => app.notifier.scheduled.any(isMedication));
+      final booked = app.notifier.scheduled.lastWhere(isMedication);
+      expect(booked.daily, isTrue);
+      expect((booked.at.hour, booked.at.minute), (8, 0));
+    } else {
+      // Windows ではお薬の時間を知らせない（BR-09）
+      await tester.pump(const Duration(seconds: 2));
+      expect(app.notifier.scheduled.where(isMedication), isEmpty);
+    }
 
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
