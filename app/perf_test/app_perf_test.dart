@@ -88,7 +88,7 @@ void main() {
       );
       rethrow;
     }
-    await _waitRecords(db, tester);
+    await _waitRecords(db, tester, results);
     add('初めての全件の同期', s);
 
     for (var i = 0; i < _repeat; i++) {
@@ -171,14 +171,40 @@ Future<void> _untilTrue(WidgetTester tester, bool Function() done) async {
 }
 
 /// 端末の DB に5年分が入るまで待つ（ホームが出た後も、続きのページを受け取っている）
-Future<void> _waitRecords(AppDatabase db, WidgetTester tester) async {
+Future<void> _waitRecords(
+  AppDatabase db,
+  WidgetTester tester,
+  Map<String, List<int>> results,
+) async {
   final want = _years * 365 * 14;
-  final end = DateTime.now().add(const Duration(minutes: 5));
-  while ((await db.select(db.records).get()).length < want) {
-    if (DateTime.now().isAfter(end)) {
-      throw TestFailure('全件を受け取れなかった');
+  Future<int> count() async => (await db.select(db.records).get()).length;
+  var syncs = 1;
+  while (true) {
+    // 受け取りが止まる（10秒ふえない）まで待つ
+    var last = -1;
+    var n = await count();
+    while (n != last) {
+      last = n;
+      for (var i = 0; i < 50; i++) {
+        await tester.pump(const Duration(milliseconds: 200));
+      }
+      n = await count();
     }
-    await tester.pump(const Duration(milliseconds: 200));
+    (results['同期 $syncs 回目までに受け取った記録の件数'] ??= []).add(n);
+    if (n >= want) return;
+    if (syncs == 5) throw TestFailure('全件を受け取れなかった（$n 件）');
+    // 続きは、利用者と同じく設定の「今すぐ同期」で受け取る（1回の同期で受け取れる件数に上限があるため。#143 で見つけた不具合）
+    syncs++;
+    await tester.tap(find.text('設定').last);
+    await _settle(tester);
+    await tester.tap(find.text('同期の状態'));
+    await _settle(tester);
+    await tester.tap(find.widgetWithText(FilledButton, '今すぐ同期'));
+    await _settle(tester);
+    await tester.tap(find.byType(BackButton));
+    await _settle(tester);
+    await tester.tap(find.text('ホーム').last);
+    await _settle(tester);
   }
 }
 
@@ -236,11 +262,23 @@ Future<String> _seed() async {
     'deletedAt': null,
     'data': d,
   };
-  Future<void> send(List<Map<String, Object?>> changes) => dio.post<void>(
-    '/sync',
-    data: {'lastSeq': 0, 'changes': changes},
-    options: auth,
-  );
+  // エミュレーターの通信は大きな本文で切れることがあるので、3回まで送り直す（同じ変更の再送は安全：API 設計書 5章）
+  Future<void> send(List<Map<String, Object?>> changes) async {
+    for (var i = 0; ; i++) {
+      try {
+        await dio.post<void>(
+          '/sync',
+          data: {'lastSeq': 0, 'changes': changes},
+          options: auth,
+        );
+        return;
+      } on DioException {
+        if (i == 2) rethrow;
+        await Future<void>.delayed(const Duration(seconds: 2));
+      }
+    }
+  }
+
   await send([
     change('cats', cat, {
       'householdId': household,

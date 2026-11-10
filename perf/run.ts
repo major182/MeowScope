@@ -247,6 +247,11 @@ function judgeApp(r: AppResult, dir: string, reference: boolean) {
   let ok = true;
   for (const [name, values] of Object.entries(r.ms)) {
     const limit = APP_LIMITS[name];
+    if (limit === undefined) {
+      // 件数などの記録だけの値
+      lines.push(`・${name}：${values.join('・')}`);
+      continue;
+    }
     const max = Math.max(...values);
     const pass = max <= limit;
     if (!pass) ok = false;
