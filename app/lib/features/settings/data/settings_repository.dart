@@ -33,6 +33,25 @@ class SettingsRepository {
   static const reminderHoursKey = 'settings.reminderHours';
   static const anomalyMethodKey = 'settings.anomalyMethod';
 
+  /// 通知の設定を1回だけ読む（保存のときなど、その時点の設定が要るとき）。未設定の項目は既定
+  Future<NotificationSettings> readNotificationSettings() async {
+    final rows =
+        await (_db.select(_db.appStates)..where(
+              (s) => s.key.isIn([
+                notificationsKey,
+                reminderHoursKey,
+                anomalyMethodKey,
+              ]),
+            ))
+            .get();
+    final values = {for (final r in rows) r.key: r.value};
+    return NotificationSettings.parse(
+      flagsJson: values[notificationsKey],
+      reminderHours: values[reminderHoursKey],
+      method: values[anomalyMethodKey],
+    );
+  }
+
   /// 通知の設定を見張る（S-49）。未設定の項目は既定
   ///
   /// 端末の状態の表はほかの値（同期の位置など）でも書かれるので、設定の値が変わったときだけ流す

@@ -9,11 +9,18 @@ class RecordingNotifier implements AppNotifier {
   final daily = <int>{};
   final cancelled = <int>[];
 
-  @override
-  Future<bool> isPermitted() async => true;
+  /// 許可されているか（テストで変える）と、許可を求めた回数
+  bool permitted = true;
+  int requests = 0;
 
   @override
-  Future<bool> requestPermission() async => true;
+  Future<bool> isPermitted() async => permitted;
+
+  @override
+  Future<bool> requestPermission() async {
+    requests++;
+    return permitted = true;
+  }
 
   @override
   Future<void> show(AppNotification notification) async =>

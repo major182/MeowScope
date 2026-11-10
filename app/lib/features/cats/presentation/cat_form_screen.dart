@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../notifications/data/permission_prompt.dart';
+import '../../notifications/domain/notification_settings.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../../icons/icon_avatar.dart';
@@ -139,6 +141,10 @@ class _CatFormScreenState extends ConsumerState<CatFormScreen> {
       // もう一度押せるように戻す
       if (mounted) setState(() => _saving = false);
       return;
+    }
+    // 誕生日の通知が初めて要るときに、許可を求める
+    if (_birthDate != null) {
+      await askNotificationPermission(ref, {NotificationKind.birthday});
     }
     if (initial != null) {
       messenger.showSnackBar(SnackBar(content: Text('$nameを保存しました')));
