@@ -56,7 +56,11 @@ void main() {
     timeOfDay: time,
   );
 
-  Future<void> show(WidgetTester tester, {String path = '/medications'}) async {
+  Future<void> show(
+    WidgetTester tester, {
+    String path = '/medications',
+    AppNotifier? notifier,
+  }) async {
     tester.view.physicalSize = const Size(600, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -89,6 +93,7 @@ void main() {
           authUserProvider.overrideWith(
             (ref) => Stream.value(const AuthUser(id: 'u1', name: 'はる')),
           ),
+          if (notifier != null) notifierProvider.overrideWithValue(notifier),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -335,4 +340,35 @@ void main() {
     expect(plan.single.daily, isTrue);
     expect(plan.single.notification, isA<AppNotification>());
   });
+
+  testWidgets(
+    'UT-NP-03 お薬の予定を保存すると、通知が未許可なら許可を求める（結合：画面→許可）。通知をオフにした予定では求めない',
+    (tester) async {
+      final notifier = RecordingNotifier()..permitted = false;
+      await show(tester, path: '/medications/new', notifier: notifier);
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ミケ').last);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextFormField, '薬の名前'), '目薬');
+      await tester.tap(find.widgetWithText(SwitchListTile, '通知する'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('保存する'));
+      await tester.pumpAndSettle();
+      expect(notifier.requests, 0);
+      await close(tester);
+
+      await show(tester, path: '/medications/new', notifier: notifier);
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ミケ').last);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.widgetWithText(TextFormField, '薬の名前'), '○○錠');
+      await tester.tap(find.text('保存する'));
+      await tester.pumpAndSettle();
+      expect(notifier.requests, 1);
+      expect((await rows()), hasLength(2));
+      await close(tester);
+    },
+  );
 }

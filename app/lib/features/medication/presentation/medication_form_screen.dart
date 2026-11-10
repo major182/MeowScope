@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../notifications/data/permission_prompt.dart';
+import '../../notifications/domain/notification_settings.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../../../core/widgets/confirm_delete.dart';
@@ -169,6 +171,10 @@ class _MedicationFormState extends ConsumerState<_MedicationForm> {
     if (!saved) {
       if (mounted) setState(() => _saving = false);
       return;
+    }
+    // お薬の時間の通知が初めて要るときに、許可を求める
+    if (_enabled) {
+      await askNotificationPermission(ref, {NotificationKind.medication});
     }
     messenger.showSnackBar(const SnackBar(content: Text('お薬の予定を保存しました')));
     router.pop();

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../notifications/data/permission_prompt.dart';
+import '../../notifications/domain/notification_settings.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../../icons/icon_avatar.dart';
@@ -232,6 +234,11 @@ class HomeScreen extends ConsumerWidget {
         ),
       ),
     );
+    // 記録忘れ・いつもとの差の通知が初めて要るときに、許可を求める
+    await askNotificationPermission(ref, {
+      NotificationKind.reminder,
+      NotificationKind.anomaly,
+    });
   }
 }
 
