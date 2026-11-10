@@ -57,7 +57,7 @@ void main() {
     }
   }
 
-  Future<void> show(WidgetTester tester) async {
+  Future<void> show(WidgetTester tester, {String? catId, String? kind}) async {
     tester.view.physicalSize = const Size(500, 1200);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -67,7 +67,9 @@ void main() {
           databaseProvider.overrideWithValue(db),
           sessionProvider.overrideWith((ref) => Stream.value(_session)),
         ],
-        child: MaterialApp(home: StatsScreen(today: _today)),
+        child: MaterialApp(
+          home: StatsScreen(today: _today, catId: catId, kind: kind),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -197,6 +199,30 @@ void main() {
     expect(grid.verticalInterval, 1);
     expect(grid.checkToShowVerticalLine(6), isTrue);
     expect(grid.checkToShowVerticalLine(6.5), isFalse);
+    await close(tester);
+  });
+
+  testWidgets('UT-SS-14 いつもとの差の通知から開くと、その猫と項目を選んでおく。体重・知らない猫は初めの選び方にする', (
+    tester,
+  ) async {
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    await addCat(
+      db,
+      id: 'c2',
+      householdId: 'h1',
+      name: 'タマ',
+      createdAt: testTime.add(const Duration(days: 1)),
+    );
+    await record('c2', 'vomit', DateTime(2026, 11, 2, 8));
+    await show(tester, catId: 'c2', kind: 'vomit');
+    expect(find.text('タマ'), findsOneWidget);
+    expect(find.text('吐いた'), findsOneWidget);
+    expect(bars(tester), [0, 0, 0, 0, 0, 0, 1]);
+    await close(tester);
+
+    await show(tester, catId: 'none', kind: 'weight');
+    expect(find.text('ミケ'), findsOneWidget);
+    expect(find.text('ご飯'), findsOneWidget);
     await close(tester);
   });
 }

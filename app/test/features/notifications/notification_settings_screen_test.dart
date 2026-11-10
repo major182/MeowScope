@@ -208,4 +208,41 @@ void main() {
     await tester.pumpAndSettle();
     await notifier.close();
   });
+
+  testWidgets('UT-NS-10 いつもとの差の通知の「開く」で、統計の画面（戻れる）を開く', (tester) async {
+    tester.view.physicalSize = const Size(600, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final notifier = InAppNotifier();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          databaseProvider.overrideWithValue(db),
+          tokenStoreProvider.overrideWithValue(MemoryTokenStore()),
+          notifierProvider.overrideWithValue(notifier),
+        ],
+        child: const MeowScopeApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await notifier.show(
+      const AppNotification(
+        id: 2,
+        title: 'ミケのご飯がいつもより少なめです',
+        payload: '/stats?cat=c1&kind=food',
+      ),
+    );
+    // スナックバーが出きるまで待つ
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.tap(find.widgetWithText(SnackBarAction, '開く'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(AppBar, '統計'), findsOneWidget);
+    expect(find.byType(BackButton), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+    await notifier.close();
+  });
 }

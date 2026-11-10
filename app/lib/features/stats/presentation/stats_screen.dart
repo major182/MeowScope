@@ -13,17 +13,21 @@ import '../domain/stats.dart';
 
 /// 統計（S-30）。1匹を選び、体重の推移と項目ごとの回数を週と月で出す
 class StatsScreen extends ConsumerStatefulWidget {
-  const StatsScreen({super.key, this.today});
+  const StatsScreen({super.key, this.today, this.catId, this.kind});
 
   /// 今日の日付。テストで差し替える
   final DateTime? today;
+
+  /// 初めに選んでおく猫と、記録項目の種類（いつもとの差の通知から開くとき。体重は `weight`）
+  final String? catId;
+  final String? kind;
 
   @override
   ConsumerState<StatsScreen> createState() => _StatsScreenState();
 }
 
 class _StatsScreenState extends ConsumerState<StatsScreen> {
-  String? _catId;
+  late String? _catId = widget.catId;
   String? _typeId;
   var _period = StatsPeriod.week;
 
@@ -39,6 +43,8 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
       for (final t in types)
         if (t.kind != RecordKind.weight.name) t,
     ];
+    // 通知から開いたときは、その種類の項目を選んでおく
+    _typeId ??= countTypes.where((t) => t.kind == widget.kind).firstOrNull?.id;
     final typeId = countTypes.any((t) => t.id == _typeId)
         ? _typeId
         : countTypes.firstOrNull?.id;

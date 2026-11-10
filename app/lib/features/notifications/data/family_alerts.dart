@@ -58,6 +58,8 @@ class FamilyAlerts {
             authorName: r.authorName,
             catName: cat,
             typeName: type,
+            catId: r.catId,
+            recordedAt: r.recordedAt.toLocal(),
           ),
     ]);
     for (final n in notifications) {

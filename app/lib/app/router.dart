@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../features/stats/presentation/stats_screen.dart';
 import '../features/auth/presentation/account_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/password_reset_screen.dart';
@@ -136,6 +137,14 @@ GoRouter createRouter() => GoRouter(
     GoRoute(
       path: '/widget-buttons',
       builder: (context, state) => const WidgetButtonsScreen(),
+    ),
+    GoRoute(
+      // いつもとの差の通知から開く統計（S-30）。ふだんはメニューの統計を使う
+      path: '/stats',
+      builder: (context, state) => StatsScreen(
+        catId: state.uri.queryParameters['cat'],
+        kind: state.uri.queryParameters['kind'],
+      ),
     ),
     GoRoute(
       path: '/days/:date',
