@@ -128,6 +128,48 @@ class Anomaly {
 
 DateTime _day(DateTime t) => DateTime(t.year, t.month, t.day);
 
+/// 回数の範囲（両端を含む）。null の側は判定しない
+typedef CountRange = ({int? min, int? max});
+
+/// 1日あたりの回数の平均
+double usualMean(List<int> counts) =>
+    counts.reduce((a, b) => a + b) / counts.length;
+
+/// ふだんの回数の範囲（BR-31）
+///
+/// 平均 ±2標準偏差の外で、かつ平均と1回以上違うときを外れ値とする（いつも同じ回数で標準偏差が 0 のとき、
+/// わずかな違いで出さないため）。その判定と同じになる整数の範囲（この回数なら範囲内）を返すので、
+/// 画面の表示と通知の判定が食い違わない
+CountRange usualCountRange(List<int> counts) {
+  final mean = usualMean(counts);
+  final sd = sqrt(
+    counts.map((c) => pow(c - mean, 2)).reduce((a, b) => a + b) / counts.length,
+  );
+  final lo = min((mean - 2 * sd).ceil(), (mean - 1).floor() + 1);
+  final hi = max((mean + 2 * sd).floor(), (mean + 1).ceil() - 1);
+  return (min: lo < 0 ? 0 : lo, max: hi);
+}
+
+/// 体重を、それより前の28日の平均と比べる（BR-31）。比べる記録がなければ null
+///
+/// [percent] は差の割合（小数1桁に丸める。4.2kg と 4.0kg で 5.000…01% になるなどの誤差で境界を越えないため）
+({double mean, double percent})? weightChange(
+  ({DateTime at, double kg}) latest,
+  Iterable<({DateTime at, double kg})> weights,
+) {
+  final day = _day(latest.at);
+  final from = day.subtract(const Duration(days: usualDays));
+  final before = [
+    for (final w in weights)
+      if (_day(w.at).isBefore(day) && !_day(w.at).isBefore(from)) w.kg,
+  ];
+  if (before.isEmpty) {
+    return null;
+  }
+  final mean = before.reduce((a, b) => a + b) / before.length;
+  return (mean: mean, percent: ((latest.kg - mean) / mean * 1000).round() / 10);
+}
+
 /// いつもとの差を判定する（F-AN-01、BR-20・31）
 ///
 /// [records] は直近29日と今日の記録。判定は、前日（記録が出そろった1日）の回数の少なすぎ・多すぎと、
@@ -186,21 +228,15 @@ List<Anomaly> detectAnomalies({
           continue;
         }
         final counts = [for (final d in usualDaysSet) countOn(d, kind)];
-        final mean = counts.reduce((a, b) => a + b) / counts.length;
-        final sd = sqrt(
-          counts.map((c) => pow(c - mean, 2)).reduce((a, b) => a + b) /
-              counts.length,
-        );
-        final low = mean - 2 * sd;
-        final high = mean + 2 * sd;
-        // 1回以上の違いがあるときだけ（いつも同じ回数で標準偏差が 0 のとき、わずかな違いで出さないため）
-        if (recordedYesterday && y < low && mean - y >= 1) {
+        final mean = usualMean(counts);
+        final range = usualCountRange(counts);
+        if (recordedYesterday && y < range.min!) {
           add(kind, AnomalyDirection.low, yesterday, y, mean);
         }
-        if (recordedYesterday && y > high && y - mean >= 1) {
+        if (recordedYesterday && y > range.max!) {
           add(kind, AnomalyDirection.high, yesterday, y, mean);
         }
-        if (t > high && t - mean >= 1) {
+        if (t > range.max!) {
           add(kind, AnomalyDirection.high, today, t, mean);
         }
       } else if (thresholds.counts[kind] case final rule?) {
@@ -230,20 +266,14 @@ List<Anomaly> detectAnomalies({
       continue;
     }
     final latest = weights.last;
-    final from = _day(latest.recordedAt)
-        .subtract(const Duration(days: usualDays));
-    final before = [
-      for (final w in weights)
-        if (_day(w.recordedAt).isBefore(_day(latest.recordedAt)) &&
-            !_day(w.recordedAt).isBefore(from))
-          w.valueNumber!,
-    ];
-    if (before.isEmpty) {
+    final change = weightChange(
+      (at: latest.recordedAt, kg: latest.valueNumber!),
+      [for (final w in weights) (at: w.recordedAt, kg: w.valueNumber!)],
+    );
+    if (change == null) {
       continue;
     }
-    final mean = before.reduce((a, b) => a + b) / before.length;
-    // 小数の誤差（4.2kg と 4.0kg で 5.000…01% になるなど）で境界を越えないよう、小数1桁に丸めてから比べる
-    final percent = ((latest.valueNumber! - mean) / mean * 1000).round() / 10;
+    final percent = change.percent;
     final limit = method == AnomalyMethod.threshold
         ? thresholds.weightPercent ?? defaultWeightPercent
         : defaultWeightPercent;
@@ -260,10 +290,15 @@ List<Anomaly> detectAnomalies({
   return result;
 }
 
-/// いつもとの差の通知を押したときに開く場所：その猫と項目の統計（体重は体重のグラフ）
+/// いつもとの差の通知を押したときに開く場所：その猫と項目の統計（体重は体重のグラフ）と、その日の体調のようす
 String anomalyPayload(Anomaly a) => Uri(
   path: '/stats',
-  queryParameters: {'cat': a.catId, 'kind': a.kind},
+  queryParameters: {
+    'cat': a.catId,
+    'kind': a.kind,
+    'day':
+        '${a.day.year}-${a.day.month.toString().padLeft(2, '0')}-${a.day.day.toString().padLeft(2, '0')}',
+  },
 ).toString();
 
 /// いつもとの差の通知の文（画面設計書 4章、F-NT-02）

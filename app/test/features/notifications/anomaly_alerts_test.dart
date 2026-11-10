@@ -42,7 +42,7 @@ void main() {
       expect(n.title, 'ミケのご飯がいつもより少なめです');
       expect(n.body, 'きのう 1回（ふだん 3回くらい）');
       // 押すと、その猫と項目の統計を開く
-      expect(n.payload, '/stats?cat=c1&kind=food');
+      expect(n.payload, '/stats?cat=c1&kind=food&day=2026-11-05');
     });
 
     test('回数・多め・きょう', () {
@@ -84,7 +84,7 @@ void main() {
       );
       expect(up.title, 'ミケの体重がいつもより 6% 増えています');
       expect(up.body, isNull);
-      expect(up.payload, '/stats?cat=c1&kind=weight');
+      expect(up.payload, '/stats?cat=c1&kind=weight&day=2026-11-05');
       final down = anomalyNotification(
         anomaly(kind: 'weight', observed: 7),
         method: AnomalyMethod.statistical,

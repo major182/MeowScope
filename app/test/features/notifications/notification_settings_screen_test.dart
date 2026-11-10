@@ -209,7 +209,7 @@ void main() {
     await notifier.close();
   });
 
-  testWidgets('UT-NS-10 いつもとの差の通知の「開く」で、統計の画面（戻れる）を開く', (tester) async {
+  testWidgets('UT-NS-12 いつもとの差の通知の「開く」で、統計の画面（戻れる）を開く', (tester) async {
     tester.view.physicalSize = const Size(600, 1400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -230,7 +230,7 @@ void main() {
       const AppNotification(
         id: 2,
         title: 'ミケのご飯がいつもより少なめです',
-        payload: '/stats?cat=c1&kind=food',
+        payload: '/stats?cat=c1&kind=food&day=2026-11-09',
       ),
     );
     // スナックバーが出きるまで待つ

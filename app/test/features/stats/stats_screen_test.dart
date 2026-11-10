@@ -57,8 +57,14 @@ void main() {
     }
   }
 
-  Future<void> show(WidgetTester tester, {String? catId, String? kind}) async {
-    tester.view.physicalSize = const Size(500, 1200);
+  Future<void> show(
+    WidgetTester tester, {
+    String? catId,
+    String? kind,
+    DateTime? day,
+    double height = 1200,
+  }) async {
+    tester.view.physicalSize = Size(500, height);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -68,7 +74,7 @@ void main() {
           sessionProvider.overrideWith((ref) => Stream.value(_session)),
         ],
         child: MaterialApp(
-          home: StatsScreen(today: _today, catId: catId, kind: kind),
+          home: StatsScreen(today: _today, catId: catId, kind: kind, day: day),
         ),
       ),
     );
@@ -223,6 +229,79 @@ void main() {
     await show(tester, catId: 'none', kind: 'weight');
     expect(find.text('ミケ'), findsOneWidget);
     expect(find.text('ご飯'), findsOneWidget);
+    await close(tester);
+  });
+
+  /// ミケ（c1）に、10/25〜10/31 の7日、毎日ご飯を3回
+  Future<void> usualWeek() async {
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    for (var d = 25; d <= 31; d++) {
+      for (var h = 8; h < 11; h++) {
+        await record('c1', 'food', DateTime(2026, 10, d, h));
+      }
+    }
+  }
+
+  testWidgets('UT-SS-15 体調のようす：初めはきのう。外れ値を上に、その下に範囲内を出す', (tester) async {
+    await usualWeek();
+    await record('c1', 'food', DateTime(2026, 11, 1, 8));
+    await show(tester, height: 2400);
+    expect(find.text('体調のようす'), findsOneWidget);
+    expect(find.text('11/1(日)'), findsOneWidget);
+    expect(find.text('外れ値 1個'), findsOneWidget);
+    expect(find.text('ご飯　1回'), findsOneWidget);
+    expect(find.text('少なめ'), findsOneWidget);
+    expect(find.text('ふだん 3回'), findsOneWidget);
+    expect(find.text('水　0回'), findsOneWidget);
+    expect(find.text('ふだん 0回'), findsWidgets);
+    expect(find.text('体重　記録なし'), findsOneWidget);
+    // 外れ値の見出しとご飯が、範囲内の見出しより上
+    final top = tester.getTopLeft(find.text('範囲内')).dy;
+    expect(tester.getTopLeft(find.text('外れ値')).dy, lessThan(top));
+    expect(tester.getTopLeft(find.text('ご飯　1回')).dy, lessThan(top));
+    expect(tester.getTopLeft(find.text('水　0回')).dy, greaterThan(top));
+    await close(tester);
+  });
+
+  testWidgets('UT-SS-16 体調のようす：日付を切り替える。今日より先には進めず、今日は多すぎだけを見る。記録のない日はその旨を出す', (
+    tester,
+  ) async {
+    await usualWeek();
+    await show(tester, height: 2400);
+    expect(find.text('この日は記録がないため、少なすぎは見ません'), findsOneWidget);
+    expect(find.text('外れ値はありません'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('次の日'));
+    await tester.pumpAndSettle();
+    expect(find.text('11/2(月)'), findsOneWidget);
+    expect(find.text('きょうは途中なので、多すぎだけを見ます'), findsOneWidget);
+    expect(find.text('ふだん 3回以下'), findsOneWidget);
+    final next = tester.widget<IconButton>(
+      find.widgetWithIcon(IconButton, Icons.chevron_right),
+    );
+    expect(next.onPressed, isNull);
+
+    await tester.tap(find.byTooltip('前の日'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('前の日'));
+    await tester.pumpAndSettle();
+    expect(find.text('10/31(土)'), findsOneWidget);
+    await close(tester);
+  });
+
+  testWidgets('UT-SS-17 体調のようす：記録が7日分に満たなければ、あと何日かを出す。通知から開くと、その日を出す', (
+    tester,
+  ) async {
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    for (var d = 26; d <= 31; d++) {
+      await record('c1', 'food', DateTime(2026, 10, d, 8));
+    }
+    await show(tester, height: 2400);
+    expect(find.text('まだ判定できません（記録が7日分たまると判定します。あと1日）'), findsOneWidget);
+    await close(tester);
+
+    await show(tester, height: 2400, catId: 'c1', day: DateTime(2026, 10, 20));
+    expect(find.text('10/20(火)'), findsOneWidget);
     await close(tester);
   });
 }
