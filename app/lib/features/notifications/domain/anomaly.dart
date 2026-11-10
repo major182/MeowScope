@@ -260,6 +260,12 @@ List<Anomaly> detectAnomalies({
   return result;
 }
 
+/// いつもとの差の通知を押したときに開く場所：その猫と項目の統計（体重は体重のグラフ）
+String anomalyPayload(Anomaly a) => Uri(
+  path: '/stats',
+  queryParameters: {'cat': a.catId, 'kind': a.kind},
+).toString();
+
 /// いつもとの差の通知の文（画面設計書 4章、F-NT-02）
 ///
 /// 回数は「ミケのご飯がいつもより少なめです」と、2行目に「きのう 1回（ふだん 3回くらい）」。
@@ -276,7 +282,7 @@ AppNotification anomalyNotification(
     return AppNotification(
       id: id,
       title: '${a.catName}の体重がいつもより ${a.observed}% ${low ? '減って' : '増えて'}います',
-      payload: '/',
+      payload: anomalyPayload(a),
     );
   }
   final label = RecordKind.values.byName(a.kind).label;
@@ -288,6 +294,6 @@ AppNotification anomalyNotification(
     id: id,
     title: '${a.catName}の$labelがいつもより${low ? '少なめ' : '多め'}です',
     body: '$day ${a.observed}回（$usual）',
-    payload: '/',
+    payload: anomalyPayload(a),
   );
 }

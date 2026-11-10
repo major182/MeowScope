@@ -21,12 +21,16 @@ void main() {
     String name = 'なつ',
     String cat = 'ミケ',
     String type = 'ご飯',
+    String catId = 'c1',
+    DateTime? at,
   }) => FamilyRecord(
     id: id,
     authorKey: author,
     authorName: name,
     catName: cat,
     typeName: type,
+    catId: catId,
+    recordedAt: at ?? DateTime(2026, 11, 7, 8),
   );
 
   group('UT-FN-01 家族の記録の通知の文（画面設計書 4章）', () {
@@ -34,7 +38,7 @@ void main() {
       final n = familyNotifications([rec('r1')]).single;
       expect(n.title, 'なつさんがミケのご飯を記録しました');
       expect(n.body, isNull);
-      expect(n.payload, '/');
+      expect(n.payload, '/days/2026-11-07?cat=c1');
       expect(n.id, notificationId('family', 'r1'));
     });
 
@@ -60,6 +64,28 @@ void main() {
 
     test('記録がなければ出さない', () {
       expect(familyNotifications(const []), isEmpty);
+    });
+  });
+
+  group('UT-FN-04 押したときに開く場所：最初の記録の日の日別一覧（S-21）', () {
+    test('1件：その日を、その猫で絞って開く。月日は2桁にそろえる', () {
+      final n = familyNotifications([
+        rec('r1', at: DateTime(2026, 1, 5, 23, 59)),
+      ]);
+      expect(n.single.payload, '/days/2026-01-05?cat=c1');
+    });
+
+    test('同じ人の、猫の違う記録は絞らない。日は最初の記録の日', () {
+      final n = familyNotifications([
+        rec('r1', at: DateTime(2026, 11, 6, 22)),
+        rec('r2', catId: 'c2', at: DateTime(2026, 11, 7, 8)),
+      ]);
+      expect(n.single.payload, '/days/2026-11-06');
+    });
+
+    test('同じ猫の2件は、その猫で絞る', () {
+      final n = familyNotifications([rec('r1'), rec('r2')]);
+      expect(n.single.payload, '/days/2026-11-07?cat=c1');
     });
   });
 

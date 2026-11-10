@@ -9,6 +9,8 @@ class FamilyRecord {
     required this.authorName,
     required this.catName,
     required this.typeName,
+    required this.catId,
+    required this.recordedAt,
   });
 
   final String id;
@@ -18,6 +20,23 @@ class FamilyRecord {
   final String authorName;
   final String catName;
   final String typeName;
+  final String catId;
+
+  /// 記録の日時（端末の時刻）
+  final DateTime recordedAt;
+}
+
+/// 家族の記録の通知を押したときに開く場所：最初の記録の日の日別一覧（S-21）。
+/// まとめた記録がすべて同じ猫なら、その猫で絞る
+String familyPayload(List<FamilyRecord> group) {
+  final d = group.first.recordedAt;
+  final date =
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+  final cats = {for (final r in group) r.catId};
+  return Uri(
+    path: '/days/$date',
+    queryParameters: cats.length == 1 ? {'cat': cats.single} : null,
+  ).toString();
 }
 
 /// 家族の記録の通知（画面設計書 4章、F-NT-04、BR-08）
@@ -37,7 +56,7 @@ List<AppNotification> familyNotifications(List<FamilyRecord> records) {
         title: group.length == 1
             ? '${group.first.authorName}さんが${group.first.catName}の${group.first.typeName}を記録しました'
             : '${group.first.authorName}さんが${group.length}件記録しました',
-        payload: '/',
+        payload: familyPayload(group),
       ),
   ];
 }
