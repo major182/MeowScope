@@ -144,6 +144,7 @@ GoRouter createRouter() => GoRouter(
       builder: (context, state) => StatsScreen(
         catId: state.uri.queryParameters['cat'],
         kind: state.uri.queryParameters['kind'],
+        day: DateTime.tryParse(state.uri.queryParameters['day'] ?? ''),
       ),
     ),
     GoRoute(

@@ -10,10 +10,11 @@ import '../../records/data/record_repository.dart';
 import '../../records/domain/record_kind.dart';
 import '../../records/presentation/record_providers.dart';
 import '../domain/stats.dart';
+import 'health_section.dart';
 
-/// 統計（S-30）。1匹を選び、体重の推移と項目ごとの回数を週と月で出す
+/// 統計（S-30）。1匹を選び、体重の推移と項目ごとの回数を週と月で出す。その下に体調のようす（F-ST-02）
 class StatsScreen extends ConsumerStatefulWidget {
-  const StatsScreen({super.key, this.today, this.catId, this.kind});
+  const StatsScreen({super.key, this.today, this.catId, this.kind, this.day});
 
   /// 今日の日付。テストで差し替える
   final DateTime? today;
@@ -21,6 +22,9 @@ class StatsScreen extends ConsumerStatefulWidget {
   /// 初めに選んでおく猫と、記録項目の種類（いつもとの差の通知から開くとき。体重は `weight`）
   final String? catId;
   final String? kind;
+
+  /// 体調のようすで初めに出す日（いつもとの差の通知から開くとき）
+  final DateTime? day;
 
   @override
   ConsumerState<StatsScreen> createState() => _StatsScreenState();
@@ -118,6 +122,12 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                     days: days,
                     counts: dailyCounts(entries, days, typeId),
                   ),
+                const Divider(height: 32),
+                HealthSection(
+                  catId: catId,
+                  today: widget.today ?? DateTime.now(),
+                  day: widget.day,
+                ),
               ],
             ),
     );
@@ -201,6 +211,8 @@ class WeightChart extends StatelessWidget {
             verticalInterval: 1,
             checkToShowVerticalLine: (value) => isLabelDay(days, value),
           ),
+          // 触っても値は出さない（指の動きを横取りし、ページがスクロールしなくなるため。#140）
+          lineTouchData: const LineTouchData(enabled: false),
           lineBarsData: [LineChartBarData(spots: spots, barWidth: 2)],
         ),
       ),
@@ -228,6 +240,8 @@ class CountChart extends StatelessWidget {
           titlesData: _titles(days, leftInterval: 1),
           // 棒そのものが日付の位置を示すので、縦の線は引かない（棒の位置とずれて見えるため）
           gridData: const FlGridData(drawVerticalLine: false),
+          // 触っても値は出さない（指の動きを横取りし、ページがスクロールしなくなるため。#140）
+          barTouchData: BarTouchData(enabled: false),
           barGroups: [
             for (var i = 0; i < counts.length; i++)
               BarChartGroupData(
