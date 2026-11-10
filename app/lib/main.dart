@@ -142,6 +142,10 @@ class _MeowScopeAppState extends State<MeowScopeApp> {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'MeowScope',
+      // 上端・下端までスクロールしたときに、画面が伸びる表現を出さない（利用者の要望。#140）
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        overscroll: false,
+      ),
       scaffoldMessengerKey: _messenger,
       // 日本語のアプリとして表示する。指定しないと、日本語と中国語で共通の漢字が中国語の字形で出ることがある
       locale: const Locale('ja', 'JP'),

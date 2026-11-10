@@ -305,4 +305,17 @@ void main() {
     expect(find.text('10/20(火)'), findsOneWidget);
     await close(tester);
   });
+
+  testWidgets('UT-SS-18 グラフは触っても指の動きを取らない（ページのスクロールを妨げない。不具合 #140）', (
+    tester,
+  ) async {
+    await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');
+    await record('c1', 'weight', DateTime(2026, 11, 1, 8), kg: 4);
+    await show(tester);
+    final line = tester.widget<LineChart>(find.byType(LineChart));
+    expect(line.data.lineTouchData.enabled, isFalse);
+    final bar = tester.widget<BarChart>(find.byType(BarChart));
+    expect(bar.data.barTouchData.enabled, isFalse);
+    await close(tester);
+  });
 }

@@ -211,6 +211,8 @@ class WeightChart extends StatelessWidget {
             verticalInterval: 1,
             checkToShowVerticalLine: (value) => isLabelDay(days, value),
           ),
+          // 触っても値は出さない（指の動きを横取りし、ページがスクロールしなくなるため。#140）
+          lineTouchData: const LineTouchData(enabled: false),
           lineBarsData: [LineChartBarData(spots: spots, barWidth: 2)],
         ),
       ),
@@ -238,6 +240,8 @@ class CountChart extends StatelessWidget {
           titlesData: _titles(days, leftInterval: 1),
           // 棒そのものが日付の位置を示すので、縦の線は引かない（棒の位置とずれて見えるため）
           gridData: const FlGridData(drawVerticalLine: false),
+          // 触っても値は出さない（指の動きを横取りし、ページがスクロールしなくなるため。#140）
+          barTouchData: BarTouchData(enabled: false),
           barGroups: [
             for (var i = 0; i < counts.length; i++)
               BarChartGroupData(
