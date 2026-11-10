@@ -6,6 +6,7 @@ import '../../calendar/presentation/calendar_providers.dart';
 import '../../cats/presentation/cat_filter.dart';
 import '../../notifications/domain/anomaly.dart';
 import '../../notifications/domain/notification_settings.dart';
+import '../../records/data/record_repository.dart';
 import '../../records/domain/record_kind.dart';
 import '../domain/health_status.dart';
 
@@ -37,6 +38,7 @@ class _HealthSectionState extends ConsumerState<HealthSection> {
     widget.today.day,
   );
   late DateTime _day = _initialDay();
+  List<RecordEntry> _entries = const [];
 
   DateTime _initialDay() {
     final d = widget.day;
@@ -59,17 +61,20 @@ class _HealthSectionState extends ConsumerState<HealthSection> {
         ref.watch(notificationSettingsProvider).value?.method ??
         AnomalyMethod.statistical;
     // ふだんの28日（今日は前日より前）と、体重の比べる分（さらに28日）を読む
-    final entries =
-        ref
-            .watch(
-              rangeRecordsProvider((
-                from: _day.subtract(const Duration(days: usualDays * 2 + 1)),
-                to: DateTime(_day.year, _day.month, _day.day + 1),
-                catId: widget.catId,
-              )),
-            )
-            .value ??
-        const [];
+    // 日付を変えた直後の読み込み中は、前の記録のまま出す（中身が空になって画面が縮み、上に戻らないように）
+    final loaded = ref
+        .watch(
+          rangeRecordsProvider((
+            from: _day.subtract(const Duration(days: usualDays * 2 + 1)),
+            to: DateTime(_day.year, _day.month, _day.day + 1),
+            catId: widget.catId,
+          )),
+        )
+        .value;
+    if (loaded != null) {
+      _entries = loaded;
+    }
+    final entries = _entries;
     final status = cat == null
         ? const HealthStatus()
         : healthStatus(
@@ -129,20 +134,23 @@ class _HealthSectionState extends ConsumerState<HealthSection> {
             ),
           )
         else ...[
-          Text(
-            outliers.isEmpty ? '外れ値はありません' : '外れ値 ${outliers.length}個',
-            style: theme.textTheme.titleSmall,
-          ),
-          if (_day == _today)
-            const Text('きょうは途中なので、多すぎだけを見ます')
-          else if (!status.recorded)
+          if (_day != _today && !status.recorded)
             const Text('この日は記録がないため、少なすぎは見ません'),
-          if (outliers.isNotEmpty) ...[
-            const _Heading('外れ値'),
-            for (final i in outliers) _HealthTile(i, usualLabel: usualLabel),
+          _Heading(
+            outliers.isEmpty ? '外れ値はありません' : '外れ値 ${outliers.length}個',
+            color: outliers.isEmpty
+                ? theme.colorScheme.surfaceContainerHighest
+                : theme.colorScheme.errorContainer,
+          ),
+          for (final (n, i) in outliers.indexed) ...[
+            if (n > 0) const Divider(height: 1),
+            _HealthTile(i, usualLabel: usualLabel),
           ],
-          const _Heading('範囲内'),
-          for (final i in normal) _HealthTile(i, usualLabel: usualLabel),
+          _Heading('範囲内', color: theme.colorScheme.surfaceContainerHighest),
+          for (final (n, i) in normal.indexed) ...[
+            if (n > 0) const Divider(height: 1),
+            _HealthTile(i, usualLabel: usualLabel),
+          ],
         ],
       ],
     );
@@ -150,14 +158,25 @@ class _HealthSectionState extends ConsumerState<HealthSection> {
 }
 
 class _Heading extends StatelessWidget {
-  const _Heading(this.text);
+  const _Heading(this.text, {required this.color});
 
   final String text;
+  final Color color;
 
+  /// 行の区切りがわかるよう、色の帯にする
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 12),
-    child: Text(text, style: Theme.of(context).textTheme.labelLarge),
+  Widget build(BuildContext context) => Container(
+    margin: const EdgeInsets.only(top: 12, bottom: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Text(
+      text,
+      style: Theme.of(context).textTheme.titleSmall
+          ?.copyWith(fontWeight: FontWeight.bold),
+    ),
   );
 }
 

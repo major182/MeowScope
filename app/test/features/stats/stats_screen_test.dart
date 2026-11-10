@@ -257,37 +257,38 @@ void main() {
     expect(find.text('体重　記録なし'), findsOneWidget);
     // 外れ値の見出しとご飯が、範囲内の見出しより上
     final top = tester.getTopLeft(find.text('範囲内')).dy;
-    expect(tester.getTopLeft(find.text('外れ値')).dy, lessThan(top));
+    expect(tester.getTopLeft(find.text('外れ値 1個')).dy, lessThan(top));
     expect(tester.getTopLeft(find.text('ご飯　1回')).dy, lessThan(top));
     expect(tester.getTopLeft(find.text('水　0回')).dy, greaterThan(top));
     await close(tester);
   });
 
-  testWidgets('UT-SS-16 体調のようす：日付を切り替える。今日より先には進めず、今日は多すぎだけを見る。記録のない日はその旨を出す', (
-    tester,
-  ) async {
-    await usualWeek();
-    await show(tester, height: 2400);
-    expect(find.text('この日は記録がないため、少なすぎは見ません'), findsOneWidget);
-    expect(find.text('外れ値はありません'), findsOneWidget);
+  testWidgets(
+    'UT-SS-16 体調のようす：日付を切り替える。今日より先には進めず、今日は上限だけを出す（説明の文は出さない）。記録のない日はその旨を出す',
+    (tester) async {
+      await usualWeek();
+      await show(tester, height: 2400);
+      expect(find.text('この日は記録がないため、少なすぎは見ません'), findsOneWidget);
+      expect(find.text('外れ値はありません'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('次の日'));
-    await tester.pumpAndSettle();
-    expect(find.text('11/2(月)'), findsOneWidget);
-    expect(find.text('きょうは途中なので、多すぎだけを見ます'), findsOneWidget);
-    expect(find.text('ふだん 3回以下'), findsOneWidget);
-    final next = tester.widget<IconButton>(
-      find.widgetWithIcon(IconButton, Icons.chevron_right),
-    );
-    expect(next.onPressed, isNull);
+      await tester.tap(find.byTooltip('次の日'));
+      await tester.pumpAndSettle();
+      expect(find.text('11/2(月)'), findsOneWidget);
+      expect(find.text('きょうは途中なので、多すぎだけを見ます'), findsNothing);
+      expect(find.text('ふだん 3回以下'), findsOneWidget);
+      final next = tester.widget<IconButton>(
+        find.widgetWithIcon(IconButton, Icons.chevron_right),
+      );
+      expect(next.onPressed, isNull);
 
-    await tester.tap(find.byTooltip('前の日'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('前の日'));
-    await tester.pumpAndSettle();
-    expect(find.text('10/31(土)'), findsOneWidget);
-    await close(tester);
-  });
+      await tester.tap(find.byTooltip('前の日'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('前の日'));
+      await tester.pumpAndSettle();
+      expect(find.text('10/31(土)'), findsOneWidget);
+      await close(tester);
+    },
+  );
 
   testWidgets('UT-SS-17 体調のようす：記録が7日分に満たなければ、あと何日かを出す。通知から開くと、その日を出す', (
     tester,
