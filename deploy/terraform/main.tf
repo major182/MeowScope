@@ -173,3 +173,59 @@ resource "aws_eip_association" "web" {
   allocation_id = aws_eip.web.id
   instance_id   = aws_instance.web.id
 }
+
+# ---- アプリの更新の中継（デプロイ設計書 6.4）：手元から上げ、EC2 が取ってボリュームに置く ----
+
+resource "aws_s3_bucket" "releases" {
+  bucket_prefix = "meowscope-releases-"
+  # terraform destroy で中身ごと消す（デプロイ設計書 7章）
+  force_destroy = true
+
+  tags = { Name = "meowscope-releases" }
+}
+
+# 外からは読ませない（サーバーの URL が入ったファイルなので、利用者だけに配る）
+resource "aws_s3_bucket_public_access_block" "releases" {
+  bucket = aws_s3_bucket.releases.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# 置き終わったら消すが、消し忘れても1日で消える
+resource "aws_s3_bucket_lifecycle_configuration" "releases" {
+  bucket = aws_s3_bucket.releases.id
+
+  rule {
+    id     = "expire-relay"
+    status = "Enabled"
+    filter {}
+    expiration {
+      days = 1
+    }
+  }
+}
+
+# EC2 には読み取りだけを許す（書き込み・削除は手元から行う）
+resource "aws_iam_role_policy" "read_releases" {
+  name = "read-meowscope-releases"
+  role = aws_iam_role.ec2.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetObject"]
+        Resource = "${aws_s3_bucket.releases.arn}/*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = aws_s3_bucket.releases.arn
+      },
+    ]
+  })
+}
