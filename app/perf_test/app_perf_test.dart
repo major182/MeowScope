@@ -122,12 +122,19 @@ void main() {
       await _settle(tester);
       add('カレンダーの月の切り替え', s);
 
-      // 統計：開く（体調のようすまで）・体調のようすの日付の切り替え
+      // 統計：開く（いちばん上の体重のグラフが出て、画面が落ち着くまで）・体調のようすの日付の切り替え
       s = Stopwatch()..start();
       await tester.tap(find.text('統計').last);
-      await _until(tester, find.text('体調のようす'));
+      await _until(tester, find.text('体重 (kg)'));
       await _settle(tester);
       add('統計を開く', s);
+      // 画面の小さい端末では、体調のようすは画面の外にあり、スクロールするまで作られない（ここは測らない）
+      await tester.scrollUntilVisible(
+        find.byTooltip('前の日'),
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await _settle(tester);
       s = Stopwatch()..start();
       await tester.tap(find.byTooltip('前の日'));
       await _settle(tester);
