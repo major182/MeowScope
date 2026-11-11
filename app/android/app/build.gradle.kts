@@ -86,6 +86,8 @@ flutter {
 dependencies {
     // ウィジェットの表示の決め方（WidgetModel）の単体テスト
     testImplementation("junit:junit:4.13.2")
+    // アプリの更新の APK を OS のインストーラーに渡す FileProvider（プラグインが使う版と同じ）
+    implementation("androidx.core:core:1.18.0")
     // 通知の部品が求める、新しい Java の日時の機能の変換（README の指定の版）
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
