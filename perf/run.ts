@@ -1,6 +1,6 @@
 // 性能テストを動かす：node perf/run.ts <テスト…> [--short] [--keep]
 //
-//   テスト：smoke load stress spike soak bulk（サーバー。k6）、app-windows app-android（アプリ。PT-07）
+//   テスト：smoke load stress spike soak bulk（サーバー。k6）、app-windows app-android app-device（アプリ。PT-07。app-device は USB でつないだ実機）
 //           night は、夜にまとめて行う順（load stress spike soak bulk app-windows app-android）
 //   --short：時間を 1/10 にした動作の確認。スクリプトが動くかを見るだけで、合否・記録には使わない
 //   --keep ：終わっても環境を捨てない（調べるため）。後から node perf/run.ts down で捨てる
@@ -24,7 +24,7 @@ const EMULATOR = join(process.env.LOCALAPPDATA ?? '', 'Android/Sdk/emulator/emul
 const AVD = process.env.PERF_AVD ?? 'Medium_Phone_API_37.0';
 
 const SERVER_TESTS = ['smoke', 'load', 'stress', 'spike', 'soak', 'bulk'] as const;
-const APP_TESTS = ['app-windows', 'app-android'] as const;
+const APP_TESTS = ['app-windows', 'app-android', 'app-device'] as const;
 const NIGHT = ['load', 'stress', 'spike', 'soak', 'bulk', 'app-windows', 'app-android'];
 const IDS: Record<string, string> = {
   smoke: 'PT-01',
@@ -35,6 +35,7 @@ const IDS: Record<string, string> = {
   bulk: 'PT-06',
   'app-windows': 'PT-07',
   'app-android': 'PT-07',
+  'app-device': 'PT-07',
 };
 
 // 専用の環境の秘密の値は、実行のたびに作って環境変数で渡す（表示も保存もしない）
@@ -182,8 +183,11 @@ async function startEmulator() {
 /** PT-07：アプリの profile ビルドで、5年分のデータの画面の速さを測る（app/perf_test） */
 async function app(test: string, dir: string, short: boolean) {
   const android = test === 'app-android';
+  const device = test === 'app-device' ? realDevice() : null;
   if (android) await startEmulator();
-  const api = android ? 'http://10.0.2.2:8081/api/v1' : 'http://localhost:8081/api/v1';
+  // 実機は USB を通して PC の 8081 につなぐ（Wi-Fi の速さで揺れず、ファイアウォールの設定も要らない）
+  if (device) out(ADB, ['-s', device, 'reverse', 'tcp:8081', 'tcp:8081']);
+  const api = android ? 'http://10.0.2.2:8081/api/v1' : `http://${device ? '127.0.0.1' : 'localhost'}:8081/api/v1`;
   // flutter test は debug ビルドでしか動かないので、テストのファイルを profile ビルドで flutter run し、
   // 出力の PERF_RESULT の行を受け取る（アプリの依存関係・ビルドの設定は変えない）
   const p = spawn(
@@ -192,7 +196,7 @@ async function app(test: string, dir: string, short: boolean) {
       'run',
       '--profile',
       '-d',
-      android ? 'emulator-5554' : 'windows',
+      device ?? (android ? 'emulator-5554' : 'windows'),
       '-t',
       'perf_test/app_perf_test.dart',
       `--dart-define=API_BASE_URL=${api}`,
@@ -226,7 +230,46 @@ async function app(test: string, dir: string, short: boolean) {
     console.error(`アプリの計測が終わらなかった（${log}）`);
     return 1;
   }
+  if (device) {
+    out(ADB, ['-s', device, 'reverse', '--remove', 'tcp:8081']);
+    (result as AppResult).ms['プロセスからの起動（am start の TotalTime）'] = coldStarts(device, log);
+  }
   return judgeApp(result, dir, android);
+}
+
+/** つないでいる実機（PERF_DEVICE で選べる。なければエミュレーターでない最初の端末） */
+function realDevice() {
+  if (process.env.PERF_DEVICE) return process.env.PERF_DEVICE;
+  const serial = out(ADB, ['devices'])
+    .split(/\r?\n/)
+    .slice(1)
+    .map((l) => l.split(/\s+/))
+    .find(([s, state]) => state === 'device' && !s.startsWith('emulator-'))?.[0];
+  if (!serial) throw new Error('実機が見つからない（USB デバッグをオンにしてつなぐ）');
+  return serial;
+}
+
+/**
+ * アプリのプロセスを立ち上げる時間も含めた起動（3回）。いつものアプリを profile ビルドで入れ直し、
+ * 止めてから `am start -W` で起動して TotalTime（最初の画面が出るまで）を見る
+ */
+function coldStarts(device: string, log: string) {
+  const app = join(ROOT, 'app');
+  const r = spawnSync('flutter', ['build', 'apk', '--profile'], { cwd: app, shell: true, encoding: 'utf8' });
+  appendFileSync(log, r.stdout + r.stderr);
+  if (r.status !== 0) throw new Error('いつものアプリの profile ビルドが失敗した');
+  out(ADB, ['-s', device, 'install', '-r', join(app, 'build/app/outputs/flutter-apk/app-profile.apk')]);
+  const pkg = 'com.meowscope.meowscope';
+  const times: number[] = [];
+  for (let i = 0; i < 3; i++) {
+    out(ADB, ['-s', device, 'shell', 'am', 'force-stop', pkg]);
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 3000);
+    const s = out(ADB, ['-s', device, 'shell', 'am', 'start', '-W', '-n', `${pkg}/.MainActivity`]);
+    appendFileSync(log, s + '\n');
+    times.push(Number(s.match(/TotalTime:\s*(\d+)/)?.[1] ?? NaN));
+  }
+  out(ADB, ['-s', device, 'shell', 'am', 'force-stop', pkg]);
+  return times;
 }
 
 type AppResult = { years: number; records: number; platform: string; ms: Record<string, number[]> };
