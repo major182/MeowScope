@@ -1,7 +1,7 @@
 ; Windows 版のインストーラー（デプロイ設計書 6.2）。Inno Setup 6.7.3 で作る
 ; 先に flutter build windows --release --dart-define=API_BASE_URL=<サーバーの URL> を行い、app フォルダーで次を動かす
 ;   ISCC.exe /DAppVersion=<pubspec.yaml の版> windows\installer\meowscope.iss
-; 出力：build\installer\MeowScope-Setup-<版>.exe。署名はしない（Q-27）
+; 出力：build\installer\MeowScope-Setup-<版>.exe。署名はしない（技術選定書 5章）
 
 #ifndef AppVersion
   #error AppVersion を /DAppVersion=1.0.0 のように渡してください

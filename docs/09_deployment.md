@@ -30,7 +30,7 @@
 | バックアップ | 毎日 DB のダンプと写真を固め、7世代を残す（NF-BK-01）。AWS と PC で同じスクリプト | 4章 |
 | PC での接続 | Tailscale の `tailscale serve` で、tailnet の中だけに HTTPS で出す | サーバーをインターネットに公開しない（C-08） |
 | Android の配布 | 署名した APK を、開発者の手で端末に入れる | 一般公開しない。署名の鍵は PC の外に出さない |
-| Windows の配布 | Inno Setup 6.7.3 でインストーラーにする。署名はしない（Q-27） | 署名がなくても作れる。SmartScreen の警告は「詳細情報」→「実行」で進める |
+| Windows の配布 | Inno Setup 6.7.3 でインストーラーにする。署名はしない（技術選定書 5章） | 署名がなくても作れる。SmartScreen の警告は「詳細情報」→「実行」で進める |
 | 公開の範囲 | APK・インストーラーは GitHub Releases に置かない | サーバーの URL（IP アドレスや tailnet の名前）がアプリに入るため |
 
 ## 2. 構成
@@ -183,7 +183,7 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 - Inno Setup のスクリプト（`app/windows/installer/meowscope.iss`）で、`build/windows/x64/runner/Release` をインストーラー（`app/build/installer/MeowScope-Setup-<版>.exe`）にする。`app` のフォルダーで `ISCC.exe /DAppVersion=<pubspec.yaml の版> windows\installer\meowscope.iss`
 - 管理者の権限なしで、使う人のフォルダー（`%LOCALAPPDATA%\Programs\MeowScope`）に入れる。スタートメニューに登録し、アンインストールもできる
 - Inno Setup は `winget install JRSoftware.InnoSetup --version 6.7.3 --scope user` で入れる
-- 署名はしない（Q-27）。初めて動かすときの SmartScreen の警告は「詳細情報」→「実行」で進める
+- 署名はしない（技術選定書 5章）。初めて動かすときの SmartScreen の警告は「詳細情報」→「実行」で進める
 
 ### 6.3 開発版と配布版を分ける
 

@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * メールの送り方が設定されていないとき（Q-26 が決まるまで）。送らずに warning を残す。
+ * メールの送り方が設定されていないとき（開発で .env に MAIL_* を書いていないときなど）。送らずに warning を残す。
  * 宛先とコードはログに出さない（ログ設計書 6章）。
  */
 class NotConfiguredMailer implements PasswordResetMailer {
