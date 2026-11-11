@@ -191,7 +191,7 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 
 | 項目 | 配布版（release） | 開発版（debug・profile） |
 |---|---|---|
-| Windows のアプリ名（保存先を決める） | `meowscope`（`%APPDATA%com.meowscopemeowscope`） | `meowscope-dev`（`%APPDATA%com.meowscopemeowscope-dev`） |
+| Windows のアプリ名（保存先を決める） | `meowscope`（`%APPDATA%\com.meowscope\meowscope`） | `meowscope-dev`（`%APPDATA%\com.meowscope\meowscope-dev`） |
 | Windows のウィンドウの名前 | MeowScope | MeowScope Dev |
 | Android のアプリの ID | `com.meowscope.meowscope` | `com.meowscope.meowscope.dev` |
 | Android のホーム画面の名前 | MeowScope | MeowScope Dev |
