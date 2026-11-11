@@ -47,3 +47,9 @@ umask 022
 # 起動（Caddy が証明書を取る。Elastic IP が付くまで少し待つことがある）
 cd "$APP_DIR"
 docker compose -f compose.yaml -f deploy/compose.aws.yaml up -d
+
+# 毎日 3:00（日本時間）のバックアップ（デプロイ設計書 4章）。ログは /var/log/meowscope-backup.log
+cat > /etc/cron.d/meowscope-backup <<'CRON'
+CRON_TZ=Asia/Tokyo
+0 3 * * * root /opt/meowscope/deploy/backup.sh >> /var/log/meowscope-backup.log 2>&1
+CRON
