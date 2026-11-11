@@ -23,3 +23,5 @@ Thumbs.db
 coverage/
 .gradle/
 server/build/
+# bootRun で置かれる写真・更新のファイル
+server/data/
