@@ -6,7 +6,7 @@
     <!-- 端末を再起動したときに、予約した通知を予約し直す（通知の部品の指定） -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application
-        android:label="MeowScope"
+        android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round">

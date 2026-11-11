@@ -27,6 +27,9 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_MINOR=${FLUTT
 target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_PATCH=${FLUTTER_VERSION_PATCH}")
 target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=${FLUTTER_VERSION_BUILD}")
 
+# 開発版（Debug・Profile）は保存先が配布版と分かれるよう、アプリ名に -dev を付ける（デプロイ設計書 6.3）
+target_compile_definitions(${BINARY_NAME} PRIVATE $<$<NOT:$<CONFIG:Release>>:MEOWSCOPE_DEV>)
+
 # Disable Windows macros that collide with C++ standard library functions.
 target_compile_definitions(${BINARY_NAME} PRIVATE "NOMINMAX")
 

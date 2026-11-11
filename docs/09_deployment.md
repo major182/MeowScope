@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 09 |
-| 版数 | 0.4 |
+| 版数 | 0.5 |
 | 作成日 | 2026-11-11 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md)、[07 ログ設計書](07_logging-design.md)、[08 性能テスト設計書](08_performance-test.md) |
@@ -185,6 +185,21 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 - Inno Setup は `winget install JRSoftware.InnoSetup --version 6.7.3 --scope user` で入れる
 - 署名はしない（Q-27）。初めて動かすときの SmartScreen の警告は「詳細情報」→「実行」で進める
 
+### 6.3 開発版と配布版を分ける
+
+開発版と配布版は保存先を分け、同じ PC・端末で混ざらないようにする。名前を足すのは開発側だけで、配布版は元の名前のまま。ビルドの種類で決まるので、作るときに指定は要らない。
+
+| 項目 | 配布版（release） | 開発版（debug・profile） |
+|---|---|---|
+| Windows のアプリ名（保存先を決める） | `meowscope`（`%APPDATA%\com.meowscope\meowscope`） | `meowscope-dev`（`%APPDATA%\com.meowscope\meowscope-dev`） |
+| Windows のウィンドウの名前 | MeowScope | MeowScope Dev |
+| Android のアプリの ID | `com.meowscope.meowscope` | `com.meowscope.meowscope.dev` |
+| Android のホーム画面の名前 | MeowScope | MeowScope Dev |
+
+- Windows の記録の DB も、アプリ名で分かれる保存先に置く（drift の既定の「ドキュメント」には置かない）。ログインの情報と写真も同じ保存先にある
+- Android は別のアプリになるので、1台の端末に両方を入れられる
+- 撮影など、開発版を速く動かしたいときは profile で動かす（release は配布版になる）
+
 ## 7. 片付け（AWS）
 
 1. 最新のバックアップを PC に持ってきてあることを確かめる
@@ -201,3 +216,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.2 | 2026-11-11 | AWS の定義を追加（#158）。Caddy を 2.11.9 に。5.2 に apply の引数と、初期設定は最初の起動だけであることを追記 |
 | 0.3 | 2026-11-11 | バックアップ・復元の確認・更新のスクリプトを追加（#160）。4章に置き場所の渡し方と cron を追記 |
 | 0.4 | 2026-11-11 | Android の署名の設定と Windows のインストーラーを追加（#162）。Inno Setup を 6.7.3 に固定。6章に作り方と確かめ方を追記 |
+| 0.5 | 2026-11-11 | 6.3 開発版と配布版を分ける（#168）を追加 |
