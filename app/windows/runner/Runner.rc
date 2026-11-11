@@ -90,7 +90,7 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.meowscope" "\0"
-            VALUE "FileDescription", "meowscope" "\0"
+            VALUE "FileDescription", "MeowScope" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "meowscope" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.meowscope. All rights reserved." "\0"

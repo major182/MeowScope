@@ -1,0 +1,10 @@
+# Android の四角いアイコン（icon）と Windows のアイコン。画面設計書 1章
+# Windows は丸の mainicon_01、Android の四角いランチャーは mainicon_02
+flutter_launcher_icons:
+  image_path: assets/icons/mainicon_02.png
+  android: true
+  ios: false
+  windows:
+    generate: true
+    image_path: assets/icons/mainicon_01.png
+    icon_size: 256
