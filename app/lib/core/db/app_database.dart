@@ -1,9 +1,20 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'tables.dart';
 
 part 'app_database.g.dart';
+
+/// DB を置くフォルダーを返す関数。null なら drift の既定（アプリの文書のフォルダー）
+///
+/// Windows の既定は「ドキュメント」で、開発版と配布版が同じファイルを使ってしまう。
+/// そのため Windows では、アプリ名（開発版は meowscope-dev）で分かれる保存先に置く（デプロイ設計書 6.3）。
+/// Android はアプリの ID で分かれるので、既定のままにする
+Future<Object> Function()? databaseDirectoryFor({required bool isWindows}) =>
+    isWindows ? getApplicationSupportDirectory : null;
 
 @DriftDatabase(
   tables: [
@@ -28,7 +39,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   /// 端末のアプリ用フォルダーに置く DB を開く
-  factory AppDatabase.open() => AppDatabase(driftDatabase(name: 'meowscope'));
+  factory AppDatabase.open() => AppDatabase(
+    driftDatabase(
+      name: 'meowscope',
+      native: DriftNativeOptions(
+        databaseDirectory: databaseDirectoryFor(isWindows: Platform.isWindows),
+      ),
+    ),
+  );
 
   @override
   // 1：最初の版　2：記録項目に hidden（非表示）を追加　3：認証の前に作ったデータを消す

@@ -50,8 +50,23 @@ android {
         }
     }
 
+    buildFeatures {
+        // ビルドの種類ごとにアプリの名前（app_name）を変えるため
+        resValues = true
+    }
+
     buildTypes {
+        // 開発版（debug・profile）は配布版と別のアプリにする（デプロイ設計書 6.3）。名前を足すのは開発側だけ
+        debug {
+            applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "MeowScope Dev")
+        }
+        maybeCreate("profile").apply {
+            applicationIdSuffix = ".dev"
+            resValue("string", "app_name", "MeowScope Dev")
+        }
         release {
+            resValue("string", "app_name", "MeowScope")
             // key.properties がなければ、今までどおり debug の鍵で署名する（flutter run --release・CI 用）
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }

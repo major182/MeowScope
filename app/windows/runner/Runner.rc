@@ -90,12 +90,21 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.meowscope" "\0"
+#ifdef MEOWSCOPE_DEV
+            VALUE "FileDescription", "MeowScope Dev" "\0"
+#else
             VALUE "FileDescription", "MeowScope" "\0"
+#endif
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "meowscope" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.meowscope. All rights reserved." "\0"
             VALUE "OriginalFilename", "meowscope.exe" "\0"
+// ProductName は保存先（%APPDATA%\com.meowscope\<ProductName>）を決める。開発版は配布版と分ける
+#ifdef MEOWSCOPE_DEV
+            VALUE "ProductName", "meowscope-dev" "\0"
+#else
             VALUE "ProductName", "meowscope" "\0"
+#endif
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

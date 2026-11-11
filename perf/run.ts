@@ -259,12 +259,13 @@ function coldStarts(device: string, log: string) {
   appendFileSync(log, r.stdout + r.stderr);
   if (r.status !== 0) throw new Error('いつものアプリの profile ビルドが失敗した');
   out(ADB, ['-s', device, 'install', '-r', join(app, 'build/app/outputs/flutter-apk/app-profile.apk')]);
-  const pkg = 'com.meowscope.meowscope';
+  // profile は開発版なので、アプリの ID に .dev が付く（デプロイ設計書 6.3）。画面のクラスは元のパッケージのまま
+  const pkg = 'com.meowscope.meowscope.dev';
   const times: number[] = [];
   for (let i = 0; i < 3; i++) {
     out(ADB, ['-s', device, 'shell', 'am', 'force-stop', pkg]);
     Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 3000);
-    const s = out(ADB, ['-s', device, 'shell', 'am', 'start', '-W', '-n', `${pkg}/.MainActivity`]);
+    const s = out(ADB, ['-s', device, 'shell', 'am', 'start', '-W', '-n', `${pkg}/com.meowscope.meowscope.MainActivity`]);
     appendFileSync(log, s + '\n');
     times.push(Number(s.match(/TotalTime:\s*(\d+)/)?.[1] ?? NaN));
   }
