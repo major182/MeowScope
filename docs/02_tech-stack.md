@@ -36,6 +36,8 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 | 状態管理 | flutter_riverpod | 3.4.3 | 現在の Flutter で広く使われ、テストで差し替えやすい。コード生成は使わず、手書きで定義する | Bloc：記述量が多い。Provider：新規の採用が減っている |
 | 画面遷移 | go_router | 18.1.2 | Flutter チームの公式パッケージで、ログイン状態による画面の振り分けを書ける | |
 | 通信 | dio | 5.11.1 | トークンの付与と、期限切れ時の更新を共通の処理（インターセプター）で書ける | http：共通の処理を自作する必要がある |
+| 今の版 | package_info_plus | 10.2.2 | Android の versionCode と Windows の exe の版から、pubspec.yaml の版とビルド番号を読める（F-UP-03、BR-34） | `--dart-define` で版を渡す：ビルドのたびに渡し忘れると、版を比べられない |
+| 更新のファイルの照合 | crypto | 3.0.8 | Dart のチームが作る。数十 MB のファイルを少しずつ読みながら SHA-256 を計算できる（BR-33） | 自作：誤りやすい |
 | トークンの保管 | flutter_secure_storage | 11.2.0 | Android は Keystore、Windows は資格情報の保管庫を使う（NF-SC-07） | |
 | 端末内の DB | SQLite（drift） | drift 2.35.3、drift_dev 2.35.2（コード生成。版の番号は drift と別に付く） | Windows と Android で共通に使え、型安全 | |
 | グラフ | fl_chart | 1.3.0 | MIT ライセンスで無料。Flutter のグラフで最も利用が多く（pub.dev の評価 160 点）、折れ線と棒の両方を描ける | syncfusion_flutter_charts：商用ライセンスか登録が必要。graphic：利用者が少ない |
@@ -123,3 +125,4 @@ Windows 版は、家族での利用の間は署名しない（2026-11-05 決定�
 | 0.18 | 2026-11-06 | 段階の呼び方を版の番号（Ver.2.0 など）にそろえる |
 | 0.19 | 2026-11-06 | 通知（flutter_local_notifications）を導入。desugar_jdk_libs と Windows の扱いを記入 |
 | 0.20 | 2026-11-11 | メール送信を Gmail の SMTP に決定（Q-26） |
+| 0.21 | 2026-11-12 | アプリの更新に package_info_plus 10.2.2 と crypto 3.0.8 を追加（#180） |

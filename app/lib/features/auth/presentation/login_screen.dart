@@ -6,6 +6,7 @@ import '../../../core/api/api_error.dart';
 import '../../../core/providers.dart';
 import '../domain/credentials.dart';
 import '../../../core/widgets/readable_width.dart';
+import '../../update/presentation/version_label.dart';
 import 'credential_field.dart';
 
 /// ログイン（S-01）
@@ -107,6 +108,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onPressed: () => context.push('/login-help'),
                 child: const Text('ログインに困ったら'),
               ),
+              // 今の版（F-UP-03）
+              const VersionLabel(),
             ],
           ),
         ),

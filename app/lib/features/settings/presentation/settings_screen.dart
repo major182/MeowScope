@@ -6,6 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers.dart';
 import '../../calendar/domain/calendar_month.dart';
 import '../../../core/widgets/readable_width.dart';
+import '../../update/domain/app_release.dart';
+import '../../update/presentation/version_label.dart';
+import '../../update/update_providers.dart';
 
 /// 設定（S-40）
 class SettingsScreen extends ConsumerWidget {
@@ -51,7 +54,48 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
+          const _UpdateTile(),
         ],
+      ),
+    );
+  }
+}
+
+/// アプリの更新：今の版と「更新を確かめる」（F-UP-01、F-UP-03）
+class _UpdateTile extends ConsumerStatefulWidget {
+  const _UpdateTile();
+
+  @override
+  ConsumerState<_UpdateTile> createState() => _UpdateTileState();
+}
+
+class _UpdateTileState extends ConsumerState<_UpdateTile> {
+  var _checking = false;
+
+  Future<void> _check() async {
+    setState(() => _checking = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await ref.read(updatePromptProvider.notifier).check();
+    if (mounted) setState(() => _checking = false);
+    // 新しい版があれば、お知らせ（S-51）は UpdateRunner が出す
+    final message = switch (result) {
+      UpdateAvailable() => null,
+      UpToDate() => '最新の版です',
+      UpdateCheckFailed() => '更新を確かめられませんでした。通信を確かめてください',
+    };
+    if (message != null) {
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: const Text('アプリの更新'),
+      subtitle: Text(versionText(ref)),
+      trailing: FilledButton.tonal(
+        onPressed: _checking ? null : _check,
+        child: const Text('更新を確かめる'),
       ),
     );
   }
