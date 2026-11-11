@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 09 |
-| 版数 | 0.3 |
+| 版数 | 0.4 |
 | 作成日 | 2026-11-11 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md)、[07 ログ設計書](07_logging-design.md)、[08 性能テスト設計書](08_performance-test.md) |
@@ -30,7 +30,7 @@
 | バックアップ | 毎日 DB のダンプと写真を固め、7世代を残す（NF-BK-01）。AWS と PC で同じスクリプト | 4章 |
 | PC での接続 | Tailscale の `tailscale serve` で、tailnet の中だけに HTTPS で出す | サーバーをインターネットに公開しない（C-08） |
 | Android の配布 | 署名した APK を、開発者の手で端末に入れる | 一般公開しない。署名の鍵は PC の外に出さない |
-| Windows の配布 | Inno Setup 6 でインストーラーにする（版は入れるときに最新の安定版を確かめて固定する）。署名はしない（Q-27） | 署名がなくても作れる。SmartScreen の警告は「詳細情報」→「実行」で進める |
+| Windows の配布 | Inno Setup 6.7.3 でインストーラーにする。署名はしない（Q-27） | 署名がなくても作れる。SmartScreen の警告は「詳細情報」→「実行」で進める |
 | 公開の範囲 | APK・インストーラーは GitHub Releases に置かない | サーバーの URL（IP アドレスや tailnet の名前）がアプリに入るため |
 
 ## 2. 構成
@@ -172,14 +172,17 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 ### 6.1 Android
 
 - 署名の鍵は `keytool` で作り、リポジトリの外（`%USERPROFILE%\.meowscope\`）に置く。鍵のパスワードは利用者のパスワードの管理の道具に残す。鍵をなくすと、同じアプリとして上書きできなくなる
-- `app/android/key.properties`（`.gitignore` に入れる）で鍵の場所を渡し、`build.gradle.kts` は、それがあれば release の署名に使う（なければ今のとおり debug の鍵）
+- `app/android/key.properties`（`.gitignore` に入っている）で鍵の場所を渡し、`build.gradle.kts` は、それがあれば release の署名に使う（なければ今のとおり debug の鍵）。中身は `storeFile`（鍵のファイルの場所）・`storePassword`・`keyAlias`・`keyPassword` の4行
+- 署名の確かめ方：`apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk`（Android SDK の build-tools にある）
 - `flutter build apk --release --dart-define=API_BASE_URL=<サーバーの URL>`
 - `adb install -r` か、ファイルを端末に送って入れる
 
 ### 6.2 Windows
 
 - `flutter build windows --release --dart-define=API_BASE_URL=<サーバーの URL>`
-- Inno Setup のスクリプト（`app/windows/installer/meowscope.iss`）で、`build/windows/x64/runner/Release` をインストーラー（`MeowScope-Setup-<版>.exe`）にする。スタートメニューに登録し、アンインストールもできる
+- Inno Setup のスクリプト（`app/windows/installer/meowscope.iss`）で、`build/windows/x64/runner/Release` をインストーラー（`app/build/installer/MeowScope-Setup-<版>.exe`）にする。`app` のフォルダーで `ISCC.exe /DAppVersion=<pubspec.yaml の版> windows\installer\meowscope.iss`
+- 管理者の権限なしで、使う人のフォルダー（`%LOCALAPPDATA%\Programs\MeowScope`）に入れる。スタートメニューに登録し、アンインストールもできる
+- Inno Setup は `winget install JRSoftware.InnoSetup --version 6.7.3 --scope user` で入れる
 - 署名はしない（Q-27）。初めて動かすときの SmartScreen の警告は「詳細情報」→「実行」で進める
 
 ## 7. 片付け（AWS）
@@ -197,3 +200,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.1 | 2026-11-11 | 初版（#152）。AWS（EC2・Caddy・sslip.io）→ PC（Tailscale）の構成、バックアップ、アプリの配り方 |
 | 0.2 | 2026-11-11 | AWS の定義を追加（#158）。Caddy を 2.11.9 に。5.2 に apply の引数と、初期設定は最初の起動だけであることを追記 |
 | 0.3 | 2026-11-11 | バックアップ・復元の確認・更新のスクリプトを追加（#160）。4章に置き場所の渡し方と cron を追記 |
+| 0.4 | 2026-11-11 | Android の署名の設定と Windows のインストーラーを追加（#162）。Inno Setup を 6.7.3 に固定。6章に作り方と確かめ方を追記 |
