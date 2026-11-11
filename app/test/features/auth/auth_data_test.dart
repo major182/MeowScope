@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meowscope/core/api/api_client.dart';
 import 'package:meowscope/core/api/api_error.dart';
@@ -53,6 +54,71 @@ void main() {
         old,
       );
       expect(rejected, 2);
+    });
+
+    group('IME の変換（#172）', () {
+      TextEditingValue composing(String text, int start) => TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+        composing: TextRange(start: start, end: text.length),
+      );
+      TextEditingValue fixed(String text) => TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      );
+
+      test('UT-AU-30 変換の途中は全角でもそのまま表示し、案内を出さない', () {
+        var rejected = 0;
+        final formatter = AsciiOnlyFormatter(onRejected: () => rejected++);
+        final result = formatter.formatEditUpdate(
+          fixed('ab'),
+          composing('abすた', 2),
+        );
+        expect(result, composing('abすた', 2));
+        expect(rejected, 0);
+      });
+
+      test('UT-AU-31 全角のまま確定したら、変換を始める前の内容に戻して案内を出す', () {
+        var rejected = 0;
+        final formatter = AsciiOnlyFormatter(onRejected: () => rejected++);
+        formatter.formatEditUpdate(fixed('ab'), composing('abす', 2));
+        formatter.formatEditUpdate(composing('abす', 2), composing('abすた', 2));
+        final result = formatter.formatEditUpdate(
+          composing('abすた', 2),
+          fixed('abスタ'),
+        );
+        expect(result, fixed('ab'));
+        expect(rejected, 1);
+      });
+
+      test('UT-AU-32 半角の候補で確定したら、そのまま受け付ける（文字が増えない）', () {
+        var rejected = 0;
+        final formatter = AsciiOnlyFormatter(onRejected: () => rejected++);
+        formatter.formatEditUpdate(fixed('ab'), composing('abすた', 2));
+        final result = formatter.formatEditUpdate(
+          composing('abすた', 2),
+          fixed('abstar@example.test'),
+        );
+        expect(result, fixed('abstar@example.test'));
+        expect(rejected, 0);
+        // 確定の後の全角の貼り付けは、今までどおり確定した内容のまま
+        expect(
+          formatter.formatEditUpdate(result, fixed('abstar@example.testｘ')),
+          result,
+        );
+        expect(rejected, 1);
+      });
+
+      test('UT-AU-33 変換の始まりを覚えていないときに全角で確定したら、空に戻す', () {
+        var rejected = 0;
+        final formatter = AsciiOnlyFormatter(onRejected: () => rejected++);
+        final result = formatter.formatEditUpdate(
+          composing('すた', 0),
+          fixed('スタ'),
+        );
+        expect(result, TextEditingValue.empty);
+        expect(rejected, 1);
+      });
     });
   });
 

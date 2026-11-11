@@ -43,21 +43,45 @@ abstract final class Credentials {
 ///
 /// 1文字ずつの入力も、貼り付けも、全角が混ざっていたら入力欄を変えずに [onRejected] を呼ぶ。
 /// 一部だけ取り込むと、気付かないまま違う値になるので、まるごと受け付けない
+///
+/// IME で変換している途中（composing）は、そのまま表示する。途中で取り消すと、入力欄と IME の
+/// 持つ文字がずれ、確定のときに文字が増える（#172）。確定したときに全角が混ざっていれば、
+/// 変換を始める前の内容に戻す。変換の前の内容を覚えるので、入力欄ごとに1つ作って使い続ける
 class AsciiOnlyFormatter extends TextInputFormatter {
-  AsciiOnlyFormatter({required this.onRejected});
+  AsciiOnlyFormatter({required this.onRejected, this.onAccepted});
 
   final void Function() onRejected;
+
+  /// 確定した半角の入力を受け付けたとき（変換の途中は呼ばない）
+  final void Function()? onAccepted;
+
+  /// 変換を始める前の、確定した内容
+  TextEditingValue? _beforeComposing;
+
+  static bool _composing(TextEditingValue value) =>
+      value.composing.isValid && !value.composing.isCollapsed;
 
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
+    if (_composing(newValue)) {
+      if (!_composing(oldValue)) {
+        _beforeComposing = oldValue;
+      }
+      return newValue;
+    }
+    final before = _composing(oldValue)
+        ? (_beforeComposing ?? TextEditingValue.empty)
+        : oldValue;
+    _beforeComposing = null;
     if (Credentials.isAscii(newValue.text)) {
+      onAccepted?.call();
       return newValue;
     }
     onRejected();
-    return oldValue;
+    return before.copyWith(composing: TextRange.empty);
   }
 }
 
