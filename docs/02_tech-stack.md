@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 02 |
-| 版数 | 0.19 |
+| 版数 | 0.20 |
 | 作成日 | 2026-11-01 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md) |
@@ -57,7 +57,7 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 | HTTPS（未導入。AWS へ置くときに入れる） | Caddy | 2.11.7 | 証明書を自動で取得できる（AWS のみ） | |
 | PC での接続 | Tailscale | 導入時に確定 | サーバーをインターネットに公開しない（C-08） | |
 | 生成 AI | Claude API | 実装時に確定 | サーバーから呼び出す（NF-SC-05）。利用した分の費用がかかる | |
-| メール送信（パスワードの再設定） | 未定（Q-26）。第一候補は Gmail の SMTP。送る仕組みは SMTP（spring-boot-starter-mail）で作り、どのサービスでも設定（環境変数 `MAIL_*`）だけで切り替える | Spring Boot の管理に従う | 無料でドメインが不要だが、アプリパスワードが未発行 | Resend、Amazon SES：送信元の認証にドメインが必要になる可能性がある |
+| メール送信（パスワードの再設定） | Gmail の SMTP（smtp.gmail.com:587。Q-26 で決定）。送る仕組みは SMTP（spring-boot-starter-mail）で作り、どのサービスでも設定（環境変数 `MAIL_*`）だけで切り替える | Spring Boot の管理に従う | 無料でドメインが不要。専用の Gmail のアカウントのアプリパスワードで送る | Resend、Amazon SES：送信元の認証にドメインが必要になる可能性がある |
 | CI と配布 | GitHub Actions、GitHub Releases | - | 無料で使える | Google Play：登録料がかかる |
 | E2E テスト | integration_test | Flutter に同梱 | Flutter の公式の方法で、Windows と Android の両方で同じテストを動かせる。追加の道具が不要（NF-MT-02） | Patrol：通知の許可など OS の画面を操作できるが、Windows に対応していない |
 | ウィジェットの単体テスト | JUnit | 4.13.2 | Kotlin の表示の決め方（WidgetModel）を Android の端末なしで確かめる。Android の雛形の標準 | JUnit 5：Android の単体テストでは追加の設定が要る |
@@ -121,3 +121,4 @@ Windows 版は、家族での利用の間は署名しない（2026-11-05 決定�
 | 0.17 | 2026-11-06 | 通知と HTTPS（Caddy）が未導入であることと、drift_dev の版を記入（品質チェック） |
 | 0.18 | 2026-11-06 | 段階の呼び方を版の番号（Ver.2.0 など）にそろえる |
 | 0.19 | 2026-11-06 | 通知（flutter_local_notifications）を導入。desugar_jdk_libs と Windows の扱いを記入 |
+| 0.20 | 2026-11-11 | メール送信を Gmail の SMTP に決定（Q-26） |
