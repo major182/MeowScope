@@ -85,8 +85,9 @@ class SyncEngine {
   /// 1回の要求で送る行の数の上限（API 設計書 5章）
   static const batchSize = 500;
 
-  /// 続きの取得を繰り返す上限。サーバーの誤りで止まらなくなるのを防ぐ
-  static const maxRounds = 50;
+  /// 進まない（位置が変わらず、送るものもない）続きの取得を許す回数。サーバーの誤りで止まらなくなるのを防ぐ。
+  /// 進んでいる間は回数を限らず、5年分のような大量の受け取りも1回の同期で終える（Issue #144）
+  static const maxStalledRounds = 3;
 
   /// 今回の同期で受け取った家族の新しい記録
   final _familyRecords = <ReceivedRecord>[];
@@ -108,13 +109,15 @@ class SyncEngine {
     try {
       rejected += await _createHouseholds(userId);
       var finished = false;
-      for (var round = 0; round < maxRounds; round++) {
+      var stalled = 0;
+      while (stalled < maxStalledRounds) {
         final more = await _round(userId);
         rejected += more.rejected;
         if (!more.again) {
           finished = true;
           break;
         }
+        stalled = more.progressed ? 0 : stalled + 1;
       }
       // 全件を取り直し終えたら、受け取らなかった行を端末から消す（途中で止まったときは消さない）
       final received = _resyncReceived;
@@ -234,8 +237,11 @@ class SyncEngine {
     }
   }
 
-  /// 送受信を1回行う。続けて呼ぶ必要があれば again が真
-  Future<({bool again, int rejected})> _round(String userId) async {
+  /// 送受信を1回行う。続けて呼ぶ必要があれば again が真。
+  /// 送るものがあった・位置が進んだ・全件の取り直しを始めたなら progressed が真
+  Future<({bool again, bool progressed, int rejected})> _round(
+    String userId,
+  ) async {
     final pending =
         await (_db.select(_db.pendingChanges)
               ..where(
@@ -321,16 +327,23 @@ class SyncEngine {
     if (body['fullResyncRequired'] == true) {
       await _setState(SyncKeys.lastSeq(userId), '0');
       // ここから受け取る行を数え、取り直し終えたら受け取らなかった行を消す
+      // 取り直しの最中に、また取り直しを求められたら進んでいないとみなす（繰り返されても止まるように）
+      final first = _resyncReceived == null;
       _resyncReceived = {};
-      return (again: true, rejected: rejected);
+      return (again: true, progressed: first, rejected: rejected);
     }
     await _apply(
       userId,
       (body['changes'] as List).cast<Map<String, dynamic>>(),
     );
-    await _setState(SyncKeys.lastSeq(userId), '${body['nextSeq']}');
+    final nextSeq = '${body['nextSeq']}';
+    await _setState(SyncKeys.lastSeq(userId), nextSeq);
     final remaining = pending.length > sentSeqs.length;
-    return (again: body['hasMore'] == true || remaining, rejected: rejected);
+    return (
+      again: body['hasMore'] == true || remaining,
+      progressed: sentSeqs.isNotEmpty || nextSeq != '$lastSeq',
+      rejected: rejected,
+    );
   }
 
   /// 送れなかった変更を残す。同じ行の前の記録は置き換える

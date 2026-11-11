@@ -367,6 +367,60 @@ void main() {
     expect((await states())['sync.lastSeq.u1'], '3');
   });
 
+  test(
+    'UT-SY-36 境界値：続きが前の上限（50回）を超えても、進んでいる間は1回の同期で全部受け取る（Issue #144）',
+    () async {
+      var calls = 0;
+      server.on('POST', '/sync', (r) {
+        calls++;
+        return FakeResponse(200, {
+          'results': [],
+          'changes': [],
+          'nextSeq': calls * 500,
+          'hasMore': calls < 60,
+          'fullResyncRequired': false,
+        });
+      });
+
+      expect(await engine.run('u1'), isA<SyncSucceeded>());
+
+      expect(calls, 60);
+      expect((await states())['sync.lastSeq.u1'], '30000');
+    },
+  );
+
+  test('UT-SY-37 異常系：サーバーの誤りで進まない続き（位置が同じ・取り直しの繰り返し）は、3回で止める', () async {
+    var calls = 0;
+    server.on('POST', '/sync', (r) {
+      calls++;
+      return FakeResponse(200, {
+        'results': [],
+        'changes': [],
+        'nextSeq': 5,
+        'hasMore': true,
+        'fullResyncRequired': false,
+      });
+    });
+    await engine.run('u1');
+    // 1回目は 0 → 5 に進み、その後の進まない3回で止まる
+    expect(calls, 4);
+
+    calls = 0;
+    server.on('POST', '/sync', (r) {
+      calls++;
+      return FakeResponse(200, {
+        'results': [],
+        'changes': [],
+        'nextSeq': 0,
+        'hasMore': false,
+        'fullResyncRequired': true,
+      });
+    });
+    await engine.run('u1');
+    // 1回目の取り直しは進んだとみなし、その後の繰り返し3回で止まる
+    expect(calls, 4);
+  });
+
   test('UT-SY-12 受け付けられなかった変更は送り直さず、行ごとに理由と項目を残す。同じ行は置き換え、送れたら消す', () async {
     await addHousehold(db, 'h1');
     await addCat(db, id: 'c1', householdId: 'h1', name: 'ミケ');

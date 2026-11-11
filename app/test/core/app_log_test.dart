@@ -171,6 +171,57 @@ void main() {
       expect(row.status, 'error');
       expect(row.message, startsWith('同期で想定外の例外：'));
     });
+
+    test(
+      'UT-SY-38 異常系：同期の最中に部品が捨てられても（ログアウトなど）例外を出さず、ログの送信と通知をせずに終える（Issue #145）',
+      () async {
+        await log.record('warning', '前の失敗');
+        server.on(
+          'POST',
+          '/sync',
+          (r) => const FakeResponse(200, {
+            'results': [],
+            'changes': [],
+            'nextSeq': 0,
+            'hasMore': false,
+            'fullResyncRequired': false,
+          }),
+        );
+        server.on('POST', '/client-logs', (r) => const FakeResponse(204));
+        // 同期の応答を待っている間に、部品の入れ物ごと捨てる（画面を閉じた・アプリを作り直したとき）
+        Future<void> syncThenDispose(ProviderContainer c) async {
+          c.listen(authUserProvider, (_, _) {});
+          await c.read(authUserProvider.future);
+          final running = c.read(syncControllerProvider.notifier).sync();
+          c.dispose();
+          await expectLater(running, completes);
+        }
+
+        await syncThenDispose(container);
+        expect(server.sentTo('/client-logs'), isEmpty);
+
+        // 想定外の例外のときも、例外のログを書かずに終える
+        server.on(
+          'POST',
+          '/sync',
+          (r) => const FakeResponse(200, {'results': 'broken'}),
+        );
+        await syncThenDispose(
+          ProviderContainer(
+            overrides: [
+              databaseProvider.overrideWithValue(db),
+              tokenStoreProvider.overrideWithValue(tokens),
+              apiClientProvider.overrideWithValue(
+                fakeApiClient(server, tokens),
+              ),
+            ],
+          ),
+        );
+        expect((await db.select(db.clientLogs).get()).map((r) => r.message), [
+          '前の失敗',
+        ]);
+      },
+    );
   });
 
   group('問い合わせ（S-06）', () {

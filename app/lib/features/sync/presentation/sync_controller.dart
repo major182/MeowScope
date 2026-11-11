@@ -41,11 +41,17 @@ class SyncController extends Notifier<SyncState> {
     } catch (e) {
       // 想定外の失敗（壊れた応答による型の誤りなども）でも、アプリの操作は止めない。同期待ちは残っているので次に送る
       // ログには例外の種類だけを書く（内容に記録が含まれるおそれがあるため。ログ設計書 6章）
-      await ref
-          .read(appLogProvider)
-          .record('error', '同期で想定外の例外：${e.runtimeType}');
+      if (ref.mounted) {
+        await ref
+            .read(appLogProvider)
+            .record('error', '同期で想定外の例外：${e.runtimeType}');
+      }
       unexpected = true;
       outcome = const SyncFailed(ApiError(status: 500));
+    }
+    // 同期の間にこの部品が捨てられた（ログアウトなど）なら、ここで終える。捨てられた後は ref を使えない（Issue #145）
+    if (!ref.mounted) {
+      return;
     }
     final log = ref.read(appLogProvider);
     switch (outcome) {
