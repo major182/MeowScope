@@ -20,8 +20,7 @@ void main() {
         interpolation: img.Interpolation.average,
       ),
   ];
-  File(
-    'windows/runner/resources/app_icon.ico',
-  ).writeAsBytesSync(img.IcoEncoder().encodeImages(images));
+  File('windows/runner/resources/app_icon.ico')
+      .writeAsBytesSync(img.IcoEncoder().encodeImages(images));
   stdout.writeln('app_icon.ico：${_sizes.join('・')}px');
 }
