@@ -1,0 +1,4 @@
+# 結果は手元に置き、コミットしない
+results/
+node_modules/
+*.log
