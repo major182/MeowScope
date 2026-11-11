@@ -43,6 +43,8 @@ services:
       MEOWSCOPE_ENV: ${MEOWSCOPE_ENV:-local}
       MEOWSCOPE_VERSION: ${MEOWSCOPE_VERSION:-dev}
       PHOTOS_DIR: /data/photos
+      # アプリの更新（デプロイ設計書 6.4）。<android か windows>/release.json とファイルを置く
+      RELEASES_DIR: /data/releases
       # パスワードの再設定のメール（SMTP）。空なら送らない
       MAIL_HOST: ${MAIL_HOST:-}
       MAIL_PORT: ${MAIL_PORT:-587}
@@ -52,6 +54,8 @@ services:
     volumes:
       # 写真の本体（PC へ移すときは、このボリュームも移す）
       - photos-data:/data/photos
+      # アプリの更新のファイル（docker compose cp で置く）
+      - releases-data:/data/releases
     ports:
       - "${SERVER_PORT:-8080}:8080"
     restart: unless-stopped
@@ -60,3 +64,4 @@ services:
 volumes:
   db-data:
   photos-data:
+  releases-data:

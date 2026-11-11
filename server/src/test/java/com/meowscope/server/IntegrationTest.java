@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Import;
 @SpringBootTest(properties = {
     "meowscope.auth.jwt-secret=" + IntegrationTest.TEST_JWT_SECRET,
     "meowscope.photos.dir=${java.io.tmpdir}/meowscope-test-photos",
+    "meowscope.releases.dir=${java.io.tmpdir}/meowscope-test-releases",
 })
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
