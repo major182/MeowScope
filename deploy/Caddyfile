@@ -1,0 +1,6 @@
+# HTTPS の入り口（デプロイ設計書 2.1）。証明書は Let's Encrypt から自動で取り、caddy-data のボリュームに残す
+# SITE_ADDRESS は sslip.io の名前（例：<IP をハイフンでつないだもの>.sslip.io）。.env から渡す
+{$SITE_ADDRESS} {
+	encode gzip
+	reverse_proxy server:8080
+}

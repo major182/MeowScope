@@ -1,0 +1,49 @@
+#!/bin/bash
+# EC2 の初期設定（デプロイ設計書 5.2）。初めて起動したときに1回だけ動く。ログは /var/log/cloud-init-output.log
+set -euo pipefail
+
+APP_DIR=/opt/meowscope
+COMPOSE_VERSION=v5.7.1
+
+# スワップ 2GB（t3.small のメモリー 2GB を補う）
+if [ ! -f /swapfile ]; then
+  dd if=/dev/zero of=/swapfile bs=1M count=2048
+  chmod 600 /swapfile
+  mkswap /swapfile
+  echo '/swapfile none swap sw 0 0' >> /etc/fstab
+fi
+swapon -a
+
+# Docker と Compose
+dnf install -y docker git cronie
+systemctl enable --now docker crond
+mkdir -p /usr/local/lib/docker/cli-plugins
+curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose \
+  "https://github.com/docker/compose/releases/download/$COMPOSE_VERSION/docker-compose-linux-x86_64"
+chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+# リポジトリ（compose の定義とスクリプト）
+git clone --branch "${git_ref}" --depth 1 https://github.com/major182/MeowScope.git "$APP_DIR"
+
+# 秘密の値はパラメーターストアから読み、root だけが読める .env に書く
+param() {
+  aws ssm get-parameter --region "${region}" --with-decryption --name "/meowscope/$1" --query Parameter.Value --output text
+}
+umask 077
+MAIL_USERNAME=$(param mail-username)
+cat > "$APP_DIR/.env" <<ENV
+DB_PASSWORD=$(param db-password)
+JWT_SECRET=$(param jwt-secret)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=$MAIL_USERNAME
+MAIL_PASSWORD=$(param mail-password)
+MAIL_FROM=$MAIL_USERNAME
+SERVER_IMAGE_TAG=${image_tag}
+SITE_ADDRESS=${site_address}
+ENV
+umask 022
+
+# 起動（Caddy が証明書を取る。Elastic IP が付くまで少し待つことがある）
+cd "$APP_DIR"
+docker compose -f compose.yaml -f deploy/compose.aws.yaml up -d
