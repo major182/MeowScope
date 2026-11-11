@@ -88,3 +88,16 @@ jobs:
           docker compose -f compose.yaml -f deploy/compose.aws.yaml config --quiet
           # 外に出すのは Caddy の 80・443 だけ
           test "$(docker compose -f compose.yaml -f deploy/compose.aws.yaml config --format json | jq -c '[.services[] | .ports[]?.published] | sort')" = '["443","443","80"]'
+      - name: シェルスクリプトの静的チェック
+        run: shellcheck deploy/*.sh
+      - name: バックアップと復元の確認（開発用の compose で動かす）
+        run: |
+          {
+            echo DB_PASSWORD=ci-password
+            echo "JWT_SECRET=$(openssl rand -base64 32)"
+          } > .env
+          docker compose up -d --build --wait
+          # サーバーが起動し、Flyway が表を作るまで待つ
+          timeout 120 bash -c "until curl -fs localhost:8080/actuator/health; do sleep 2; done"
+          deploy/backup.sh "$RUNNER_TEMP/backup"
+          deploy/restore-check.sh "$RUNNER_TEMP/backup"
