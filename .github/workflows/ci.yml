@@ -38,6 +38,20 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - run: ./gradlew check
 
+  # 性能テストのスクリプトの型チェック。性能テストそのものは手元で任意のときに動かす（性能テスト設計書 6章）
+  perf:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: perf
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm ci
+      - run: npm run typecheck
+
   # 依存ライブラリの脆弱性を検査する（NF-SC-06）。見つかったら失敗する
   vulnerability:
     runs-on: ubuntu-latest
@@ -48,3 +62,4 @@ jobs:
           scan-args: |-
             --lockfile=app/pubspec.lock
             --lockfile=server/gradle.lockfile
+            --lockfile=perf/package-lock.json

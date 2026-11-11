@@ -1,0 +1,20 @@
+# 性能テスト専用の環境。リポジトリの compose.yaml に重ねて、別のプロジェクト名（meowscope-perf）で動かす
+# 開発用の DB・ボリュームとは別になり、終わったら run.ts が down -v で丸ごと捨てる。本体の compose.yaml は変えない
+services:
+  db:
+    # 開発用の DB（5432）とぶつからないよう、PC には公開しない（調べるときは docker exec で psql を使う）
+    ports: !reset []
+    # 遅い SQL を探すため、SQL ごとの統計（pg_stat_statements）を有効にする
+    command: ["postgres", "-c", "shared_preload_libraries=pg_stat_statements", "-c", "pg_stat_statements.track=all"]
+    restart: "no"
+
+  server:
+    # PC から 8081 で呼ぶ（Android のエミュレーターからは 10.0.2.2:8081）
+    ports: !override
+      - "8081:8080"
+    environment:
+      MEOWSCOPE_ENV: perf
+      # メールは送らない（外部のサービスに負荷をかけない）
+      MAIL_HOST: ""
+      MAIL_FROM: ""
+    restart: "no"
