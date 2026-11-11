@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'app/router.dart';
 import 'core/providers.dart';
 import 'features/notifications/data/notifier.dart';
+import 'features/update/data/update_installer.dart';
 import 'features/widget/widget_bridge.dart';
 
 /// 通知を押したときに開く場所（payload）。画面の側で聞いて開く
@@ -50,6 +51,15 @@ Future<void> main() async {
   if (Platform.isAndroid) {
     startWidgetBridge(container);
   }
+  // 前の更新で使ったファイルを消す（BR-33：入れた後の次の起動で消す）。待たずに進める
+  // Windows で開き直した直後はインストーラーがまだ終わっておらず消せないことがあるが、その次の起動で消える
+  unawaited(
+    updateDirectory().then(deleteUpdateFiles).catchError((Object e) {
+      container
+          .read(appLogProvider)
+          .record('info', '更新のファイルを消せない：${e.runtimeType}');
+    }),
+  );
   runApp(
     UncontrolledProviderScope(
       container: container,

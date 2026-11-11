@@ -212,6 +212,7 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 置き場所 | サーバーのボリューム `releases-data`（`/data/releases/<android か windows>/`）。ファイルの名前は `meowscope.apk`・`meowscope-setup.exe`（API 設計書 10章）。開発（`bootRun`）では `server/data/releases/`。版の情報とファイルを1組だけ置き、新しい版で上書きする |
 | AWS へ届け方 | SSH を開けないので、非公開の S3 バケットを中継にする。手元から S3 に上げ、セッションマネージャーで EC2 に取らせてボリュームへ置く。バケットは Terraform で作り、EC2 のロールには読み取りだけを許す。`terraform destroy` で中身ごと消す |
 | PC へ届け方 | `docker compose cp` でボリュームへ置く |
+| 入れ方 | Android は OS のインストールの画面（REQUEST_INSTALL_PACKAGES、FileProvider）。Windows はインストーラーを `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS` で動かし、`meowscope.iss` の `[Run]`（`skipifnotsilent`）で開き直す |
 
 - 作ってから置くまでを1つのスクリプトにまとめる（Issue で作る）。置いた後に `/app-releases/<platform>/latest` が新しい版を返すことを確かめる
 - 置く前に、開発版で更新の流れを確かめる（配布版の端末で試さない）
@@ -236,3 +237,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.5 | 2026-11-11 | 6.3 開発版と配布版を分ける（#168）を追加 |
 | 0.6 | 2026-11-12 | 6.4 アプリの更新を出す（#176）を追加。片付けに S3 バケットを追加 |
 | 0.7 | 2026-11-12 | 6.4 に置くファイルの名前と、開発での置き場所を記入（#178） |
+| 0.8 | 2026-11-12 | 6.4 に端末での入れ方を追加（#182） |

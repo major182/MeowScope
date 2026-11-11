@@ -44,3 +44,5 @@ Name: "{autodesktop}\MeowScope"; Filename: "{app}\meowscope.exe"; Tasks: desktop
 
 [Run]
 Filename: "{app}\meowscope.exe"; Description: "{cm:LaunchProgram,MeowScope}"; Flags: nowait postinstall skipifsilent
+; アプリからの更新（F-UP-02）：アプリが確認なしのモード（/VERYSILENT）で動かしたときは、入れた後に開き直す
+Filename: "{app}\meowscope.exe"; Flags: nowait skipifnotsilent
