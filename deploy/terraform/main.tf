@@ -74,7 +74,7 @@ resource "aws_vpc_security_group_ingress_rule" "web" {
 
 resource "aws_vpc_security_group_egress_rule" "all" {
   security_group_id = aws_security_group.web.id
-  description       = "all outbound (GHCR, Let's Encrypt, Gmail, SSM)"
+  description       = "all outbound (GHCR, Lets Encrypt, Gmail, SSM)"
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
