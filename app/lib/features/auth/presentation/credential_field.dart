@@ -26,6 +26,18 @@ class CredentialField extends StatefulWidget {
 class _CredentialFieldState extends State<CredentialField> {
   var _rejected = false;
 
+  /// 変換の前の内容を覚えるので、作り直さずに使い続ける（#172）
+  late final _formatter = AsciiOnlyFormatter(
+    onRejected: () => setState(() => _rejected = true),
+    // 案内は、半角の入力を受け付けたときだけ消す。全角を取り消して入力欄を戻したときにも
+    // onChanged は呼ばれるので、そこで消すと案内が出ない（#172）
+    onAccepted: () {
+      if (_rejected) {
+        setState(() => _rejected = false);
+      }
+    },
+  );
+
   @override
   Widget build(BuildContext context) {
     return TextFormField(
@@ -36,14 +48,7 @@ class _CredentialFieldState extends State<CredentialField> {
       keyboardType: widget.password
           ? TextInputType.visiblePassword
           : TextInputType.emailAddress,
-      inputFormatters: [
-        AsciiOnlyFormatter(onRejected: () => setState(() => _rejected = true)),
-      ],
-      onChanged: (_) {
-        if (_rejected) {
-          setState(() => _rejected = false);
-        }
-      },
+      inputFormatters: [_formatter],
       decoration: InputDecoration(
         labelText: widget.label,
         helperText: _rejected ? '全角の文字は使えません。半角で入力してください' : null,

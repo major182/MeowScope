@@ -150,6 +150,36 @@ void main() {
     await close(tester);
   });
 
+  testWidgets('UT-AU-34 IME で全角のまま確定すると、変換の前に戻して案内を出す（#172）', (tester) async {
+    await start(tester);
+
+    await tester.enterText(field('メールアドレス'), 'haru');
+    await tester.pump();
+    // 変換の途中（composing）は全角のまま見え、案内は出ない
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: 'haruすた',
+        selection: TextSelection.collapsed(offset: 6),
+        composing: TextRange(start: 4, end: 6),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('haruすた'), findsOneWidget);
+    expect(find.text('全角の文字は使えません。半角で入力してください'), findsNothing);
+
+    // 全角のまま確定すると、変換の前に戻り、案内が出る
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: 'haruスタ',
+        selection: TextSelection.collapsed(offset: 6),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('haru'), findsOneWidget);
+    expect(find.text('全角の文字は使えません。半角で入力してください'), findsOneWidget);
+    await close(tester);
+  });
+
   testWidgets('UT-AU-26 新規登録：入力の誤りがあれば送らない', (tester) async {
     await start(tester);
     await tester.tap(find.text('新規アカウント作成'));
