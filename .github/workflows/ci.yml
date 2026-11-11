@@ -63,3 +63,28 @@ jobs:
             --lockfile=app/pubspec.lock
             --lockfile=server/gradle.lockfile
             --lockfile=perf/package-lock.json
+
+  # デプロイの定義の確認（デプロイ設計書）。AWS にはつながない
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: 1.16.5
+      - name: terraform fmt と validate
+        working-directory: deploy/terraform
+        run: |
+          terraform fmt -check -recursive
+          terraform init -backend=false -input=false
+          terraform validate
+      - name: compose の設定（AWS 用の差分を重ねる）
+        env:
+          DB_PASSWORD: dummy
+          JWT_SECRET: dummy
+          SERVER_IMAGE_TAG: dummy
+          SITE_ADDRESS: 192-0-2-1.sslip.io
+        run: |
+          docker compose -f compose.yaml -f deploy/compose.aws.yaml config --quiet
+          # 外に出すのは Caddy の 80・443 だけ
+          test "$(docker compose -f compose.yaml -f deploy/compose.aws.yaml config --format json | jq -c '[.services[] | .ports[]?.published] | sort')" = '["443","443","80"]'

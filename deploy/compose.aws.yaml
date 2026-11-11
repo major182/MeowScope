@@ -1,0 +1,41 @@
+# AWS 用の差分（デプロイ設計書 2.1）。compose.yaml に重ねて使う
+#   docker compose -f compose.yaml -f deploy/compose.aws.yaml up -d
+# - サーバーは GHCR のイメージを使い、ここでは組み立てない
+# - 外から受けるのは Caddy の 80・443 だけ。サーバーの 8080 と DB の 5432 は外に出さない
+# - 相対パスは compose.yaml のある場所（リポジトリの直下）から数える
+services:
+  db:
+    ports: !reset []
+
+  server:
+    build: !reset null
+    image: ghcr.io/major182/meowscope-server:${SERVER_IMAGE_TAG:?SERVER_IMAGE_TAG を .env に書いてください}
+    ports: !reset []
+    environment:
+      MEOWSCOPE_ENV: prod
+      MEOWSCOPE_VERSION: ${SERVER_IMAGE_TAG}
+
+  caddy:
+    image: caddy:2.11.9
+    depends_on:
+      - server
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?SITE_ADDRESS を .env に書いてください}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+volumes:
+  caddy-data:
+  caddy-config:
