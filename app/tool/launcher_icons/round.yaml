@@ -1,0 +1,6 @@
+# Android の丸いアイコン（roundIcon。Android 7.1 以降の丸いランチャー）。画面設計書 1章
+# 使い方（app で）：dart run flutter_launcher_icons -f tool/launcher_icons/round.yaml の後に square.yaml
+flutter_launcher_icons:
+  image_path: assets/icons/mainicon_01.png
+  android: ic_launcher_round
+  ios: false
