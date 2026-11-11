@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * メールの送り方（技術選定書 2章、Q-26）。SMTP で送り、どのサービス（Gmail・Brevo・Resend など）でも設定だけで切り替える。
+ * メールの送り方（技術選定書 2章）。SMTP で送り、どのサービス（Gmail・Brevo・Resend など）でも設定だけで切り替える。
  *
  * <p>パスワードは秘密の置き場に置き、環境変数で渡す。{@code host} が空なら送らない（{@link NotConfiguredMailer}）。
  *

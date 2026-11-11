@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** おうちの API（API 設計書 4章）。招待はメール送信の手段が決まってから（Q-26）足す。 */
+/** おうちの API（API 設計書 4章）。招待はリンクで行い、メールでの招待はしない。 */
 @RestController
 @RequestMapping("/api/v1/households")
 class HouseholdController {
