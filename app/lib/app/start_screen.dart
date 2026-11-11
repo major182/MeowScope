@@ -6,6 +6,7 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/household/presentation/household_setup_screen.dart';
 import '../features/notifications/presentation/notification_runner.dart';
 import '../features/sync/presentation/sync_controller.dart';
+import '../features/update/presentation/update_runner.dart';
 import 'main_shell.dart';
 
 /// 最初の画面。ログインしていなければログイン（S-01）、おうちがなければおうちの作成（S-04）、
@@ -30,10 +31,13 @@ class StartScreen extends ConsumerWidget {
     }
     // ログイン中は自動で同期する。おうちがまだなくても、サーバーにあるおうちを探すために同期する
     // おうちがあれば、通知の予約も最新に保つ（記録忘れなど）
+    // 更新の確かめも、認証が要るのでログイン中だけ行う（F-UP-01）
     return SyncScheduler(
-      child: session.value == null
-          ? const HouseholdSetupScreen()
-          : const NotificationRunner(child: MainShell()),
+      child: UpdateRunner(
+        child: session.value == null
+            ? const HouseholdSetupScreen()
+            : const NotificationRunner(child: MainShell()),
+      ),
     );
   }
 }
