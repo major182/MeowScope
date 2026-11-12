@@ -18,7 +18,8 @@ case $PLATFORM in
 esac
 [[ $TARGET == aws || $TARGET == pc ]] || { echo "aws か pc を指定してください" >&2; exit 1; }
 
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+# Windows の Git Bash では、Windows のプログラム（terraform など）に渡せる C:/... 形式にする
+ROOT=$(cd "$(dirname "$0")/.." && (pwd -W 2>/dev/null || pwd))
 tf() { terraform -chdir="$ROOT/deploy/terraform" "$@"; }
 
 # 版の番号（例：1.0.1+3）。ビルド番号が数字でなければ止める
@@ -45,8 +46,11 @@ if [[ $PLATFORM == android ]]; then
   cp build/app/outputs/flutter-apk/app-release.apk "$STAGE/$FILE"
 else
   # Windows のビルドにはシンボリックリンクが要る（開発者モードを一時的にオンにする）
-  flutter build windows --release "${DEFINES[@]}"
-  ISCC.exe "/DAppVersion=$VERSION" windows\\installer\\meowscope.iss
+  # APK を作った直後は、Flutter の一時フォルダーの作り直しで1回目が失敗することがあるので、1回だけやり直す
+  flutter build windows --release "${DEFINES[@]}" || flutter build windows --release "${DEFINES[@]}"
+  # Inno Setup は PATH になければ、winget の既定の入れ場所（使う人のフォルダー）から探す（デプロイ設計書 6.2）
+  ISCC=$(command -v ISCC.exe || echo "$LOCALAPPDATA/Programs/Inno Setup 6/ISCC.exe")
+  "$ISCC" "/DAppVersion=$VERSION" windows\\installer\\meowscope.iss
   cp "build/installer/MeowScope-Setup-$VERSION.exe" "$STAGE/$FILE"
 fi
 
@@ -60,7 +64,8 @@ echo "作りました：$(cat "$STAGE/release.json")"
 # 3. 置く
 cd "$ROOT"
 if [[ $TARGET == pc ]]; then
-  deploy/place-release.sh "$PLATFORM" "$STAGE"
+  # bash で呼ぶ（実行の権限に頼らない）
+  bash deploy/place-release.sh "$PLATFORM" "$STAGE"
 else
   BUCKET=$(tf output -raw releases_bucket)
   INSTANCE=$(tf output -raw instance_id)
@@ -73,7 +78,7 @@ else
     "cd /opt/meowscope && git pull --ff-only" \
     "rm -rf $TMP && mkdir -p $TMP" \
     "aws s3 cp s3://$BUCKET/$PLATFORM/ $TMP/ --recursive --region $REGION --only-show-errors" \
-    "deploy/place-release.sh $PLATFORM $TMP -f compose.yaml -f deploy/compose.aws.yaml" \
+    "bash deploy/place-release.sh $PLATFORM $TMP -f compose.yaml -f deploy/compose.aws.yaml" \
     "rm -rf $TMP")
   PARAMS=$(mktemp)
   echo "{\"commands\": [${COMMANDS%,}]}" > "$PARAMS"
