@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 09 |
-| 版数 | 0.6 |
+| 版数 | 0.12 |
 | 作成日 | 2026-11-11 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md)、[07 ログ設計書](07_logging-design.md)、[08 性能テスト設計書](08_performance-test.md) |
@@ -88,6 +88,65 @@ flowchart LR
 - サーバーの URL は `https://<PC の名前>.<tailnet>.ts.net/api/v1`。確かめ方は `tailscale status`
 - 利用者の端末に Tailscale を入れ、同じ tailnet に招く
 - PC が止まっている間は、アプリは端末に記録し、PC が動いたら同期する（F-OF-02）
+
+### 2.3 アプリとサーバーの中の作り
+
+2.1・2.2 は「どこに置くか」の図。ここでは、どこに置いても同じ、アプリとサーバーの中の作りを示す。
+
+```mermaid
+flowchart LR
+  subgraph app ["アプリ（Flutter。Android・Windows で同じコード）"]
+    ui["画面<br>go_router で移る"] --> state["状態<br>Riverpod"]
+    state --> repo["リポジトリ<br>features/*/data"]
+    repo --> local[("端末の DB<br>SQLite（drift）")]
+    widget["Android のウィジェット<br>Kotlin・home_widget"] -- "ボタンを押す" --> local
+    sync["同期<br>features/sync"] --> local
+    sync --> api["通信<br>dio（core/api）"]
+    update["更新<br>features/update"] --> api
+  end
+  subgraph server ["サーバー（Spring Boot）"]
+    ctl["Controller<br>入口。業務ルールは書かない"] --> svc["Service<br>業務ルール"]
+    svc --> jdbc["JdbcClient<br>SQL を書く"]
+  end
+  api -- "HTTPS・JSON<br>アクセストークン（JWT）" --> ctl
+  jdbc --> db[("PostgreSQL")]
+  svc --> files[("写真・アイコン・更新のファイル<br>ボリューム")]
+  svc -- "確認コードのメール" --> mail["メール（SMTP）"]
+  svc -- "JSON のログ<br>標準出力" --> logs["docker compose logs"]
+```
+
+| 部分 | 役割 | 詳しくは |
+|---|---|---|
+| 画面・状態 | 記録・猫などの共有データは、端末の DB から読む。通信を待たずに表示でき、オフラインでも使える（F-OF-01・02）。ログイン・招待・写真の取得などは、その場でサーバーに問い合わせる | 画面設計書 |
+| 端末の DB | 記録・猫・設定などをまず端末に保存し、「同期待ち」の印を付ける | DB 設計書 |
+| ウィジェット | ボタンを押すと、アプリを開かずに裏の処理（Dart）が端末の DB に記録する。送るのは次の同期 | 要件定義書 F-WG-01 |
+| 同期 | 端末の変更を送り、相手の変更を受け取る。共有のデータは個別の API を作らず、すべて同期の API で送受信する | API 設計書 5章 |
+| 更新 | 起動したときに新しい版を聞き、ファイルを取ってきて OS に渡す | API 設計書 10章、6.4 |
+| サーバーの層 | Controller → Service → JdbcClient の3層。エラーは `ApiException` で投げ、Problem Details の形で返す | API 設計書 9章 |
+| ログ | サーバーも端末も JSON のログ。端末の失敗はサーバーへ送り、問い合わせ番号で追える | ログ設計書 |
+
+同期の流れ（API 設計書 5章）：
+
+```mermaid
+sequenceDiagram
+  participant U as 利用者
+  participant A as アプリ
+  participant L as 端末の DB
+  participant S as サーバー
+  participant D as PostgreSQL
+  U->>A: 記録する
+  A->>L: 保存して「同期待ち」にする
+  A-->>U: すぐに画面に出す（通信は待たない）
+  Note over A: 起動・バックグラウンドへ移るとき・5分おき・手動（F-OF-03）
+  A->>S: POST /sync（同期待ちの変更と、前回の位置 lastSeq）
+  S->>D: 変更を反映し、通し番号（seq）を振る
+  Note over S,D: 同じ行の競合は、サーバーが後から受け取った方を採用（BR-10）
+  S-->>A: 反映の結果と、lastSeq より後の相手の変更
+  A->>L: 相手の変更を反映し、送れた行の「同期待ち」を外す
+```
+
+- 通信できない・サーバーが止まっているときは、同期待ちのまま残し、次の同期で送る（F-OF-02）
+- 2つの端末が同じ行を変えても、端末の時計は使わず、サーバーが受け取った順で決める（BR-10）
 
 ## 3. 費用（A. AWS）
 
@@ -255,3 +314,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.9 | 2026-11-12 | 6.4 に版を作って置く手順とスクリプト、S3 の中継の設定を追加（#184） |
 | 0.10 | 2026-11-12 | 6.3 に Windows の開発版のインストーラー（/DDev）を追加（#186） |
 | 0.11 | 2026-11-12 | 6.3 のパスの区切り（バックスラッシュ）の抜けを直す。6.4 に版の番号とリリースの段階の対応を記入。使う人の説明の「家族」を「利用者」に（#204） |
+| 0.12 | 2026-11-12 | 2.3 にアプリとサーバーの中の作りの図と、同期の流れの図を追加（#206） |
