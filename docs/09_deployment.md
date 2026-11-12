@@ -199,7 +199,7 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 - Windows の記録の DB も、アプリ名で分かれる保存先に置く（drift の既定の「ドキュメント」には置かない）。ログインの情報と写真も同じ保存先にある
 - Android は別のアプリになるので、1台の端末に両方を入れられる
 - 撮影など、開発版を速く動かしたいときは profile で動かす（release は配布版になる）
-- Windows の開発版のインストーラーは、`flutter build windows --profile` の後に `ISCC.exe /DDev /DAppVersion=<版> windowsinstallermeowscope.iss` で作る。別の AppId・名前「MeowScope Dev」・別のフォルダー（`%LOCALAPPDATA%ProgramsMeowScope Dev`）になり、配布版を上書きしない。アプリの更新（6.4）を開発版で確かめるときに使う
+- Windows の開発版のインストーラーは、`flutter build windows --profile` の後に `ISCC.exe /DDev /DAppVersion=<版> windows\installer\meowscope.iss` で作る。別の AppId・名前「MeowScope Dev」・別のフォルダー（`%LOCALAPPDATA%\Programs\MeowScope Dev`）になり、配布版を上書きしない。アプリの更新（6.4）を開発版で確かめるときに使う
 
 ### 6.4 アプリの更新を出す（Ver.1.1）
 
@@ -207,7 +207,7 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 
 | 項目 | 内容 |
 |---|---|
-| 版の番号 | `app/pubspec.yaml` の `version` を上げる。ビルド番号（`+` の後）は出すたびに必ず1つ上げる（BR-34） |
+| 版の番号 | `app/pubspec.yaml` の `version` を上げる。ビルド番号（`+` の後）は出すたびに必ず1つ上げる（BR-34）。前の2つの数字はリリースの段階（Ver.1.1 なら 1.1）に合わせ、最後の数字は不具合の修正だけで上げる |
 | 作るもの | 6.1 の APK と 6.2 のインストーラー（サーバーの URL と版の番号が入る） |
 | 版の情報 | `release.json`（`version`・`buildNumber`・`sha256`・`sizeBytes`）。作るときにスクリプトが計算する |
 | 置き場所 | サーバーのボリューム `releases-data`（`/data/releases/<android か windows>/`）。ファイルの名前は `meowscope.apk`・`meowscope-setup.exe`（API 設計書 10章）。開発（`bootRun`）では `server/data/releases/`。版の情報とファイルを1組だけ置き、新しい版で上書きする |
@@ -218,7 +218,7 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 手順（Git Bash で、リポジトリの直下から）：
 
 0. 初めて AWS に出すときは、`terraform apply` で中継の S3 バケットと EC2 の読み取り権限を足す（EC2 は作り直さない。引数は 5.2 と同じ）
-1. `app/pubspec.yaml` の `version` を上げてコミットする（例：`1.0.1+3` → `1.0.2+4`）
+1. `app/pubspec.yaml` の `version` を上げてコミットする（例：`1.1.0+5` → `1.1.1+6`）
 2. 開発版で更新の流れを確かめる：開発版を開発用のサーバーに置く（`deploy/place-release.sh android <release.json とファイルのフォルダー>`）
 3. 配布版を作って置く：`CONTACT_EMAIL=<問い合わせ先> deploy/publish-release.sh <android か windows> <aws か pc>`。`pc` のときは `API_BASE_URL` も渡す。Windows は、ビルドの間だけ開発者モードをオンにする
 4. スクリプトは、作る → `release.json` を作る → 置く → サーバーから見えるファイルの SHA-256 が合うかを確かめる、まで行い、手元と S3 の中継のファイルを消す。最後に、アプリの設定の「更新を確かめる」で新しい版が知らされることを確かめる
@@ -254,3 +254,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.8 | 2026-11-12 | 6.4 に端末での入れ方を追加（#182） |
 | 0.9 | 2026-11-12 | 6.4 に版を作って置く手順とスクリプト、S3 の中継の設定を追加（#184） |
 | 0.10 | 2026-11-12 | 6.3 に Windows の開発版のインストーラー（/DDev）を追加（#186） |
+| 0.11 | 2026-11-12 | 6.3 のパスの区切り（バックスラッシュ）の抜けを直す。6.4 に版の番号とリリースの段階の対応を記入（#204） |
