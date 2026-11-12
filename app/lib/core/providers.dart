@@ -19,6 +19,7 @@ import '../features/photos/data/photo_picker.dart';
 import '../features/photos/data/photo_repository.dart';
 import '../features/settings/data/settings_repository.dart';
 import '../features/sync/data/sync_engine.dart';
+import '../features/update/update_providers.dart';
 import '../features/widget/data/widget_button_repository.dart';
 import 'api/api_client.dart';
 import 'logging/app_log.dart';
@@ -125,7 +126,12 @@ final accountRepositoryProvider = Provider<AccountRepository>(
 
 /// 端末のログ（ログ設計書 8章）
 final appLogProvider = Provider<AppLog>(
-  (ref) => AppLog(ref.watch(databaseProvider)),
+  (ref) => AppLog(
+    ref.watch(databaseProvider),
+    // 画面に出す版と同じものを使う（F-UP-03）
+    version: () async =>
+        (await ref.read(installedVersionProvider.future)).version,
+  ),
 );
 
 /// 問い合わせ用のログをファイルに保存し、保存した場所を返す（S-06）。テストでは差し替える

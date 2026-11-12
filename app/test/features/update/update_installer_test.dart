@@ -146,6 +146,26 @@ void main() {
     });
   });
 
+  group('UT-UP-11 Windows：DB を閉じてから終える（#190）', () {
+    test('閉じてから終了コード 0 で終える', () async {
+      final calls = <String>[];
+      await closeThenExit(
+        () async => calls.add('close'),
+        (code) => calls.add('exit $code'),
+      );
+      expect(calls, ['close', 'exit 0']);
+    });
+
+    test('閉じられなくても終える', () async {
+      final calls = <String>[];
+      await closeThenExit(
+        () async => throw StateError('x'),
+        (code) => calls.add('exit $code'),
+      );
+      expect(calls, ['exit 0']);
+    });
+  });
+
   group('UT-UP-10 起動したときの片付け（BR-33）', () {
     test('残っている更新のファイルを消す。なければ何もしない', () async {
       await deleteUpdateFiles(dir);

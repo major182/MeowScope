@@ -150,7 +150,10 @@ Future<void> launchAndroidInstaller(File file) async {
 
 /// Windows：インストーラーを確認なしのモードで動かし、アプリを閉じる。
 /// インストーラーが入れ終わった後にアプリを開き直す（meowscope.iss の [Run]）
-Future<void> launchWindowsInstaller(File file) async {
+Future<void> launchWindowsInstaller(
+  File file, {
+  required Future<void> Function() closeDatabase,
+}) async {
   await Process.start(file.path, const [
     '/VERYSILENT',
     '/SUPPRESSMSGBOXES',
@@ -158,7 +161,22 @@ Future<void> launchWindowsInstaller(File file) async {
     // 閉じきっていないアプリを、インストーラーが閉じてから入れる
     '/CLOSEAPPLICATIONS',
   ], mode: ProcessStartMode.detached);
-  exit(0);
+  await closeThenExit(closeDatabase, exit);
+}
+
+/// 端末の DB を閉じてから、アプリを終える。閉じられなくても終える（更新を止めない）
+///
+/// SQLite は途中で終えても壊れない作りだが、書きかけを確定させてから終えるほうが丁寧
+Future<void> closeThenExit(
+  Future<void> Function() closeDatabase,
+  void Function(int code) exitApp,
+) async {
+  try {
+    await closeDatabase();
+  } on Object {
+    // 閉じられなくても更新は続ける
+  }
+  exitApp(0);
 }
 
 /// 端末に合った部品を作る
@@ -168,6 +186,11 @@ UpdateInstaller createUpdateInstaller(Ref ref) {
     api: ref.watch(apiClientProvider),
     platform: windows ? 'windows' : 'android',
     directory: updateDirectory,
-    launch: windows ? launchWindowsInstaller : launchAndroidInstaller,
+    launch: windows
+        ? (file) => launchWindowsInstaller(
+            file,
+            closeDatabase: () => ref.read(databaseProvider).close(),
+          )
+        : launchAndroidInstaller,
   );
 }
