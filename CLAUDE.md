@@ -123,7 +123,7 @@ cd server; .\gradlew bootRun # 開発用の設定（人が読めるログ）で�
 cd app; flutter run -d windows
 ```
 
-問い合わせ先は `--dart-define=CONTACT_EMAIL=...`、アプリの版は `--dart-define=APP_VERSION=...` で渡す（リポジトリには書かない）。
+問い合わせ先は `--dart-define=CONTACT_EMAIL=...` で渡す（リポジトリには書かない）。アプリの版は `app/pubspec.yaml` の `version` だけで決まる（画面にもログにも同じ版が出る）。
 
 アプリがつなぐサーバーは `--dart-define=API_BASE_URL=...` で変える（既定は `http://localhost:8080/api/v1`。Android のエミュレーターからは `http://10.0.2.2:8080/api/v1`）。`bootRun` では `DB_PASSWORD` と `JWT_SECRET` を `.env` と同じ値で環境変数に入れる。
 

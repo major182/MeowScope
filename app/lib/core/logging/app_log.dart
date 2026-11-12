@@ -6,8 +6,8 @@ import 'package:flutter/foundation.dart';
 
 import '../db/app_database.dart';
 
-/// アプリの版。ビルドのときに `--dart-define=APP_VERSION=...` で渡す
-const appVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.0.0');
+/// 版が読めないときにログに書く値
+const unknownVersion = 'unknown';
 
 /// 端末のログ（F-LG-03、F-LG-04、ログ設計書 8章）
 ///
@@ -15,11 +15,27 @@ const appVersion = String.fromEnvironment('APP_VERSION', defaultValue: '1.0.0');
 /// - 最新の [maxStored] 件まで持ち、古いものから消す。サーバーが止まっていても端末の動作を妨げない
 /// - 出さない情報を守る：メールアドレスに見える文字列を伏せ、記録の内容は書かない（呼ぶ側で種類と ID だけを渡す）
 class AppLog {
-  AppLog(this._db, {DateTime Function()? clock})
-    : _clock = clock ?? DateTime.now;
+  AppLog(
+    this._db, {
+    DateTime Function()? clock,
+    Future<String> Function()? version,
+  }) : _clock = clock ?? DateTime.now,
+       _version = version ?? (() async => unknownVersion);
 
   final AppDatabase _db;
   final DateTime Function() _clock;
+
+  /// 今の版（画面と同じ pubspec.yaml の版。F-UP-03）。版の出どころを1つにするため外から渡す
+  final Future<String> Function() _version;
+
+  /// 版を読む。読めなくてもログの書き出し・送信は止めない
+  Future<String> _readVersion() async {
+    try {
+      return await _version();
+    } on Object {
+      return unknownVersion;
+    }
+  }
 
   static const maxStored = 1000;
   static const maxMessage = 2000;
@@ -68,8 +84,9 @@ class AppLog {
     final rows = await (_db.select(
       _db.clientLogs,
     )..orderBy([(l) => OrderingTerm.asc(l.seq)])).get();
+    final version = await _readVersion();
     final header =
-        'MeowScope $appVersion / ${_platform()} / ${Platform.operatingSystemVersion}';
+        'MeowScope $version / ${_platform()} / ${Platform.operatingSystemVersion}';
     return [
       header,
       for (final r in rows)
@@ -81,6 +98,7 @@ class AppLog {
   /// 送っていないログをサーバーへ送る。送れたものは消す。失敗しても例外は投げない
   Future<void> send(Dio api) async {
     try {
+      final version = await _readVersion();
       while (true) {
         final rows =
             await (_db.select(_db.clientLogs)
@@ -100,7 +118,7 @@ class AppLog {
                   'message': r.message,
                   'occurredAt': r.occurredAt.toUtc().toIso8601String(),
                   'platform': _platform(),
-                  'appVersion': appVersion,
+                  'appVersion': version,
                   'osVersion': _osVersion(),
                   'requestId': r.requestId,
                 },

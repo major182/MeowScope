@@ -89,6 +89,21 @@ void main() {
     expect(lines[2], '2026-11-03T10:00:00.000Z [info] 二つ目');
   });
 
+  test('UT-LO-17 版は画面と同じ出どころから読み、読めなければ unknown（#190）', () async {
+    server.on('POST', '/client-logs', (r) => const FakeResponse(204));
+    final withVersion = AppLog(db, version: () async => '1.0.2');
+    await withVersion.record('info', 'a');
+    expect(await withVersion.exportText(), startsWith('MeowScope 1.0.2 / '));
+    await withVersion.send(fakeApiClient(server, tokens));
+    final sent =
+        ((server.sentTo('/client-logs').last.data as Map)['logs'] as List).first
+            as Map;
+    expect(sent['appVersion'], '1.0.2');
+
+    final broken = AppLog(db, version: () async => throw Exception('no'));
+    expect(await broken.exportText(), startsWith('MeowScope unknown / '));
+  });
+
   group('同期と一緒に', () {
     late ProviderContainer container;
 

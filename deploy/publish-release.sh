@@ -33,7 +33,7 @@ if [[ $TARGET == aws ]]; then
 else
   : "${API_BASE_URL:?pc のときは API_BASE_URL を渡してください}"
 fi
-DEFINES=(--dart-define=API_BASE_URL="$API_BASE_URL" --dart-define=APP_VERSION="$VERSION")
+DEFINES=(--dart-define=API_BASE_URL="$API_BASE_URL")
 [[ -n ${CONTACT_EMAIL:-} ]] && DEFINES+=(--dart-define=CONTACT_EMAIL="$CONTACT_EMAIL")
 
 # 1. 作る（配布版＝release。デプロイ設計書 6.1・6.2）
