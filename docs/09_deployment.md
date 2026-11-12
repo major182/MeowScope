@@ -20,7 +20,7 @@
 |---|---|---|
 | 進め方 | A. AWS に置く → B. PC へ移す → AWS を消す | 要件定義書 C-04・C-05 |
 | AWS に置く期間 | 開始と終了は利用者が合図する（日数は決めない） | 課題の確認の日程に合わせる |
-| AWS で使う人 | 開発者1人（Android と Windows） | 家族は PC へ移した後に使い始める |
+| AWS で使う人 | 開発者1人（Android と Windows） | ほかの利用者は PC へ移した後に使い始める |
 | サーバー | EC2（t3.small）1台で、`compose.yaml` をそのまま動かす | 技術選定書。PC と同じ構成で移しやすい |
 | HTTPS | Caddy 2.11.9 で証明書を自動で取る。名前は **sslip.io**（IP アドレスから名前を作る無料のサービス） | ドメインを買わずに正式な証明書を使える |
 | サーバーへの入り方 | セッションマネージャーだけ。SSH は開けない | 鍵を持たず、受けるポートを減らす |
@@ -74,7 +74,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  phone["家族の端末<br>Tailscale"] -- "HTTPS（tailnet の中だけ）" --> ts
+  phone["利用者の端末<br>Tailscale"] -- "HTTPS（tailnet の中だけ）" --> ts
   subgraph pc ["開発者の PC（Docker Desktop）"]
     ts["tailscale serve"] -- "127.0.0.1:8080" --> server["Spring Boot"]
     server --> db[("PostgreSQL 18.6")]
@@ -86,7 +86,7 @@ flowchart LR
 - `deploy/compose.pc.yaml` を重ね、サーバーの 8080 を `127.0.0.1` だけで受ける（LAN に出さない）
 - `tailscale serve` が tailnet の中だけに HTTPS で出す。証明書は Tailscale が用意する
 - サーバーの URL は `https://<PC の名前>.<tailnet>.ts.net/api/v1`。確かめ方は `tailscale status`
-- 家族の端末に Tailscale を入れ、同じ tailnet に招く
+- 利用者の端末に Tailscale を入れ、同じ tailnet に招く
 - PC が止まっている間は、アプリは端末に記録し、PC が動いたら同期する（F-OF-02）
 
 ## 3. 費用（A. AWS）
@@ -163,7 +163,7 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 2. AWS でバックアップを取り、PC に持ってくる（S3 は使わず、セッションマネージャーのポート転送で取る）
 3. PC で `deploy/compose.pc.yaml` を重ねて立て、ダンプと写真を戻す。件数が AWS と合うことを確かめる
 4. PC の URL でアプリを作り直し、入れ直す（同じ署名の鍵なので、端末のデータは残る）
-5. 家族の端末に Tailscale とアプリを入れる
+5. 利用者の端末に Tailscale とアプリを入れる
 6. タスクスケジューラーにバックアップを登録する
 7. 数日使って問題がなければ、7章で AWS を消す
 
@@ -199,7 +199,7 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 - Windows の記録の DB も、アプリ名で分かれる保存先に置く（drift の既定の「ドキュメント」には置かない）。ログインの情報と写真も同じ保存先にある
 - Android は別のアプリになるので、1台の端末に両方を入れられる
 - 撮影など、開発版を速く動かしたいときは profile で動かす（release は配布版になる）
-- Windows の開発版のインストーラーは、`flutter build windows --profile` の後に `ISCC.exe /DDev /DAppVersion=<版> windowsinstallermeowscope.iss` で作る。別の AppId・名前「MeowScope Dev」・別のフォルダー（`%LOCALAPPDATA%ProgramsMeowScope Dev`）になり、配布版を上書きしない。アプリの更新（6.4）を開発版で確かめるときに使う
+- Windows の開発版のインストーラーは、`flutter build windows --profile` の後に `ISCC.exe /DDev /DAppVersion=<版> windows\installer\meowscope.iss` で作る。別の AppId・名前「MeowScope Dev」・別のフォルダー（`%LOCALAPPDATA%\Programs\MeowScope Dev`）になり、配布版を上書きしない。アプリの更新（6.4）を開発版で確かめるときに使う
 
 ### 6.4 アプリの更新を出す（Ver.1.1）
 
@@ -207,7 +207,7 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 
 | 項目 | 内容 |
 |---|---|
-| 版の番号 | `app/pubspec.yaml` の `version` を上げる。ビルド番号（`+` の後）は出すたびに必ず1つ上げる（BR-34） |
+| 版の番号 | `app/pubspec.yaml` の `version` を上げる。ビルド番号（`+` の後）は出すたびに必ず1つ上げる（BR-34）。前の2つの数字はリリースの段階（Ver.1.1 なら 1.1）に合わせ、最後の数字は不具合の修正だけで上げる |
 | 作るもの | 6.1 の APK と 6.2 のインストーラー（サーバーの URL と版の番号が入る） |
 | 版の情報 | `release.json`（`version`・`buildNumber`・`sha256`・`sizeBytes`）。作るときにスクリプトが計算する |
 | 置き場所 | サーバーのボリューム `releases-data`（`/data/releases/<android か windows>/`）。ファイルの名前は `meowscope.apk`・`meowscope-setup.exe`（API 設計書 10章）。開発（`bootRun`）では `server/data/releases/`。版の情報とファイルを1組だけ置き、新しい版で上書きする |
@@ -218,7 +218,7 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 手順（Git Bash で、リポジトリの直下から）：
 
 0. 初めて AWS に出すときは、`terraform apply` で中継の S3 バケットと EC2 の読み取り権限を足す（EC2 は作り直さない。引数は 5.2 と同じ）
-1. `app/pubspec.yaml` の `version` を上げてコミットする（例：`1.0.1+3` → `1.0.2+4`）
+1. `app/pubspec.yaml` の `version` を上げてコミットする（例：`1.1.0+5` → `1.1.1+6`）
 2. 開発版で更新の流れを確かめる：開発版を開発用のサーバーに置く（`deploy/place-release.sh android <release.json とファイルのフォルダー>`）
 3. 配布版を作って置く：`CONTACT_EMAIL=<問い合わせ先> deploy/publish-release.sh <android か windows> <aws か pc>`。`pc` のときは `API_BASE_URL` も渡す。Windows は、ビルドの間だけ開発者モードをオンにする
 4. スクリプトは、作る → `release.json` を作る → 置く → サーバーから見えるファイルの SHA-256 が合うかを確かめる、まで行い、手元と S3 の中継のファイルを消す。最後に、アプリの設定の「更新を確かめる」で新しい版が知らされることを確かめる
@@ -254,3 +254,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.8 | 2026-11-12 | 6.4 に端末での入れ方を追加（#182） |
 | 0.9 | 2026-11-12 | 6.4 に版を作って置く手順とスクリプト、S3 の中継の設定を追加（#184） |
 | 0.10 | 2026-11-12 | 6.3 に Windows の開発版のインストーラー（/DDev）を追加（#186） |
+| 0.11 | 2026-11-12 | 6.3 のパスの区切り（バックスラッシュ）の抜けを直す。6.4 に版の番号とリリースの段階の対応を記入。使う人の説明の「家族」を「利用者」に（#204） |
