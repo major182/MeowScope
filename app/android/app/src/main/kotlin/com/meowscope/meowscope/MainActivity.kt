@@ -2,6 +2,7 @@ package com.meowscope.meowscope
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.core.content.FileProvider
 import io.flutter.embedding.android.FlutterActivity
@@ -27,7 +28,11 @@ class MainActivity : FlutterActivity() {
                 try {
                     // 初めてのときは、先に「この提供元のアプリを許可」の画面を出す。OS の案内から許可すると
                     // インストールに戻らずこのアプリに戻ってしまうため、許可を済ませてから Dart の側でもう一度呼ぶ
-                    if (!packageManager.canRequestPackageInstalls()) {
+                    // Android 8.0 より前は、この許可がない（OS のインストールの画面が自分で求める。#198）
+                    if (UpdatePermission.needsPermissionScreen(Build.VERSION.SDK_INT) {
+                            packageManager.canRequestPackageInstalls()
+                        }
+                    ) {
                         startActivity(
                             Intent(
                                 Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
@@ -45,8 +50,9 @@ class MainActivity : FlutterActivity() {
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     startActivity(intent)
                     result.success("started")
-                } catch (e: Exception) {
-                    // 渡せないときは Dart の側で「取ってこられなかった」と同じ案内を出す
+                } catch (e: Throwable) {
+                    // 渡せないときは Dart の側で「取ってこられなかった」と同じ案内を出す。
+                    // 端末にない関数を呼んだとき（Error）もアプリを落とさない（#198）
                     result.error("launch_failed", e.javaClass.simpleName, null)
                 }
             }
