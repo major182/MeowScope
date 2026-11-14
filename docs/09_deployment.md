@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 09 |
-| 版数 | 0.15 |
+| 版数 | 0.16 |
 | 作成日 | 2026-11-11 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md)、[07 ログ設計書](07_logging-design.md)、[08 性能テスト設計書](08_performance-test.md) |
@@ -259,7 +259,9 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 ### 6.1 Android
 
 - 署名の鍵は `keytool` で作り、リポジトリの外（`%USERPROFILE%\.meowscope\`）に置く。鍵のパスワードは利用者のパスワードの管理の道具に残す。鍵をなくすと、同じアプリとして上書きできなくなる
-- `app/android/key.properties`（`.gitignore` に入っている）で鍵の場所を渡し、`build.gradle.kts` は、それがあれば release の署名に使う（なければ今のとおり debug の鍵）。中身は `storeFile`（鍵のファイルの場所）・`storePassword`・`keyAlias`・`keyPassword` の4行
+- `app/android/key.properties`（`.gitignore` に入っている）で鍵の場所を渡し、`build.gradle.kts` は、それを release の署名に使う。中身は `storeFile`（鍵のファイルの場所）・`storePassword`・`keyAlias`・`keyPassword` の4行
+- 4行のどれかがない（ファイルがないときを含む）と、release のビルドは「配布版のビルドには配布用の署名の鍵が要ります」と出して止まる（NF-SC-12）。開発用の鍵で作った版を配ると、正しい鍵の版で上書きできなくなるため。debug・profile・テスト・CI（鍵を置かない）のビルドは止まらない。`flutter run --release` も鍵が要る
+- アプリのデータ（記録の DB・写真・ログインの情報）は、OS のバックアップ（Google のバックアップ・`adb backup`）と端末間の移行に出さない（NF-SC-10）。Android 11 以前は `AndroidManifest.xml` の `android:allowBackup="false"`、12 以降は `res/xml/data_extraction_rules.xml` で外す。端末を替えたときは、新しい端末でログインして同期で戻す（古い端末で送れていない記録は戻らないので、替える前に同期を済ませる）
 - 署名の確かめ方：`apksigner verify --print-certs build/app/outputs/flutter-apk/app-release.apk`（Android SDK の build-tools にある）
 - `flutter build apk --release --dart-define=API_BASE_URL=<サーバーの URL>`
 - `adb install -r` か、ファイルを端末に送って入れる
@@ -349,3 +351,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.13 | 2026-11-14 | PC の Docker で本番（`meowscope`）と開発（`meowscope-dev`）を分ける（#217）。1章・2.2・6.3 に名前・置き場所・ポート（本番 18080）を、2.2 に普段使いの PC での止まり方を、4章に PC の置き場所（物理的に別のディスク）と眠っていたときの扱いを追記。5.5 を準備と切り替え（VPN）の2段階に。6.4 の版の上げ方を BR-34 に合わせる |
 | 0.14 | 2026-11-14 | 5.5 に、PC へ戻したとき（#217）に分かったことを追記（#219）：AWS と同じイメージの版で立てる、ポート転送での取り方、DB と写真の戻し方と写真の持ち主の直し方、タスクスケジューラーの設定、Docker Desktop の自動起動、切り替えのときの戻し直し方 |
 | 0.15 | 2026-11-14 | 2.2・5.5 に Tailscale のアクセス制御（メンバーの端末から PC の 443 だけを許可。PC にタグを付けない理由）と、つながらないときの確かめ方を追記（#223） |
+| 0.16 | 2026-11-14 | 6.1 に、鍵のない release のビルドを止めること（NF-SC-12）と、OS のバックアップから外すこと（NF-SC-10）を追記（#229） |
