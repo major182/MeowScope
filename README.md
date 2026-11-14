@@ -4,7 +4,7 @@
 
 - 本リポジトリは、猫の体調管理アプリ「MeowScope」に関するものです
 - 利用者は開発者に限っており、一般公開はしていません（[利用方法](#利用方法)）
-- Ver.1.1 までの実装とテスト（単体・結合・E2E・性能）を終え、AWS で動かして利用者の端末でのみ使用が可能な段階です
+- Ver.1.1 までの実装とテスト（単体・結合・E2E・性能）を終え、開発者の PC のサーバー（Tailscale の VPN の中だけ）で動かして利用者の端末でのみ使用が可能な段階です
 
 ## コンセプト
 
@@ -45,7 +45,7 @@ https://github.com/user-attachments/assets/7acddb0e-6e1f-4e3b-93d7-d9336a7e906b
 | Android のウィジェット | Kotlin、home_widget |
 | サーバー | Java 25、Spring Boot 4.1.2（Spring Security、Flyway） |
 | データベース | PostgreSQL 18.6 |
-| インフラ | Docker Compose。AWS EC2（Caddy で HTTPS）で動作を確かめた後、開発者の PC の Docker（Tailscale でつなぐ）へ移す |
+| インフラ | Docker Compose。開発者の PC の Docker Desktop で動かし、Tailscale の VPN の中だけに HTTPS で出す。AWS EC2（Caddy で HTTPS）で動作を確かめた後に移した（AWS の環境は消した） |
 | CI | GitHub Actions（静的チェック・テスト・カバレッジ・OSV-Scanner による脆弱性検査） |
 | テスト | 単体・結合（Testcontainers）・E2E（integration_test）・性能（k6） |
 
