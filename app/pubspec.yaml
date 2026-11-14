@@ -55,6 +55,8 @@ dependencies:
   home_widget: 0.10.0
   flutter_local_notifications: 22.3.3
   timezone: 0.11.2
+  # 日付の選択の週の始まりを差し替えるため、日本語の日付の書式を作る（F-VW-04）
+  intl: 0.20.3
 
 dev_dependencies:
   flutter_test:
