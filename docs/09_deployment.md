@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 09 |
-| 版数 | 0.12 |
+| 版数 | 0.13 |
 | 作成日 | 2026-11-11 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md)、[07 ログ設計書](07_logging-design.md)、[08 性能テスト設計書](08_performance-test.md) |
@@ -29,6 +29,8 @@
 | 自動デプロイ | 行わない。更新は手で1つのコマンド（5.3） | 使う期間が短く、使う人も1人 |
 | バックアップ | 毎日 DB のダンプと写真を固め、7世代を残す（NF-BK-01）。AWS と PC で同じスクリプト | 4章 |
 | PC での接続 | Tailscale の `tailscale serve` で、tailnet の中だけに HTTPS で出す | サーバーをインターネットに公開しない（C-08） |
+| PC の本番と開発 | 同じ PC の Docker で、名前（本番 `meowscope`・開発 `meowscope-dev`）・ボリューム・ポートを分ける。本番は開発の作業フォルダーとは別のフォルダー（例：`C:\Major182\MeowScope`）に置く（6.3） | データが混ざらず、名前で見分けて取り違えて操作しない。開発のブランチの切り替えやビルドが本番に及ばない |
+| PC の本番のサーバー | AWS と同じ GHCR のイメージを使う | 開発のビルドに左右されない。将来の一般公開で外部のサーバーへ戻すときも同じ形で済む |
 | Android の配布 | 署名した APK を、開発者の手で端末に入れる | 一般公開しない。署名の鍵は PC の外に出さない |
 | Windows の配布 | Inno Setup 6.7.3 でインストーラーにする。署名はしない（技術選定書 5章） | 署名がなくても作れる。SmartScreen の警告は「詳細情報」→「実行」で進める |
 | 公開の範囲 | APK・インストーラーは GitHub Releases に置かない | サーバーの URL（IP アドレスや tailnet の名前）がアプリに入るため |
@@ -76,14 +78,16 @@ flowchart LR
 flowchart LR
   phone["利用者の端末<br>Tailscale"] -- "HTTPS（tailnet の中だけ）" --> ts
   subgraph pc ["開発者の PC（Docker Desktop）"]
-    ts["tailscale serve"] -- "127.0.0.1:8080" --> server["Spring Boot"]
+    ts["tailscale serve"] -- "127.0.0.1:18080" --> server["Spring Boot"]
     server --> db[("PostgreSQL 18.6")]
     server --> photos[("写真のボリューム")]
     task["タスクスケジューラー：毎日のバックアップ"] --> backup[("バックアップのフォルダー<br>7世代")]
   end
 ```
 
-- `deploy/compose.pc.yaml` を重ね、サーバーの 8080 を `127.0.0.1` だけで受ける（LAN に出さない）
+- `deploy/compose.pc.yaml` を重ね、サーバーを `127.0.0.1:18080` だけで受ける（LAN に出さない。開発用の 8080・5432 とぶつけない）。DB は外に出さない
+- 本番のフォルダーの `.env` に `COMPOSE_PATH_SEPARATOR=;` と `COMPOSE_FILE=compose.yaml;deploy/compose.pc.yaml` を書き、そのフォルダーでは `docker compose` だけで本番を操作できるようにする（重ねるファイルの指定の付け忘れを起こさない）
+- PC はサーバー専用ではなく普段使いの PC なので、スリープ・OS の更新による再起動・サインインの前は、サーバーが止まる。Docker Desktop の「サインインしたときに起動」をオンにし、コンテナは `restart: unless-stopped` で戻す。止まっている間もアプリは端末に記録し、動いたら同期する（F-OF-02）
 - `tailscale serve` が tailnet の中だけに HTTPS で出す。証明書は Tailscale が用意する
 - サーバーの URL は `https://<PC の名前>.<tailnet>.ts.net/api/v1`。確かめ方は `tailscale status`
 - 利用者の端末に Tailscale を入れ、同じ tailnet に招く
@@ -173,11 +177,12 @@ sequenceDiagram
 | DB | `docker compose exec db pg_dump -Fc` で1つのファイルに |
 | 写真 | 写真のボリュームを tar.gz に固める |
 | 残す数 | 7世代。古いものから消す |
-| 置き場所 | AWS：EC2 のディスクの `/var/backups/meowscope`。PC：PC の外付けか、別のディスクのフォルダー（利用者が決める） |
-| 失敗したとき | 終了コードと件数をログに残す（AWS は `/var/log/meowscope-backup.log`）。途中で失敗したファイルは世代に数えない |
+| 置き場所 | AWS：EC2 のディスクの `/var/backups/meowscope`。PC：C ドライブとは物理的に別のディスク（例：`G:\MeowScopeBackup`。パスはタスクの引数で渡し、リポジトリには書かない） |
+| 失敗したとき | 終了コードと件数をログに残す（AWS は `/var/log/meowscope-backup.log`、PC は置き場所の `backup.log`）。途中で失敗したファイルは世代に数えない |
+| PC が眠っていたとき | タスクスケジューラーの「スケジュールされた時刻にタスクを開始できなかった場合、すぐにタスクを実行する」をオンにし、起きた後に動かす。夜中に PC を起こさない。Docker が動いていなければ失敗をログに残し、次の回に任せる |
 | 復元の確認 | 作った日に一度、別のコンテナの PostgreSQL に戻し、利用者・猫・記録の件数と写真の数が元と合うかを確かめる（`deploy/restore-check.sh`）。PC へ移すときの手順も、これと同じ |
 
-- 置き場所は引数（`deploy/backup.sh <置き場所>`）か環境変数 `BACKUP_DIR` で渡す。AWS では EC2 の初期設定が cron（`/etc/cron.d/meowscope-backup`）を登録する
+- 置き場所は引数（`deploy/backup.sh <置き場所>`）か環境変数 `BACKUP_DIR` で渡す。AWS では EC2 の初期設定が cron（`/etc/cron.d/meowscope-backup`）を登録する。PC では、本番のフォルダーにあるスクリプトを動かす（`.env` の `COMPOSE_FILE` で本番を指すため。開発の作業フォルダーから動かすと開発用を固める）
 - 2つのスクリプトは CI（`deploy` のジョブ）で、開発用の compose に対して動かして確かめる
 
 AWS のバックアップは EC2 のディスクの中だけにある。AWS を使う期間は短く、PC へ移すときに最新のダンプを持ち出すので、別の場所への写しはしない。
@@ -218,13 +223,23 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 
 ### 5.5 B. PC へ移す
 
-1. PC に Tailscale を入れ、`tailscale serve` を設定する
-2. AWS でバックアップを取り、PC に持ってくる（S3 は使わず、セッションマネージャーのポート転送で取る）
-3. PC で `deploy/compose.pc.yaml` を重ねて立て、ダンプと写真を戻す。件数が AWS と合うことを確かめる
-4. PC の URL でアプリを作り直し、入れ直す（同じ署名の鍵なので、端末のデータは残る）
-5. 利用者の端末に Tailscale とアプリを入れる
-6. タスクスケジューラーにバックアップを登録する
-7. 数日使って問題がなければ、7章で AWS を消す
+2つの段階に分ける。準備の間、アプリは AWS を使い続ける。
+
+**準備（PC に本番を立てて確かめる）**
+
+1. 開発用のコンテナを止め、名前を分ける前の古いボリューム（`meowscope_*`）を消す。残すと、本番が開発のデータを使ってしまう。開発用は `docker compose up -d` で `meowscope-dev` として立て直す（開発のデータは消えてよい）
+2. 本番のフォルダーにリポジトリを取り、`.env` を作る（`COMPOSE_FILE`・`SERVER_IMAGE_TAG`・DB のパスワード・JWT の鍵・メール。AWS のパラメーターストアと同じ値にし、画面に出さない）
+3. AWS でバックアップを取り、PC に持ってくる（S3 は使わず、セッションマネージャーのポート転送で取る）
+4. 本番を立て、ダンプと写真を戻す。件数が AWS と合うことを確かめる
+5. タスクスケジューラーにバックアップを登録し、できたバックアップで復元の確認（`deploy/restore-check.sh`）を通す
+
+**切り替え（VPN）**
+
+1. PC に Tailscale を入れ、`tailscale serve` で `127.0.0.1:18080` を tailnet の中へ出す
+2. AWS の最新のバックアップを取り直し、本番に戻し直す（準備の後に記録した分を含めるため）
+3. PC の URL でアプリを作り直し、入れ直す（同じ署名の鍵なので、端末のデータは残る）
+4. 利用者の端末に Tailscale とアプリを入れる
+5. 数日使って問題がなければ、7章で AWS を消す
 
 ## 6. アプリの配り方
 
@@ -254,6 +269,9 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | Windows のウィンドウの名前 | MeowScope | MeowScope Dev |
 | Android のアプリの ID | `com.meowscope.meowscope` | `com.meowscope.meowscope.dev` |
 | Android のホーム画面の名前 | MeowScope | MeowScope Dev |
+| PC の Docker の名前（コンテナ・ボリュームの頭に付く） | `meowscope`（`deploy/compose.pc.yaml`・`compose.aws.yaml` で上書き） | `meowscope-dev`（`compose.yaml` のまま） |
+| PC の Docker の置き場所 | 本番のフォルダー（例：`C:\Major182\MeowScope`） | 開発の作業フォルダー |
+| PC のサーバーのポート | `127.0.0.1:18080`（DB は出さない） | 8080・DB は `127.0.0.1:5432` |
 
 - Windows の記録の DB も、アプリ名で分かれる保存先に置く（drift の既定の「ドキュメント」には置かない）。ログインの情報と写真も同じ保存先にある
 - Android は別のアプリになるので、1台の端末に両方を入れられる
@@ -266,12 +284,12 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 
 | 項目 | 内容 |
 |---|---|
-| 版の番号 | `app/pubspec.yaml` の `version` を上げる。ビルド番号（`+` の後）は出すたびに必ず1つ上げる（BR-34）。前の2つの数字はリリースの段階（Ver.1.1 なら 1.1）に合わせ、最後の数字は不具合の修正だけで上げる |
+| 版の番号 | `app/pubspec.yaml` の `version` を上げる。ビルド番号（`+` の後）は出すたびに必ず1つ上げる（BR-34）。上げ方は BR-34（SemVer）に従い、要件定義書 2章のリリースの段階の番号にする |
 | 作るもの | 6.1 の APK と 6.2 のインストーラー（サーバーの URL と版の番号が入る） |
 | 版の情報 | `release.json`（`version`・`buildNumber`・`sha256`・`sizeBytes`）。作るときにスクリプトが計算する |
 | 置き場所 | サーバーのボリューム `releases-data`（`/data/releases/<android か windows>/`）。ファイルの名前は `meowscope.apk`・`meowscope-setup.exe`（API 設計書 10章）。開発（`bootRun`）では `server/data/releases/`。版の情報とファイルを1組だけ置き、新しい版で上書きする |
 | AWS へ届け方 | SSH を開けないので、非公開の S3 バケットを中継にする。手元から S3 に上げ、セッションマネージャーで EC2 に取らせてボリュームへ置く。バケットは Terraform で作り、EC2 のロールには読み取りだけを許す。`terraform destroy` で中身ごと消す |
-| PC へ届け方 | `docker compose cp` でボリュームへ置く |
+| PC へ届け方 | `docker compose cp` で本番（名前 `meowscope`）のボリュームへ置く。開発の作業フォルダーから動かすので、`-p meowscope` で本番を名前で指す |
 | 入れ方 | Android は OS のインストールの画面（REQUEST_INSTALL_PACKAGES、FileProvider）。Windows はインストーラーを `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS` で動かし、`meowscope.iss` の `[Run]`（`skipifnotsilent`）で開き直す |
 
 手順（Git Bash で、リポジトリの直下から）：
@@ -315,3 +333,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.10 | 2026-11-12 | 6.3 に Windows の開発版のインストーラー（/DDev）を追加（#186） |
 | 0.11 | 2026-11-12 | 6.3 のパスの区切り（バックスラッシュ）の抜けを直す。6.4 に版の番号とリリースの段階の対応を記入。使う人の説明の「家族」を「利用者」に（#204） |
 | 0.12 | 2026-11-12 | 2.3 にアプリとサーバーの中の作りの図と、同期の流れの図を追加（#206） |
+| 0.13 | 2026-11-14 | PC の Docker で本番（`meowscope`）と開発（`meowscope-dev`）を分ける（#217）。1章・2.2・6.3 に名前・置き場所・ポート（本番 18080）を、2.2 に普段使いの PC での止まり方を、4章に PC の置き場所（物理的に別のディスク）と眠っていたときの扱いを追記。5.5 を準備と切り替え（VPN）の2段階に。6.4 の版の上げ方を BR-34 に合わせる |

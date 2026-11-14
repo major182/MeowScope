@@ -88,6 +88,19 @@ jobs:
           docker compose -f compose.yaml -f deploy/compose.aws.yaml config --quiet
           # 外に出すのは Caddy の 80・443 だけ
           test "$(docker compose -f compose.yaml -f deploy/compose.aws.yaml config --format json | jq -c '[.services[] | .ports[]?.published] | sort')" = '["443","443","80"]'
+          # 本番の名前は meowscope（開発用の meowscope-dev と分ける。デプロイ設計書 6.3）
+          test "$(docker compose -f compose.yaml -f deploy/compose.aws.yaml config --format json | jq -r .name)" = meowscope
+          test "$(docker compose config --format json | jq -r .name)" = meowscope-dev
+      - name: compose の設定（PC 用の差分を重ねる）
+        env:
+          DB_PASSWORD: dummy
+          JWT_SECRET: dummy
+          SERVER_IMAGE_TAG: dummy
+        run: |
+          docker compose -f compose.yaml -f deploy/compose.pc.yaml config --quiet
+          # 名前は本番の meowscope。受けるのは PC の中（127.0.0.1）の 18080 だけで、DB は出さない
+          test "$(docker compose -f compose.yaml -f deploy/compose.pc.yaml config --format json | jq -r .name)" = meowscope
+          test "$(docker compose -f compose.yaml -f deploy/compose.pc.yaml config --format json | jq -c '[.services[] | .ports[]? | "\(.host_ip):\(.published)"]')" = '["127.0.0.1:18080"]'
       - name: シェルスクリプトの静的チェック
         run: shellcheck deploy/*.sh
       - name: バックアップと復元の確認（開発用の compose で動かす）

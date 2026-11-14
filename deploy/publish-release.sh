@@ -3,7 +3,7 @@
 #   使い方：deploy/publish-release.sh <android か windows> <aws か pc>
 #   - 先に app/pubspec.yaml の version を上げる（ビルド番号は必ず1つ上げる。BR-34）
 #   - aws：terraform output からサーバーの URL・中継の S3 バケット・EC2 を読み、S3 → セッションマネージャーで EC2 に置く
-#   - pc ：環境変数 API_BASE_URL（PC のサーバーの URL）を渡す。手元の Docker のボリュームに置く
+#   - pc ：環境変数 API_BASE_URL（PC のサーバーの URL）を渡す。手元の Docker の本番（名前 meowscope）のボリュームに置く
 #   - 問い合わせ先は環境変数 CONTACT_EMAIL で渡す（リポジトリには書かない）
 # バケットの名前や EC2 の ID は画面に出さない（公開リポジトリの Actions などに貼らないため）
 set -euo pipefail
@@ -65,7 +65,8 @@ echo "作りました：$(cat "$STAGE/release.json")"
 cd "$ROOT"
 if [[ $TARGET == pc ]]; then
   # bash で呼ぶ（実行の権限に頼らない）
-  bash deploy/place-release.sh "$PLATFORM" "$STAGE"
+  # 本番（名前 meowscope）のコンテナに置く。この作業フォルダーの compose は開発用（meowscope-dev）なので、名前で指す
+  bash deploy/place-release.sh "$PLATFORM" "$STAGE" -p meowscope
 else
   BUCKET=$(tf output -raw releases_bucket)
   INSTANCE=$(tf output -raw instance_id)

@@ -3,6 +3,9 @@
 # - サーバーは GHCR のイメージを使い、ここでは組み立てない
 # - 外から受けるのは Caddy の 80・443 だけ。サーバーの 8080 と DB の 5432 は外に出さない
 # - 相対パスは compose.yaml のある場所（リポジトリの直下）から数える
+# 名前は開発用の meowscope-dev を上書きし、本番の名前にする（デプロイ設計書 6.3）
+name: meowscope
+
 services:
   db:
     ports: !reset []

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # アプリの新しい版をサーバーのボリュームに置く（デプロイ設計書 6.4）。サーバーの動いている所（EC2・PC）で動かす
-#   使い方：deploy/place-release.sh <android か windows> <release.json とファイルのあるフォルダー> [compose の -f の指定…]
+#   使い方：deploy/place-release.sh <android か windows> <release.json とファイルのあるフォルダー> [compose の指定（-f・-p）…]
 #   例（EC2）：deploy/place-release.sh android /tmp/meowscope-release/android -f compose.yaml -f deploy/compose.aws.yaml
+#   例（PC の本番）：deploy/place-release.sh android <フォルダー> -p meowscope（開発用の meowscope-dev に置かないよう名前で指す）
 # ファイルを先に置き、版の情報を最後に置き換える（端末が新しい版の情報で古いファイルを取らないように）
 set -euo pipefail
 

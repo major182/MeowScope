@@ -118,7 +118,7 @@ gh pr checks <番号>                                        # ④ 実行 ID（r
 
 ```powershell
 Copy-Item .env.example .env   # 初回だけ。DB_PASSWORD を自分の値に書き換える
-docker compose up -d db       # DB だけを動かす（サーバーも Docker で動かすなら docker compose up -d --build）
+docker compose up -d db       # DB だけを動かす（サーバーも Docker で動かすなら docker compose up -d --build）。名前は開発用の meowscope-dev
 cd server; .\gradlew bootRun # 開発用の設定（人が読めるログ）で起動する。DB_PASSWORD は .env と同じ値を環境変数で渡す
 cd app; flutter run -d windows
 ```
@@ -133,6 +133,7 @@ cd app; flutter run -d windows
 
 - ツールが常駐プロセス（デーモン・開発サーバー）を持つ場合、**ブランチ切り替え前に止める**（Gradle デーモンがファイルを掴んだまま切り替えが失敗し、作業ツリーが壊れたことがある）
 - 環境変数は `.env`（コミットしない）から読む。見本は `.env.example`
+- 同じ PC に本番のサーバー（名前 `meowscope`、本番のフォルダー）も動いている。開発の作業フォルダーの `docker compose` は開発用（`meowscope-dev`）だけを操作する。本番を操作するのは、本番のフォルダーか `-p meowscope` を付けたときだけ（デプロイ設計書 6.3）
 - 改行コードは LF に統一（`.gitattributes`）。整形ツールの設定もこれに揃える
 
 ---

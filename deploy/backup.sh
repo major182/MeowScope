@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 毎日のバックアップ（デプロイ設計書 4章）。DB のダンプと写真を固め、新しいものから KEEP 世代を残す
-#   AWS：cron から root で動かす。PC：タスクスケジューラーから Git Bash で動かす
+#   AWS：cron から root で動かす。PC：タスクスケジューラーから Git Bash で、本番のフォルダー（.env の COMPOSE_FILE で本番を指す）にあるこのスクリプトを動かす
 #   使い方：deploy/backup.sh [置き場所]（既定は BACKUP_DIR、なければ /var/backups/meowscope）
 set -euo pipefail
 export MSYS_NO_PATHCONV=1 # Git Bash（PC）でコンテナの中のパスを書き換えさせない

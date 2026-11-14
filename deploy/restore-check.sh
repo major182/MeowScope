@@ -3,6 +3,7 @@
 # 別のコンテナの PostgreSQL にダンプを戻し、利用者・猫・記録の件数と写真の数が、動いている DB と写真に合うかを確かめる
 #   使い方：deploy/restore-check.sh [置き場所]（既定は BACKUP_DIR、なければ /var/backups/meowscope。いちばん新しい世代を使う）
 #   バックアップの後に記録が増えると合わなくなるので、バックアップの直後に動かす
+#   PC では本番のフォルダーにあるこのスクリプトを動かす（.env の COMPOSE_FILE で本番を指す。デプロイ設計書 4章）
 set -euo pipefail
 export MSYS_NO_PATHCONV=1 # Git Bash（PC）でコンテナの中のパスを書き換えさせない
 
