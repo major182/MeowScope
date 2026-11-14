@@ -1,0 +1,22 @@
+# PC の本番用の差分（デプロイ設計書 2.2）。compose.yaml に重ねて使う
+#   本番のフォルダー（例：C:\Major182\MeowScope）の .env に次の2行を書くと、docker compose だけで本番を操作できる
+#     COMPOSE_PATH_SEPARATOR=;
+#     COMPOSE_FILE=compose.yaml;deploy/compose.pc.yaml
+# - 名前を本番の meowscope にし、開発用（meowscope-dev）とコンテナ・ボリュームを分ける
+# - サーバーは GHCR のイメージを使い、ここでは組み立てない（開発のビルドに左右されない）
+# - サーバーは PC の中（127.0.0.1）の 18080 だけで受け、Tailscale が tailnet の中へ HTTPS で出す。
+#   開発用の 8080・5432 とぶつけない。DB は外に出さない
+name: meowscope
+
+services:
+  db:
+    ports: !reset []
+
+  server:
+    build: !reset null
+    image: ghcr.io/major182/meowscope-server:${SERVER_IMAGE_TAG:?SERVER_IMAGE_TAG を .env に書いてください}
+    ports: !override
+      - "127.0.0.1:18080:8080"
+    environment:
+      MEOWSCOPE_ENV: prod
+      MEOWSCOPE_VERSION: ${SERVER_IMAGE_TAG}

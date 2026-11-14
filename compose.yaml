@@ -1,6 +1,8 @@
 # DB とサーバーを動かす。AWS と PC で同じ定義を使う（技術選定書 3章）
 # 値は .env から読む（見本は .env.example）。開発で DB だけを動かすときは docker compose up -d db
-name: meowscope
+# このままでは開発用（名前 meowscope-dev。コンテナとボリュームの名前の頭に付く）。
+# 本番は deploy/compose.pc.yaml か deploy/compose.aws.yaml を重ね、名前を meowscope にする（デプロイ設計書 6.3）
+name: meowscope-dev
 
 # Docker のログは JSON のファイルに、10MB を5世代まで残す（ログ設計書 7章）
 x-logging: &logging
