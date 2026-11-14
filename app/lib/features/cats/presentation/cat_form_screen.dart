@@ -8,6 +8,8 @@ import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../../icons/icon_avatar.dart';
 import '../../icons/icon_repository.dart';
+import '../../../core/widgets/app_date_picker.dart';
+import '../../calendar/domain/calendar_month.dart';
 import '../../../core/widgets/confirm_delete.dart';
 import '../../household/data/household_repository.dart';
 import '../data/cat_repository.dart';
@@ -87,10 +89,11 @@ class _CatFormScreenState extends ConsumerState<CatFormScreen> {
     super.dispose();
   }
 
-  Future<void> _pickBirthDate() async {
+  Future<void> _pickBirthDate(WeekStart weekStart) async {
     final today = widget.today ?? DateTime.now();
-    final picked = await showDatePicker(
+    final picked = await showAppDatePicker(
       context: context,
+      weekStart: weekStart,
       initialDate: _birthDate ?? today,
       firstDate: DateTime(today.year - 40),
       // 未来の日付は選べない
@@ -188,6 +191,8 @@ class _CatFormScreenState extends ConsumerState<CatFormScreen> {
     final birth = _birthDate;
     // 画面を開いた時点でセッションを読み込み、読み込むまでは登録できなくする
     final session = ref.watch(sessionProvider).value;
+    // 日付の選択の週の始まり（F-VW-04）。watch して、設定の読み込みを先に済ませておく
+    final weekStart = ref.watch(weekStartProvider).value ?? WeekStart.sunday;
     return Scaffold(
       appBar: AppBar(
         title: Text(_editing ? '${widget.initial!.name}のプロフィール' : '猫を登録しましょう'),
@@ -235,7 +240,7 @@ class _CatFormScreenState extends ConsumerState<CatFormScreen> {
                     ),
                   IconButton(
                     tooltip: '生年月日を選ぶ',
-                    onPressed: _pickBirthDate,
+                    onPressed: () => _pickBirthDate(weekStart),
                     icon: const Icon(Icons.calendar_today),
                   ),
                 ],

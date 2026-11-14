@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/core/providers.dart';
 import 'package:meowscope/core/widgets/save_guard.dart';
+import 'package:meowscope/features/calendar/domain/calendar_month.dart';
 import 'package:meowscope/features/cats/data/cat_repository.dart';
 import 'package:meowscope/features/cats/presentation/cat_form_screen.dart';
 import 'package:meowscope/features/household/data/household_repository.dart';
 import 'package:meowscope/features/records/data/record_repository.dart';
+import 'package:meowscope/features/settings/data/settings_repository.dart';
 
 import '../../helpers/test_db.dart';
 
@@ -28,7 +31,12 @@ void main() {
   tearDown(() => db.close());
 
   /// 猫の登録画面を、ホームの目印の上に開く
-  Future<void> show(WidgetTester tester, {List extra = const []}) async {
+  Future<void> show(
+    WidgetTester tester, {
+    List extra = const [],
+    // アプリと同じ日本語で開くとき（日付の選択の週の始まりを確かめる）
+    bool japanese = false,
+  }) async {
     final router = GoRouter(
       initialLocation: '/cats/new',
       routes: [
@@ -52,7 +60,12 @@ void main() {
           sessionProvider.overrideWith((ref) => Stream.value(_session)),
           ...extra.cast(),
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          locale: japanese ? const Locale('ja', 'JP') : null,
+          supportedLocales: const [Locale('en', 'US'), Locale('ja', 'JP')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -218,6 +231,21 @@ void main() {
       find.widgetWithText(FilledButton, '登録する'),
     );
     expect(button.onPressed, isNotNull);
+    await close(tester);
+  });
+
+  testWidgets('UT-CT-14 生年月日の選択は、アプリの週の始まり（月曜）で並ぶ', (tester) async {
+    await SettingsRepository(db).setWeekStart(WeekStart.monday);
+    await show(tester, japanese: true);
+
+    await tester.tap(find.byTooltip('生年月日を選ぶ'));
+    await tester.pumpAndSettle();
+    // 曜日の見出しの「月」が「日」より左にある
+    final mon = tester.getCenter(find.text('月').first).dx;
+    final sun = tester.getCenter(find.text('日').first).dx;
+    expect(mon, lessThan(sun));
+    await tester.tap(find.text('キャンセル'));
+    await tester.pumpAndSettle();
     await close(tester);
   });
 }
