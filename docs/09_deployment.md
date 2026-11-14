@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 09 |
-| 版数 | 0.14 |
+| 版数 | 0.15 |
 | 作成日 | 2026-11-11 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md)、[07 ログ設計書](07_logging-design.md)、[08 性能テスト設計書](08_performance-test.md) |
@@ -90,6 +90,8 @@ flowchart LR
 - PC はサーバー専用ではなく普段使いの PC なので、スリープ・OS の更新による再起動・サインインの前は、サーバーが止まる。Docker Desktop の「サインインしたときに起動」をオンにし、コンテナは `restart: unless-stopped` で戻す。止まっている間もアプリは端末に記録し、動いたら同期する（F-OF-02）
 - `tailscale serve` が tailnet の中だけに HTTPS で出す。証明書は Tailscale が用意する
 - サーバーの URL は `https://<PC の名前>.<tailnet>.ts.net/api/v1`。確かめ方は `tailscale status`
+- Tailscale のアクセス制御（管理画面の Access controls）で、メンバーの端末（`autogroup:member`）から **PC の 443 だけ**を許可する。許可がないと、ほかの端末から PC へは何もつながらない（同じ PC の Windows のアプリはつながるので気づきにくい）。PC は `hosts` に tailnet の IP で名前を付けて指す（例：`"hosts": {"meowscope-server": "<PC の tailnet の IP>"}` と、`"grants"` に `{"src": ["autogroup:member"], "dst": ["meowscope-server"], "ip": ["443"]}`）。IP は `tailscale ip -4` で確かめる
+- PC に `tag:server` などのタグは付けない。タグを付けると PC の持ち主が利用者からタグに替わり、PC からほかの端末へつなげなくなるため、普段使いの PC に向かない（サーバー専用の機械を置くときはタグで指す）
 - 利用者の端末に Tailscale を入れ、同じ tailnet に招く
 - PC が止まっている間は、アプリは端末に記録し、PC が動いたら同期する（F-OF-02）
 
@@ -244,7 +246,9 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 
 **切り替え（VPN）**
 
-1. PC に Tailscale を入れ、`tailscale serve` で `127.0.0.1:18080` を tailnet の中へ出す
+1. PC に Tailscale を入れ、`tailscale serve --bg --https=443 http://127.0.0.1:18080` で tailnet の中へ出す（`--bg` で再起動の後も残る）。管理画面のアクセス制御で、メンバーの端末から PC の 443 を許可する（2.2）
+   - 確かめ方：ほかの端末のブラウザーで `https://<PC の名前>.<tailnet>.ts.net/actuator/health` を開く。Chrome は応答の形式（`application/vnd.spring-boot.actuator.v3+json`）を表示できず、`health.bin` のダウンロードになるが、それでつながっている
+   - 時間切れになるときは、PC で `tailscale debug netmap` の `PacketFilter` を見る。空（`[]`）なら、アクセス制御で PC への許可がない
 2. AWS の最新のバックアップを取り直し、本番に戻し直す（準備の後に記録した分を含めるため）。本番のフォルダーで `docker compose down -v` で本番のボリュームを空にしてから、準備の 3・4 と同じ手順で戻す。取り直す前に、アプリで記録しないよう利用者に伝える
 3. PC の URL でアプリを作り直し、入れ直す（同じ署名の鍵なので、端末のデータは残る）
 4. 利用者の端末に Tailscale とアプリを入れる
@@ -344,3 +348,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.12 | 2026-11-12 | 2.3 にアプリとサーバーの中の作りの図と、同期の流れの図を追加（#206） |
 | 0.13 | 2026-11-14 | PC の Docker で本番（`meowscope`）と開発（`meowscope-dev`）を分ける（#217）。1章・2.2・6.3 に名前・置き場所・ポート（本番 18080）を、2.2 に普段使いの PC での止まり方を、4章に PC の置き場所（物理的に別のディスク）と眠っていたときの扱いを追記。5.5 を準備と切り替え（VPN）の2段階に。6.4 の版の上げ方を BR-34 に合わせる |
 | 0.14 | 2026-11-14 | 5.5 に、PC へ戻したとき（#217）に分かったことを追記（#219）：AWS と同じイメージの版で立てる、ポート転送での取り方、DB と写真の戻し方と写真の持ち主の直し方、タスクスケジューラーの設定、Docker Desktop の自動起動、切り替えのときの戻し直し方 |
+| 0.15 | 2026-11-14 | 2.2・5.5 に Tailscale のアクセス制御（メンバーの端末から PC の 443 だけを許可。PC にタグを付けない理由）と、つながらないときの確かめ方を追記（#223） |
