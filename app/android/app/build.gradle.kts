@@ -12,6 +12,10 @@ val keystoreProperties = Properties().apply {
     if (file.exists()) file.inputStream().use { load(it) }
 }
 
+// key.properties に要る4つの値。そろっていないときは release の署名を作らない（debug のビルドは止めない）
+val signingKeys = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+val hasSigningKey = signingKeys.all { !keystoreProperties.getProperty(it).isNullOrBlank() }
+
 android {
     namespace = "com.meowscope.meowscope"
     compileSdk = flutter.compileSdkVersion
@@ -40,7 +44,7 @@ android {
     }
 
     signingConfigs {
-        if (!keystoreProperties.isEmpty) {
+        if (hasSigningKey) {
             create("release") {
                 storeFile = file(keystoreProperties.getProperty("storeFile"))
                 storePassword = keystoreProperties.getProperty("storePassword")
@@ -67,8 +71,26 @@ android {
         }
         release {
             resValue("string", "app_name", "MeowScope")
-            // key.properties がなければ、今までどおり debug の鍵で署名する（flutter run --release・CI 用）
-            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+            // 配布用の鍵だけで署名する（NF-SC-12）。鍵がないときは下の確かめで止める
+            signingConfig = signingConfigs.findByName("release")
+        }
+    }
+}
+
+// 配布版（release）を作るときだけ、配布用の鍵があるかを確かめる（NF-SC-12）
+// なぜ：以前は鍵がないと開発用（debug）の鍵で黙って署名していた。それを配ると、
+// 正しい鍵の版で上書きできなくなる。debug・profile・テスト・CI のビルドは止めない
+// （preReleaseBuild は release を作るときにだけ動く、Android のビルドの最初の作業）
+tasks.configureEach {
+    if (name == "preReleaseBuild") {
+        doFirst {
+            val missing = signingKeys.filter { keystoreProperties.getProperty(it).isNullOrBlank() }
+            if (missing.isNotEmpty()) {
+                throw GradleException(
+                    "配布版のビルドには配布用の署名の鍵が要ります。app/android/key.properties に " +
+                        "${missing.joinToString("・")} がありません（デプロイ設計書 6.1）",
+                )
+            }
         }
     }
 }
