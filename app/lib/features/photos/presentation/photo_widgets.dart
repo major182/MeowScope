@@ -7,6 +7,7 @@ import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../data/photo_picker.dart';
 import '../data/photo_repository.dart';
+import 'photo_viewer.dart';
 
 /// 記録の写真の一覧
 final recordPhotosProvider =
@@ -59,12 +60,18 @@ final photoImageProvider = FutureProvider.autoDispose
       }
     });
 
-/// 写真1枚の小さな表示
+/// 写真1枚の小さな表示。[onTap] があれば、押すと全画面で開く（F-RC-06）
 class PhotoThumb extends ConsumerWidget {
-  const PhotoThumb({super.key, required this.photo, this.size = 96});
+  const PhotoThumb({
+    super.key,
+    required this.photo,
+    this.size = 96,
+    this.onTap,
+  });
 
   final RecordPhotoRow photo;
   final double size;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -75,9 +82,16 @@ class PhotoThumb extends ConsumerWidget {
       PhotoNotYetUploaded() => const _Note('まだ届いていません'),
       null => const Center(child: CircularProgressIndicator()),
     };
-    return ClipRRect(
+    final thumb = ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: SizedBox(width: size, height: size, child: child),
+    );
+    if (onTap == null) {
+      return thumb;
+    }
+    return Tooltip(
+      message: '写真を大きく見る',
+      child: GestureDetector(onTap: onTap, child: thumb),
     );
   }
 }
@@ -122,7 +136,15 @@ class PhotoGallery extends ConsumerWidget {
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
-        children: [for (final p in photos) PhotoThumb(photo: p, size: 120)],
+        children: [
+          for (final (i, p) in photos.indexed)
+            PhotoThumb(
+              photo: p,
+              size: 120,
+              onTap: () =>
+                  showPhotoViewer(context, photos: photos, initialIndex: i),
+            ),
+        ],
       ),
     );
   }
@@ -207,10 +229,18 @@ class PhotoEditor extends ConsumerWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final p in photos)
+            for (final (i, p) in photos.indexed)
               Stack(
                 children: [
-                  PhotoThumb(photo: p),
+                  // 押すと全画面。角の「写真を外す」は上に重なっているので、そちらが先に押される
+                  PhotoThumb(
+                    photo: p,
+                    onTap: () => showPhotoViewer(
+                      context,
+                      photos: photos,
+                      initialIndex: i,
+                    ),
+                  ),
                   // 写真を隠しすぎないよう、角に小さく置く
                   Positioned(
                     right: 4,
