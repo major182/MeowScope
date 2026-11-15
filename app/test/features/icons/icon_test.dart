@@ -12,6 +12,7 @@ import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/core/providers.dart';
 import 'package:meowscope/features/auth/data/token_store.dart';
 import 'package:meowscope/features/icons/icon_avatar.dart';
+import 'package:meowscope/features/icons/icon_crop_screen.dart';
 import 'package:meowscope/features/icons/icon_repository.dart';
 import 'package:meowscope/features/photos/data/photo_picker.dart';
 import 'package:meowscope/features/photos/data/photo_repository.dart';
@@ -38,12 +39,16 @@ class FakeIconRepository extends IconRepository {
   Object? error;
   final calls = <(IconOwner, String)>[];
 
+  /// 渡された画像（切り抜いた結果を確かめる）
+  final bytes = <Uint8List>[];
+
   @override
   Future<void> setIcon(IconOwner owner, String id, Uint8List bytes) async {
     if (error != null) {
       throw error!;
     }
     calls.add((owner, id));
+    this.bytes.add(bytes);
   }
 }
 
@@ -239,15 +244,21 @@ void main() {
       ]);
     });
 
-    testWidgets('UT-IC-06 押すと選んだ画像をアイコンにする。選ばなければ何もしない', (tester) async {
+    testWidgets('UT-IC-06 押すと選んだ画像の範囲を決めてアイコンにする。選ばなければ何もしない', (tester) async {
       await show(
         tester,
         const EditableIcon(icon: IconRef(IconOwner.cat, 'c1')),
-        picked: jpeg(10, 10),
+        picked: jpeg(20, 10),
       );
       await tester.tap(find.text('アイコンを変える'));
       await tester.pumpAndSettle();
+      // 切り抜きの画面（F-SH-10）で「決定」すると、正方形に切り抜いた画像を渡す
+      expect(find.byType(IconCropScreen), findsOneWidget);
+      await tester.tap(find.text('決定'));
+      await tester.pumpAndSettle();
       expect(fake.calls, [(IconOwner.cat, 'c1')]);
+      final sent = img.decodeImage(fake.bytes.single)!;
+      expect((sent.width, sent.height), (10, 10));
       expect(find.text('アイコンを変更しました'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
 
@@ -269,6 +280,8 @@ void main() {
       fake.error = const ApiError();
       await tester.tap(find.text('アイコンを変える'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('決定'));
+      await tester.pumpAndSettle();
       expect(find.text('サーバーにつながりません。通信の状態を確かめてください'), findsOneWidget);
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
@@ -276,7 +289,37 @@ void main() {
       fake.error = const PhotoUnreadable();
       await tester.tap(find.text('アイコンを変える'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('決定'));
+      await tester.pumpAndSettle();
       expect(find.text('この画像は読み込めませんでした'), findsOneWidget);
+    });
+
+    testWidgets('UT-IC-08 切り抜きの画面を閉じたら何もしない。読めない画像は切り抜きの画面を出さない', (
+      tester,
+    ) async {
+      await show(
+        tester,
+        const EditableIcon(icon: IconRef(IconOwner.cat, 'c1')),
+        picked: jpeg(20, 10),
+      );
+      await tester.tap(find.text('アイコンを変える'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byType(CloseButton));
+      await tester.pumpAndSettle();
+      expect(fake.calls, isEmpty);
+      expect(find.text('アイコンを変更しました'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+
+      await show(
+        tester,
+        const EditableIcon(icon: IconRef(IconOwner.cat, 'c1')),
+        picked: Uint8List.fromList([1, 2]),
+      );
+      await tester.tap(find.text('アイコンを変える'));
+      await tester.pumpAndSettle();
+      expect(find.byType(IconCropScreen), findsNothing);
+      expect(find.text('この画像は読み込めませんでした'), findsOneWidget);
+      expect(fake.calls, isEmpty);
     });
   });
 }
