@@ -7,7 +7,12 @@ import '../../core/api/api_error.dart';
 import '../../core/providers.dart';
 import '../photos/data/photo_picker.dart';
 import '../photos/data/photo_repository.dart' show PhotoUnreadable;
+import '../photos/domain/photo_compress.dart';
+import 'icon_crop_screen.dart';
 import 'icon_repository.dart';
+
+/// 切り抜きの画面に出す画像の長辺。拡大しても粗くならず、端末で重すぎない大きさ
+const cropSourceMaxSide = 1600;
 
 /// アイコンの画像。テストでは差し替える
 final iconImageProvider = FutureProvider.autoDispose
@@ -81,8 +86,22 @@ class EditableIcon extends ConsumerWidget {
     if (bytes == null) {
       return;
     }
+    // 先に向きを直して縮める。切り抜きの画面の表示と、切り抜く画像を同じにするため（F-SH-10）
+    final prepared = compressPhoto(bytes, maxSide: cropSourceMaxSide);
+    if (prepared == null) {
+      messenger.showSnackBar(const SnackBar(content: Text('この画像は読み込めませんでした')));
+      return;
+    }
+    if (!context.mounted) {
+      return;
+    }
+    // どこを切り抜くかを選ぶ。閉じたら何もしない
+    final cropped = await showIconCropper(context, prepared);
+    if (cropped == null) {
+      return;
+    }
     try {
-      await repo.setIcon(icon.owner, icon.id, bytes);
+      await repo.setIcon(icon.owner, icon.id, cropped);
       container.invalidate(iconImageProvider(icon));
       messenger.showSnackBar(const SnackBar(content: Text('アイコンを変更しました')));
     } on PhotoUnreadable {
