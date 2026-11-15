@@ -176,6 +176,9 @@ Map<DateTime, List<CalendarMark>> dayMarks(List<RecordEntry> entries) {
   };
 }
 
+/// 月の表の1行の高さの下限。日付（1行）と、その下の記録の印（14px）が切れずに入る高さ
+const calendarMinRowHeight = 44.0;
+
 class _MonthGrid extends StatelessWidget {
   const _MonthGrid({
     required this.days,
@@ -199,77 +202,99 @@ class _MonthGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // ふだんは6行で高さを分け合う。横向きなど高さが足りず1行が低くなりすぎると、
+        // 日付の下の記録の印が切れるので、そのときは行を下限の高さにしてスクロールする（#248）
+        if (constraints.maxHeight / 6 >= calendarMinRowHeight) {
+          return Column(
+            children: [
+              for (var row = 0; row < 6; row++)
+                Expanded(child: _row(context, row)),
+            ],
+          );
+        }
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              for (var row = 0; row < 6; row++)
+                SizedBox(
+                  height: calendarMinRowHeight,
+                  child: _row(context, row),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// 1週間（7日）の行
+  Widget _row(BuildContext context, int row) {
     final scheme = Theme.of(context).colorScheme;
-    return Column(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (var row = 0; row < 6; row++)
+        for (final day in days.skip(row * 7).take(7))
           Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final day in days.skip(row * 7).take(7))
-                  Expanded(
-                    child: InkWell(
-                      key: ValueKey('day-${day.month}-${day.day}'),
-                      onTap: () => onTap(day),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: scheme.outlineVariant),
-                          color: selected != null && isSameDay(day, selected!)
-                              ? scheme.primaryContainer
-                              : null,
+            child: InkWell(
+              key: ValueKey('day-${day.month}-${day.day}'),
+              onTap: () => onTap(day),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: scheme.outlineVariant),
+                  color: selected != null && isSameDay(day, selected!)
+                      ? scheme.primaryContainer
+                      : null,
+                ),
+                padding: const EdgeInsets.all(2),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          '${day.day}',
+                          style: TextStyle(
+                            color: day.month != month.month
+                                ? scheme.outline
+                                : null,
+                            fontWeight: isSameDay(day, today)
+                                ? FontWeight.bold
+                                : null,
+                          ),
                         ),
-                        padding: const EdgeInsets.all(2),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const Spacer(),
+                        // 誕生日はセルの右上に印を出す。イラストがないので標準のケーキのアイコンを使う
+                        if (birthdays.any((b) => isBirthday(b, day)))
+                          Icon(
+                            Icons.cake_outlined,
+                            size: 14,
+                            color: scheme.primary,
+                            semanticLabel: '誕生日',
+                          ),
+                      ],
+                    ),
+                    Expanded(
+                      child: ClipRect(
+                        child: Wrap(
+                          spacing: 1,
+                          runSpacing: 1,
                           children: [
-                            Row(
-                              children: [
-                                Text(
-                                  '${day.day}',
-                                  style: TextStyle(
-                                    color: day.month != month.month
-                                        ? scheme.outline
-                                        : null,
-                                    fontWeight: isSameDay(day, today)
-                                        ? FontWeight.bold
-                                        : null,
-                                  ),
-                                ),
-                                const Spacer(),
-                                // 誕生日はセルの右上に印を出す。イラストがないので標準のケーキのアイコンを使う
-                                if (birthdays.any((b) => isBirthday(b, day)))
-                                  Icon(
-                                    Icons.cake_outlined,
-                                    size: 14,
-                                    color: scheme.primary,
-                                    semanticLabel: '誕生日',
-                                  ),
-                              ],
-                            ),
-                            Expanded(
-                              child: ClipRect(
-                                child: Wrap(
-                                  spacing: 1,
-                                  runSpacing: 1,
-                                  children: [
-                                    for (final m in marks[day] ?? const [])
-                                      Image.asset(
-                                        m.asset,
-                                        width: 14,
-                                        height: 14,
-                                        semanticLabel: m.label,
-                                      ),
-                                  ],
-                                ),
+                            for (final m in marks[day] ?? const [])
+                              Image.asset(
+                                m.asset,
+                                width: 14,
+                                height: 14,
+                                semanticLabel: m.label,
                               ),
-                            ),
                           ],
                         ),
                       ),
                     ),
-                  ),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
       ],
