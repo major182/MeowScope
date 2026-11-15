@@ -3,7 +3,7 @@ import 'dart:convert';
 /// 通知の種類（DB 設計書 user_settings.notifications のキー）
 enum NotificationKind {
   medication('お薬の時間', 'お薬の予定の時刻に、毎日通知します', onWindows: false),
-  anomaly('いつもとの差', 'アプリを開いて同期したとき、記録の回数や体重がふだんと違えば通知します', onWindows: true),
+  anomaly('いつもとの差', 'アプリを開いて同期したとき、記録の回数や体重がいつもと違えば通知します', onWindows: true),
   reminder('記録忘れ', '猫ごとに、最後の記録から決めた時間がたっても記録がなければ通知します', onWindows: false),
   family('家族の記録', '同期した際に家族が記録を行っていた場合、通知します（アプリを開いている間）', onWindows: false),
   birthday('猫の誕生日', '猫の誕生日の当日、朝9時に通知します', onWindows: true);
@@ -33,7 +33,7 @@ enum NotificationKind {
 
 /// いつもとの差の判定方式（BR-20）
 enum AnomalyMethod {
-  statistical('ふだんの傾向から自動で判定'),
+  statistical('いつもの傾向から自動で判定'),
   threshold('自分で決めたしきい値');
 
   const AnomalyMethod(this.label);

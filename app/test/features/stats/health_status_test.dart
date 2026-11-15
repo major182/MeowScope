@@ -49,7 +49,7 @@ HealthStatus _status(
 );
 
 void main() {
-  group('UT-HS-01 ふだんの回数の範囲（BR-31）', () {
+  group('UT-HS-01 いつもの回数の範囲（BR-31）', () {
     test('いつも同じ回数なら、その回数だけ。0回ばかりなら0回', () {
       expect(usualCountRange(List.filled(7, 3)), (min: 3, max: 3));
       expect(usualCountRange(List.filled(7, 0)), (min: 0, max: 0));
@@ -92,7 +92,7 @@ void main() {
   });
 
   group('UT-HS-02 統計の方式：その日の回数と範囲を並べ、外れ値に印を付ける', () {
-    test('ふだん3回のご飯がきのう1回なら少なめ。記録のない項目は0回で、ふだん0回なら範囲内', () {
+    test('いつも3回のご飯がきのう1回なら少なめ。記録のない項目は0回で、いつも0回なら範囲内', () {
       final s = _status([
         ..._usual(_yesterday, 28),
         ..._records('food', _yesterday, 1),
@@ -134,18 +134,18 @@ void main() {
       expect(_status(_usual(_yesterday, 7)).daysLeft, 0);
     });
 
-    test('28日より前の記録はふだんに入れない', () {
+    test('28日より前の記録はいつもに入れない', () {
       final old = _usual(DateTime(2026, 10, 12), 7);
       expect(_status(old).daysLeft, minRecordDays);
     });
   });
 
   group('UT-HS-04 今日と、記録のない日は、少なすぎを判定しない', () {
-    test('今日：下限なしで多すぎだけを見る。ふだんは前日より前の28日', () {
+    test('今日：下限なしで多すぎだけを見る。いつもは前日より前の28日', () {
       final today = DateTime(2026, 11, 10);
       final s = _status([
         ..._usual(_yesterday, 28),
-        // 前日の多い記録はふだんに入れない
+        // 前日の多い記録はいつもに入れない
         ..._records('food', _yesterday, 9),
         ..._records('food', today, 0),
         ..._records('water', today, 1),

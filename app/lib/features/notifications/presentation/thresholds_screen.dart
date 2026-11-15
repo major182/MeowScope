@@ -26,7 +26,7 @@ const percentRangeMessage = '1〜50の数字で入れてください';
 
 /// しきい値の設定（S-47、BR-20）
 ///
-/// 猫ごとに、回数の1日の下限と上限（どちらも任意）と、体重のふだんとの差の割合を決める。
+/// 猫ごとに、回数の1日の下限と上限（どちらも任意）と、体重のいつもとの差の割合を決める。
 /// 猫のデータとして同期し、家族と共有する
 class ThresholdsScreen extends ConsumerStatefulWidget {
   const ThresholdsScreen({super.key});
