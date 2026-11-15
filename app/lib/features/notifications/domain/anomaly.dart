@@ -9,13 +9,13 @@ import 'reminder_plan.dart';
 /// 回数で判定する記録の種類（BR-31。薬・ブラシ・独自の項目は判定しない）
 const anomalyCountKinds = ['food', 'water', 'urine', 'stool', 'vomit'];
 
-/// 体重の、ふだんとの差の既定（±5%。BR-20・31）
+/// 体重の、いつもとの差の既定（±5%。BR-20・31）
 const defaultWeightPercent = 5;
 
 /// 統計で判定するのに要る、記録のある日数（BR-31）
 const minRecordDays = 7;
 
-/// ふだんとして見る日数（直近28日。BR-31）
+/// いつもの範囲として見る日数（直近28日。BR-31）
 const usualDays = 28;
 
 /// 判定に使う記録（記録の画面の RecordEntry から作る）
@@ -55,7 +55,7 @@ class CatThresholds {
   /// 種類ごとの1日の下限と上限。どちらも空なら判定しない
   final Map<String, ({int? min, int? max})> counts;
 
-  /// 体重の、ふだんとの差の割合（%）。空なら既定（5%）
+  /// 体重の、いつもとの差の割合（%）。空なら既定（5%）
   final int? weightPercent;
 
   /// 保存した JSON から作る。壊れていたら空（判定しない）
@@ -118,7 +118,7 @@ class Anomaly {
   /// その日の回数、または体重の差の割合（%、絶対値）
   final num observed;
 
-  /// ふだんの回数（平均や、しきい値の下限・上限）。体重は使わない
+  /// いつもの回数（平均や、しきい値の下限・上限）。体重は使わない
   final num usual;
 
   /// 同じ内容を1日1回にするための鍵（BR-12）
@@ -135,7 +135,7 @@ typedef CountRange = ({int? min, int? max});
 double usualMean(List<int> counts) =>
     counts.reduce((a, b) => a + b) / counts.length;
 
-/// ふだんの回数の範囲（BR-31）
+/// いつもの回数の範囲（BR-31）
 ///
 /// 平均 ±2標準偏差の外で、かつ平均と1回以上違うときを外れ値とする（いつも同じ回数で標準偏差が 0 のとき、
 /// わずかな違いで出さないため）。その判定と同じになる整数の範囲（この回数なら範囲内）を返すので、
@@ -193,7 +193,7 @@ List<Anomaly> detectAnomalies({
     int countOn(DateTime day, String kind) =>
         mine.where((r) => r.kind == kind && _day(r.recordedAt) == day).length;
     final recordedYesterday = mine.any((r) => _day(r.recordedAt) == yesterday);
-    // ふだん：前日より前の28日のうち、その猫の記録が1件でもある日
+    // いつも：前日より前の28日のうち、その猫の記録が1件でもある日
     final usualDaysSet = {
       for (final r in mine)
         if (!_day(r.recordedAt).isBefore(windowStart) &&
@@ -303,7 +303,7 @@ String anomalyPayload(Anomaly a) => Uri(
 
 /// いつもとの差の通知の文（画面設計書 4章、F-NT-02）
 ///
-/// 回数は「ミケのご飯がいつもより少なめです」と、2行目に「きのう 1回（ふだん 3回くらい）」。
+/// 回数は「ミケのご飯がいつもより少なめです」と、2行目に「きのう 1回（いつも 3回くらい）」。
 /// しきい値で判定したときは、2行目のかっこを「下限 1回」「上限 5回」にする。
 /// 体重は「ミケの体重がいつもより 6% 増えています」（2行目なし）
 AppNotification anomalyNotification(
@@ -324,7 +324,7 @@ AppNotification anomalyNotification(
   final day = _day(a.day) == _day(now) ? 'きょう' : 'きのう';
   final usual = method == AnomalyMethod.threshold
       ? '${low ? '下限' : '上限'} ${a.usual}回'
-      : 'ふだん ${a.usual.round()}回くらい';
+      : 'いつも ${a.usual.round()}回くらい';
   return AppNotification(
     id: id,
     title: '${a.catName}の$labelがいつもより${low ? '少なめ' : '多め'}です',

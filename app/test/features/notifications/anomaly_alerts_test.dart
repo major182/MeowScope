@@ -33,14 +33,14 @@ void main() {
   );
 
   group('UT-AN-07 いつもとの差の通知の文（画面設計書 4章）', () {
-    test('回数・少なめ・きのう・統計：ふだんは四捨五入して「くらい」', () {
+    test('回数・少なめ・きのう・統計：いつもは四捨五入して「くらい」', () {
       final n = anomalyNotification(
         anomaly(),
         method: AnomalyMethod.statistical,
         now: now,
       );
       expect(n.title, 'ミケのご飯がいつもより少なめです');
-      expect(n.body, 'きのう 1回（ふだん 3回くらい）');
+      expect(n.body, 'きのう 1回（いつも 3回くらい）');
       // 押すと、その猫と項目の統計を開く
       expect(n.payload, '/stats?cat=c1&kind=food&day=2026-11-05');
     });
@@ -58,7 +58,7 @@ void main() {
         now: now,
       );
       expect(n.title, 'ミケの吐いたがいつもより多めです');
-      expect(n.body, 'きょう 3回（ふだん 0回くらい）');
+      expect(n.body, 'きょう 3回（いつも 0回くらい）');
     });
 
     test('しきい値の方式では、かっこを下限・上限にする', () {
@@ -162,7 +162,7 @@ void main() {
     test('外れ値を知らせ、知らせた日を残す。お別れの猫は判定しない', () async {
       expect(await check(), 1);
       expect(notifier.shown.single.title, 'ミケのご飯がいつもより少なめです');
-      expect(notifier.shown.single.body, 'きのう 1回（ふだん 3回くらい）');
+      expect(notifier.shown.single.body, 'きのう 1回（いつも 3回くらい）');
       final row =
           await (db.select(db.appStates)
                 ..where((s) => s.key.equals(AnomalyAlerts.key('c1', 'food'))))

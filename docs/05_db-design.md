@@ -1,10 +1,9 @@
-| 0.24 | 2026-11-12 | メールの送り方が決まった（Gmail の SMTP。メールアドレスの扱いは変わらない）ので、見直しの注記を消す |
 # DB 設計書：MeowScope
 
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 05 |
-| 版数 | 0.24 |
+| 版数 | 0.25 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md) |
@@ -70,7 +69,7 @@ erDiagram
 | `week_start` | text | 既定 `sunday` | 週の始まり |
 | `reminder_hours` | integer | 既定10、1〜48、空はオフ | 記録忘れの n 時間（BR-13） |
 | `notifications` | jsonb | | 通知の種類ごとのオンとオフ。`{"medication":true,"anomaly":true,"reminder":true,"family":true,"birthday":true}` の形で、ない種類はオンとみなす |
-| `anomaly_method` | text | 既定 `statistical` | 判定方式（BR-20）。`statistical`（ふだんの傾向から自動）または `threshold`（自分で決めたしきい値） |
+| `anomaly_method` | text | 既定 `statistical` | 判定方式（BR-20）。`statistical`（いつもの傾向から自動）または `threshold`（自分で決めたしきい値） |
 
 ### households（おうち）
 
@@ -259,3 +258,5 @@ erDiagram
 | 0.21 | 2026-11-06 | 4章を「同期する表」にし、端末に表を作らない users・user_settings の扱い、アイコンの列、記録項目とウィジェットのボタンの並び順の取り違え、同期待ちの操作、端末のログの表を直す（品質チェック） |
 | 0.22 | 2026-11-06 | お薬の予定（medication_schedules）を追加。user_settings の通知の設定と判定方式、cats のしきい値の形、端末の app_states の通知の設定と通知を出した日のキーを記入 |
 | 0.23 | 2026-11-06 | 端末の cats にしきい値の列（版 11）。サーバーは送られたときだけしきい値を変える |
+| 0.24 | 2026-11-12 | メールの送り方が決まった（Gmail の SMTP。メールアドレスの扱いは変わらない）ので、見直しの注記を消す |
+| 0.25 | 2026-11-15 | 判定方式の説明の「ふだん」を「いつも」に（#238。F-ST-03）。0.24 の行がファイルの先頭に入っていたのを改訂履歴へ戻す |

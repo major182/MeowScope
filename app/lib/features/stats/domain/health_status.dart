@@ -55,8 +55,8 @@ DateTime _day(DateTime t) => DateTime(t.year, t.month, t.day);
 
 /// 選んだ日の体調のようすを作る（F-ST-02。範囲の計算はいつもとの差の通知と同じ：BR-20・31）
 ///
-/// [records] はその猫の、選んだ日までの記録（ふだんの28日と、体重の比べる分を含む）。
-/// 今日は1日の途中なので、少なすぎは判定しない。今日のふだんは、通知と同じく前日より前の28日で見る
+/// [records] はその猫の、選んだ日までの記録（いつもの28日と、体重の比べる分を含む）。
+/// 今日は1日の途中なので、少なすぎは判定しない。今日のいつもの範囲は、通知と同じく前日より前の28日で見る
 HealthStatus healthStatus({
   required AnomalyCat cat,
   required List<AnomalyRecord> records,

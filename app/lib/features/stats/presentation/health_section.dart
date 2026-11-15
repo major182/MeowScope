@@ -12,7 +12,7 @@ import '../domain/health_status.dart';
 
 const _weekdays = ['月', '火', '水', '木', '金', '土', '日'];
 
-/// 体調のようす（S-30 のグラフの下。F-ST-02）。選んだ猫・日の各項目を、ふだんの範囲と並べる
+/// 体調のようす（S-30 のグラフの下。F-ST-02）。選んだ猫・日の各項目を、いつもの範囲と並べる
 class HealthSection extends ConsumerStatefulWidget {
   const HealthSection({
     super.key,
@@ -60,7 +60,7 @@ class _HealthSectionState extends ConsumerState<HealthSection> {
     final method =
         ref.watch(notificationSettingsProvider).value?.method ??
         AnomalyMethod.statistical;
-    // ふだんの28日（今日は前日より前）と、体重の比べる分（さらに28日）を読む
+    // いつもの28日（今日は前日より前）と、体重の比べる分（さらに28日）を読む
     // 日付を変えた直後の読み込み中は、前の記録のまま出す（中身が空になって画面が縮み、上に戻らないように）
     final loaded = ref
         .watch(
@@ -104,7 +104,7 @@ class _HealthSectionState extends ConsumerState<HealthSection> {
       for (final i in status.items)
         if (i.outlier == null) i,
     ];
-    final usualLabel = method == AnomalyMethod.threshold ? 'しきい値' : 'ふだん';
+    final usualLabel = method == AnomalyMethod.threshold ? 'しきい値' : 'いつも';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

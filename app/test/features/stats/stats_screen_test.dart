@@ -251,9 +251,9 @@ void main() {
     expect(find.text('外れ値 1個'), findsOneWidget);
     expect(find.text('ご飯　1回'), findsOneWidget);
     expect(find.text('少なめ'), findsOneWidget);
-    expect(find.text('ふだん 3回'), findsOneWidget);
+    expect(find.text('いつも 3回'), findsOneWidget);
     expect(find.text('水　0回'), findsOneWidget);
-    expect(find.text('ふだん 0回'), findsWidgets);
+    expect(find.text('いつも 0回'), findsWidgets);
     expect(find.text('体重　記録なし'), findsOneWidget);
     // 外れ値の見出しとご飯が、範囲内の見出しより上
     final top = tester.getTopLeft(find.text('範囲内')).dy;
@@ -275,7 +275,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('11/2(月)'), findsOneWidget);
       expect(find.text('きょうは途中なので、多すぎだけを見ます'), findsNothing);
-      expect(find.text('ふだん 3回以下'), findsOneWidget);
+      expect(find.text('いつも 3回以下'), findsOneWidget);
       final next = tester.widget<IconButton>(
         find.widgetWithIcon(IconButton, Icons.chevron_right),
       );
