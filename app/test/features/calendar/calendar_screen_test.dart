@@ -49,8 +49,9 @@ void main() {
     WidgetTester tester,
     Widget home, {
     double width = 400,
+    double height = 900,
   }) async {
-    tester.view.physicalSize = Size(width, 900);
+    tester.view.physicalSize = Size(width, height);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final router = GoRouter(
@@ -353,4 +354,42 @@ void main() {
       await close(tester);
     },
   );
+
+  testWidgets('UT-CS-15 横向きで高さが足りないと、行を下限の高さにして記録の印を切らず、スクロールできる（不具合 #248）', (
+    tester,
+  ) async {
+    await record('c1', 'food', DateTime(2026, 11, 2, 8));
+    // 実機の横向き（1920×1080、倍率3）と同じ論理の大きさ（640×360）
+    await show(tester, CalendarScreen(today: _today), width: 640, height: 360);
+
+    final day = tester.getRect(cell(11, 2));
+    expect(day.height, closeTo(calendarMinRowHeight, 0.01));
+    // 印がセルの中に収まっている
+    final mark = tester.getRect(inCell(11, 2, 'cal_food'));
+    expect(mark.bottom, lessThanOrEqualTo(day.bottom));
+    // 最後の行（12月12日）まで、スクロールして出せる
+    await tester.dragUntilVisible(
+      cell(12, 12),
+      find.byType(SingleChildScrollView),
+      const Offset(0, -50),
+    );
+    expect(cell(12, 12).hitTestable(), findsOneWidget);
+    await close(tester);
+  });
+
+  testWidgets('UT-CS-16 境界：縦向きなど高さが足りれば、6行で高さを分け合いスクロールしない', (tester) async {
+    await show(tester, CalendarScreen(today: _today));
+    expect(
+      find.descendant(
+        of: find.byType(CalendarScreen),
+        matching: find.byType(SingleChildScrollView),
+      ),
+      findsNothing,
+    );
+    expect(
+      tester.getRect(cell(11, 2)).height,
+      greaterThan(calendarMinRowHeight),
+    );
+    await close(tester);
+  });
 }

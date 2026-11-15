@@ -163,6 +163,40 @@ void main() {
     expect(find.byType(PhotoViewer), findsOneWidget);
   });
 
+  /// 指を1回で大きく動かして離す（実機の adb の指の動きと同じく、途中の細かな動きがない）
+  Future<void> jumpSwipe(WidgetTester tester, double dx) async {
+    final center = tester.getCenter(find.byType(PageView));
+    final gesture = await tester.startGesture(center);
+    await gesture.moveBy(Offset(dx, 0));
+    await gesture.up();
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('UT-PV-08 指を一度に大きく動かしても、左右にめくれる（不具合 #248）', (tester) async {
+    await show(tester, const PhotoGallery(recordId: 'r1'));
+    await openAt(tester, 1);
+    await jumpSwipe(tester, -400);
+    expect(find.text('3 / 3'), findsOneWidget);
+    await jumpSwipe(tester, 400);
+    await jumpSwipe(tester, 400);
+    expect(find.text('1 / 3'), findsOneWidget);
+  });
+
+  testWidgets('UT-PV-09 境界：少しだけ動かしてゆっくり離すと、元の写真に戻る', (tester) async {
+    await show(tester, const PhotoGallery(recordId: 'r1'));
+    await openAt(tester, 1);
+    final center = tester.getCenter(find.byType(PageView));
+    final width = tester.getSize(find.byType(PageView)).width;
+    final gesture = await tester.startGesture(center);
+    // 2割より少し少なく、止まってから離す（払う速さを 0 にする）
+    await gesture.moveBy(Offset(-width * (photoSwipeRatio - 0.05), 0));
+    await tester.pump(const Duration(seconds: 1));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.text('2 / 3'), findsOneWidget);
+    expect(tester.getTopLeft(find.byType(InteractiveViewer).first).dx, 0);
+  });
+
   for (final (image, text) in [
     (const PhotoOffline(), 'オンラインで表示できます'),
     (const PhotoNotYetUploaded(), 'まだ届いていません'),

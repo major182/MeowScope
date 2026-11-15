@@ -321,5 +321,58 @@ void main() {
       expect(find.text('この画像は読み込めませんでした'), findsOneWidget);
       expect(fake.calls, isEmpty);
     });
+
+    testWidgets('UT-IC-09 変えたら、同じ猫の別の版の表示も読み直す（不具合 #248）', (tester) async {
+      fake = FakeIconRepository(db, fakeApiClient(server, tokens));
+      // 版ごとに読んだ回数を数える
+      final loads = <int?, int>{};
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            iconRepositoryProvider.overrideWithValue(fake),
+            photoPickerProvider.overrideWithValue(FakePicker(jpeg(20, 10))),
+            iconImageProvider.overrideWith((ref, icon) async {
+              loads[icon.version] = (loads[icon.version] ?? 0) + 1;
+              return null;
+            }),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: Column(
+                children: [
+                  // プロフィールは開いたときの版（1）、下の一覧は同期の後の版（2）を出している
+                  EditableIcon(
+                    icon: IconRef(
+                      IconOwner.cat,
+                      'c1',
+                      hasIcon: true,
+                      version: 1,
+                    ),
+                  ),
+                  IconAvatar(
+                    icon: IconRef(
+                      IconOwner.cat,
+                      'c1',
+                      hasIcon: true,
+                      version: 2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(loads, {1: 1, 2: 1});
+
+      await tester.tap(find.text('アイコンを変える'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('決定'));
+      await tester.pumpAndSettle();
+      expect(fake.calls, [(IconOwner.cat, 'c1')]);
+      // 版 2 の表示も読み直される
+      expect(loads, {1: 2, 2: 2});
+    });
   });
 }

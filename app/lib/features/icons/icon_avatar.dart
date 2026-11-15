@@ -102,7 +102,9 @@ class EditableIcon extends ConsumerWidget {
     }
     try {
       await repo.setIcon(icon.owner, icon.id, cropped);
-      container.invalidate(iconImageProvider(icon));
+      // 表示は版ごとに分かれている。送信の後の同期で版が変わると、新しい版の表示が
+      // 先に古いファイルを読んでしまうことがあるので、版に関係なく全部を読み直す（#248）
+      container.invalidate(iconImageProvider);
       messenger.showSnackBar(const SnackBar(content: Text('アイコンを変更しました')));
     } on PhotoUnreadable {
       messenger.showSnackBar(const SnackBar(content: Text('この画像は読み込めませんでした')));
