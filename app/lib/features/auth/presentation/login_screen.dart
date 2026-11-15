@@ -108,10 +108,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 onPressed: () => context.push('/login-help'),
                 child: const Text('ログインに困ったら'),
               ),
-              // 今の版（F-UP-03）
-              const VersionLabel(),
             ],
           ),
+        ),
+      ),
+      // 今の版（F-UP-03・04）。画面の左下に固定する。下の帯（bottomNavigationBar）に
+      // 置くと、スクロールしても動かず、キーボードが開いても入力欄に重ならない
+      bottomNavigationBar: const SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: VersionLabel(),
         ),
       ),
     );

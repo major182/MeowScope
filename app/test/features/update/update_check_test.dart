@@ -311,4 +311,48 @@ void main() {
       expect(find.textContaining('Ver.'), findsNothing);
     });
   });
+
+  group('UT-UP-13 ログインの画面の版の位置（S-01、F-UP-04）', () {
+    Future<void> show(WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            databaseProvider.overrideWithValue(db),
+            installedVersionProvider.overrideWith((ref) async => installed),
+          ],
+          child: const MaterialApp(home: LoginScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('画面の左下にある', (tester) async {
+      await show(tester);
+      final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
+      final label = tester.getRect(find.text('Ver.1.0.0'));
+      // 左の余白（16）の近くで、画面の下の端から少し上（余白 8）
+      expect(label.left, lessThan(32));
+      expect(screen.height - label.bottom, lessThan(32));
+      // ボタンの並びより下にある
+      expect(
+        label.top,
+        greaterThan(tester.getRect(find.text('ログインに困ったら')).bottom),
+      );
+    });
+
+    testWidgets('画面が狭くスクロールしても、版の位置は変わらない', (tester) async {
+      // 縦が短い画面にして、ボタンの並びをスクロールできるようにする
+      tester.view.physicalSize = const Size(800, 900);
+      tester.view.devicePixelRatio = 2;
+      addTearDown(tester.view.reset);
+      await show(tester);
+      final before = tester.getRect(find.text('Ver.1.0.0'));
+      final login = tester.getRect(find.text('ログイン'));
+      await tester.drag(find.byType(ListView), const Offset(0, -200));
+      await tester.pumpAndSettle();
+      // ボタンは上へ動き、版は動かない
+      expect(tester.getRect(find.text('ログイン')).top, lessThan(login.top));
+      expect(tester.getRect(find.text('Ver.1.0.0')), before);
+    });
+  });
 }
