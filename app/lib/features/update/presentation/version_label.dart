@@ -11,14 +11,16 @@ String versionText(WidgetRef ref) {
   return installed == null ? '' : 'Ver.${installed.version}';
 }
 
-/// 画面の下に出す今の版（S-01）
+/// ログインの画面の左下に出す今の版（S-01、F-UP-04）
 class VersionLabel extends ConsumerWidget {
   const VersionLabel({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Align(
-      alignment: Alignment.centerRight,
+      alignment: Alignment.centerLeft,
+      // 高さは文字に合わせる（下の帯に置いたとき、縦いっぱいに広がらないように）
+      heightFactor: 1,
       child: Text(
         versionText(ref),
         style: Theme.of(context).textTheme.bodySmall,
