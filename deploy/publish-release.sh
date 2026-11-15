@@ -3,8 +3,9 @@
 #   使い方：deploy/publish-release.sh <android か windows> <aws か pc>
 #   - 先に app/pubspec.yaml の version を上げる（ビルド番号は必ず1つ上げる。BR-34）
 #   - aws：terraform output からサーバーの URL・中継の S3 バケット・EC2 を読み、S3 → セッションマネージャーで EC2 に置く
-#   - pc ：環境変数 API_BASE_URL（PC のサーバーの URL）を渡す。手元の Docker の本番（名前 meowscope）のボリュームに置く
-#   - 問い合わせ先は環境変数 CONTACT_EMAIL で渡す（リポジトリには書かない）
+#   - pc ：API_BASE_URL（PC のサーバーの URL）を渡す。手元の Docker の本番（名前 meowscope）のボリュームに置く
+#   - 問い合わせ先は CONTACT_EMAIL で渡す（リポジトリには書かない）
+#   - API_BASE_URL・CONTACT_EMAIL は、環境変数がなければリポジトリの直下の .env（gitignore の対象）から読む
 # バケットの名前や EC2 の ID は画面に出さない（公開リポジトリの Actions などに貼らないため）
 set -euo pipefail
 export MSYS_NO_PATHCONV=1
@@ -22,6 +23,12 @@ esac
 ROOT=$(cd "$(dirname "$0")/.." && (pwd -W 2>/dev/null || pwd))
 tf() { terraform -chdir="$ROOT/deploy/terraform" "$@"; }
 
+# 環境変数で渡されなければ .env から読む（環境変数が先。そのときだけ別の値で作れるように）
+# shellcheck source=deploy/lib/env.sh
+source "$ROOT/deploy/lib/env.sh"
+API_BASE_URL=${API_BASE_URL:-$(env_value "$ROOT/.env" API_BASE_URL)}
+CONTACT_EMAIL=${CONTACT_EMAIL:-$(env_value "$ROOT/.env" CONTACT_EMAIL)}
+
 # 版の番号（例：1.0.1+3）。ビルド番号が数字でなければ止める
 FULL=$(sed -n 's/^version: *\([^ ]*\).*/\1/p' "$ROOT/app/pubspec.yaml")
 VERSION=${FULL%+*}
@@ -32,7 +39,7 @@ BUILD=${FULL#*+}
 if [[ $TARGET == aws ]]; then
   API_BASE_URL=$(tf output -raw api_base_url)
 else
-  : "${API_BASE_URL:?pc のときは API_BASE_URL を渡してください}"
+  : "${API_BASE_URL:?pc のときは API_BASE_URL を環境変数か .env で渡してください}"
 fi
 DEFINES=(--dart-define=API_BASE_URL="$API_BASE_URL")
 [[ -n ${CONTACT_EMAIL:-} ]] && DEFINES+=(--dart-define=CONTACT_EMAIL="$CONTACT_EMAIL")
