@@ -397,5 +397,6 @@ class _FailingRecordRepository extends RecordRepository {
     required String catId,
     required String recordTypeId,
     required Author author,
+    DateTime? recordedAt,
   }) async => throw StateError('保存できない');
 }

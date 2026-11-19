@@ -5,6 +5,7 @@ import '../features/auth/presentation/account_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/password_reset_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
+import '../features/calendar/presentation/day_record_add.dart';
 import '../features/calendar/presentation/day_records.dart';
 import '../features/cats/presentation/cat_form_screen.dart';
 import '../features/cats/presentation/cat_list_screen.dart';
@@ -154,6 +155,17 @@ GoRouter createRouter() => GoRouter(
         day: DateTime.tryParse(state.pathParameters['date']!) ?? DateTime.now(),
         catId: state.uri.queryParameters['cat'],
       ),
+      routes: [
+        GoRoute(
+          // 日付からの記録（S-24）
+          path: 'new',
+          builder: (context, state) => DayRecordAddScreen(
+            day:
+                DateTime.tryParse(state.pathParameters['date']!) ??
+                DateTime.now(),
+          ),
+        ),
+      ],
     ),
   ],
 );

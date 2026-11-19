@@ -139,8 +139,9 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
           ),
     );
     // 失敗したら画面に残り、入力をやり直せるようにする
+    // 保存できたことを開いた側へ返す（日付からの記録で、作った記録を残すかの判断に使う）
     if (saved && mounted) {
-      context.pop();
+      context.pop(true);
     }
   }
 

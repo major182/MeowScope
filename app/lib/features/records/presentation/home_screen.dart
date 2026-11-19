@@ -7,28 +7,17 @@ import '../../notifications/domain/notification_settings.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../../icons/icon_avatar.dart';
-import '../../icons/icon_repository.dart';
 import '../../../core/today.dart';
 import '../../../app/main_shell.dart' show wideLayoutWidth;
 import '../../sync/presentation/sync_status_screen.dart';
 import '../../household/data/household_repository.dart';
 import '../data/record_repository.dart';
-import '../../../core/widgets/balanced_text.dart';
 import '../../../core/widgets/save_guard.dart';
+import 'cat_picker.dart';
 import 'record_format.dart';
 import 'record_providers.dart';
 import 'today_detail.dart';
 import 'type_icon.dart';
-
-final _catsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
-  final session = ref.watch(sessionProvider).value;
-  if (session == null) {
-    return Stream.value(const []);
-  }
-  return ref
-      .watch(recordRepositoryProvider)
-      .watchActiveCats(session.householdId);
-});
 
 /// 上部に出すおうち名（S-10）
 final _householdNameProvider = StreamProvider.autoDispose<String?>((ref) {
@@ -56,8 +45,8 @@ final _todayProvider = StreamProvider.autoDispose<List<RecordEntry>>((ref) {
 /// 広い画面での記録のボタン1つの幅の上限
 const typeButtonMaxWidth = 160.0;
 
-/// 記録のボタンの並べ方。狭い画面は4列、広い画面は幅に上限を設けて、窓が広いほど列を増やす
-SliverGridDelegate _typeGrid(BuildContext context) =>
+/// 記録のボタンの並べ方（ホームと日付からの記録で使う）。狭い画面は4列、広い画面は幅に上限を設けて、窓が広いほど列を増やす
+SliverGridDelegate recordTypeGrid(BuildContext context) =>
     MediaQuery.sizeOf(context).width >= wideLayoutWidth
     ? const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: typeButtonMaxWidth,
@@ -84,7 +73,7 @@ class HomeScreen extends ConsumerWidget {
     final types = ref.watch(recordTypesProvider).value ?? const [];
     final today = ref.watch(_todayProvider).value ?? const [];
     // ボタンを押す前に猫の一覧を読み込んでおく
-    final cats = ref.watch(_catsProvider).value ?? const [];
+    final cats = ref.watch(activeCatsProvider).value ?? const [];
     final detail = TodayDetail.forPlatform;
     return Scaffold(
       // 左上におうち名、右に同期の状態（S-10）。猫の追加は設定の猫の一覧（S-41）から行う
@@ -107,12 +96,12 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
           GridView(
-            gridDelegate: _typeGrid(context),
+            gridDelegate: recordTypeGrid(context),
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: [
               for (final t in types)
-                _TypeButton(
+                RecordTypeButton(
                   type: t,
                   onPressed: () => _record(context, ref, session, cats, t),
                 ),
@@ -170,41 +159,7 @@ class HomeScreen extends ConsumerWidget {
       return;
     }
     // 猫が1匹なら選択を省く
-    final cat = cats.length == 1
-        ? cats.single
-        : await showDialog<CatRow>(
-            context: context,
-            builder: (context) => SimpleDialog(
-              title: BalancedText('${type.name}：どの子ですか？'),
-              children: [
-                for (final c in cats)
-                  SimpleDialogOption(
-                    onPressed: () => Navigator.pop(context, c),
-                    child: IconLabel(
-                      icon: IconRef(
-                        IconOwner.cat,
-                        c.id,
-                        hasIcon: c.hasIcon,
-                        version: c.serverSeq,
-                      ),
-                      text: c.name,
-                      radius: 16,
-                    ),
-                  ),
-                // 外側を押しても閉じるが、閉じ方が分かるようにボタンも置く（S-11）
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 16, top: 8),
-                    child: TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('キャンセル'),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
+    final cat = await pickCat(context, cats, type.name);
     if (cat == null) {
       return;
     }
@@ -242,11 +197,18 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
-class _TypeButton extends StatelessWidget {
-  const _TypeButton({required this.type, required this.onPressed});
+/// 記録項目のボタン（イラストと名前）
+class RecordTypeButton extends StatelessWidget {
+  const RecordTypeButton({
+    super.key,
+    required this.type,
+    required this.onPressed,
+  });
 
   final RecordTypeRow type;
-  final VoidCallback onPressed;
+
+  /// null なら押せない状態にする
+  final VoidCallback? onPressed;
 
   @override
   Widget build(BuildContext context) {

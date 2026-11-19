@@ -10,6 +10,7 @@ import '../../cats/presentation/cat_filter.dart';
 import '../../notifications/domain/birthday_plan.dart';
 import '../../records/data/record_repository.dart';
 import '../../records/domain/record_kind.dart';
+import 'day_record_add.dart';
 import '../domain/calendar_month.dart';
 import 'calendar_providers.dart';
 import 'day_records.dart';
@@ -65,6 +66,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final wide = MediaQuery.sizeOf(context).width >= wideLayoutWidth;
     final weekStart = ref.watch(weekStartProvider).value ?? WeekStart.sunday;
     final days = monthGrid(_month, weekStart);
+    // 開いたまま日付が変わったら、「今日」の印を新しい日に移す（B-3）
+    final today = widget.today ?? ref.watch(todayProvider).value ?? _today;
     final entries =
         ref
             .watch(
@@ -113,12 +116,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           child: _MonthGrid(
             days: days,
             month: _month,
-            // 開いたまま日付が変わったら、「今日」の印を新しい日に移す（B-3）
-            today: widget.today ?? ref.watch(todayProvider).value ?? _today,
+            today: today,
             selected: wide ? _selected : null,
             marks: dayMarks(entries),
             birthdays: _birthdays(ref.watch(filterCatsProvider).value),
             onTap: (d) => _selectDay(d, wide),
+            // 日付の長押しで、その日の記録を始める（F-VW-06）。未来の日は何もしない（BR-35）
+            onLongPress: (d) {
+              if (!d.isAfter(today)) {
+                context.push(dayRecordAddPath(d));
+              }
+            },
           ),
         ),
       ],
@@ -137,6 +145,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       DayHeader(
                         day: _selected,
                         onChanged: (d) => _selectDay(d, true),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: AddDayRecordButton(day: _selected),
                       ),
                       Expanded(
                         child: DayRecordList(day: _selected, catId: _catId),
@@ -187,6 +199,7 @@ class _MonthGrid extends StatelessWidget {
     required this.selected,
     required this.marks,
     required this.onTap,
+    required this.onLongPress,
     this.birthdays = const [],
   });
 
@@ -199,6 +212,7 @@ class _MonthGrid extends StatelessWidget {
   /// 誕生日の印を出す猫の生年月日
   final List<DateTime> birthdays;
   final ValueChanged<DateTime> onTap;
+  final ValueChanged<DateTime> onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -240,6 +254,7 @@ class _MonthGrid extends StatelessWidget {
             child: InkWell(
               key: ValueKey('day-${day.month}-${day.day}'),
               onTap: () => onTap(day),
+              onLongPress: () => onLongPress(day),
               child: Container(
                 decoration: BoxDecoration(
                   border: Border.all(color: scheme.outlineVariant),

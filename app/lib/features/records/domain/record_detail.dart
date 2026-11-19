@@ -56,3 +56,14 @@ String? validateWeight(String? text) {
 /// 記録の日時を確かめる。未来は受け付けない
 String? validateRecordedAt(DateTime value, DateTime now) =>
     value.isAfter(now) ? '未来の日時は選べません' : null;
+
+/// カレンダーの日付から記録を始められるか（F-VW-06、BR-35）。未来の日は選べない
+bool canRecordOn(DateTime day, DateTime now) =>
+    !DateTime(day.year, day.month, day.day).isAfter(now);
+
+/// カレンダーの日付から記録するときの日時の既定（BR-35）。
+/// 選んだ日に今の時刻（時・分）を合わせる。今日なら今より後にならないよう、今にそろえる
+DateTime defaultRecordedAt(DateTime day, DateTime now) {
+  final at = DateTime(day.year, day.month, day.day, now.hour, now.minute);
+  return at.isAfter(now) ? now : at;
+}

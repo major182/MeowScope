@@ -307,13 +307,18 @@ class RecordRepository {
   }
 
   /// 詳細なしで記録を保存する（BR-01、BR-02）。保存した記録の ID を返す
+  ///
+  /// recordedAt を渡すと、その日時で記録する（カレンダーの日付からの記録。F-VW-06）。
+  /// 渡さなければ今の時刻
   Future<String> addRecord({
     required String catId,
     required String recordTypeId,
     required Author author,
+    DateTime? recordedAt,
   }) {
     final id = _uuid.v4();
     final now = _clock().toUtc();
+    final at = recordedAt?.toUtc() ?? now;
     return _db.transaction(() async {
       await _db
           .into(_db.records)
@@ -324,7 +329,7 @@ class RecordRepository {
               updatedAt: now,
               catId: catId,
               recordTypeId: recordTypeId,
-              recordedAt: now,
+              recordedAt: at,
               authorId: Value(author.id),
               authorName: author.name,
             ),
@@ -340,7 +345,7 @@ class RecordRepository {
               payload: jsonEncode({
                 'catId': catId,
                 'recordTypeId': recordTypeId,
-                'recordedAt': now.toIso8601String(),
+                'recordedAt': at.toIso8601String(),
                 'authorName': author.name,
               }),
             ),

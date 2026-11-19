@@ -2,11 +2,51 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/today.dart';
+import '../../records/domain/record_detail.dart';
 import '../../records/presentation/record_format.dart';
+import 'day_record_add.dart';
 import '../../icons/icon_avatar.dart';
 import '../../records/domain/record_kind.dart';
 import '../domain/calendar_month.dart';
 import 'calendar_providers.dart';
+
+/// 日別一覧の「記録を追加」（F-VW-06）。未来の日には出さない（BR-35）
+class AddDayRecordButton extends ConsumerWidget {
+  const AddDayRecordButton({
+    super.key,
+    required this.day,
+    this.compact = false,
+  });
+
+  final DateTime day;
+
+  /// 見出しの横（狭い画面の上部）に置くときは、日付と並んで収まるよう
+  /// アイコンだけにする（説明はマウスを重ねたときと読み上げで出す）
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 開いたまま日付が変わっても合うよう、今日の流れを見張る
+    ref.watch(todayProvider);
+    if (!canRecordOn(day, ref.watch(nowProvider)())) {
+      return const SizedBox.shrink();
+    }
+    void open() => context.push(dayRecordAddPath(day));
+    if (compact) {
+      return IconButton(
+        tooltip: '記録を追加',
+        onPressed: open,
+        icon: const Icon(Icons.add),
+      );
+    }
+    return TextButton.icon(
+      onPressed: open,
+      icon: const Icon(Icons.add),
+      label: const Text('記録を追加'),
+    );
+  }
+}
 
 /// 日別一覧の見出し。「<」「>」で前後の日へ移動する
 class DayHeader extends StatelessWidget {
@@ -17,8 +57,14 @@ class DayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 狭い画面の上部では、戻るボタンと「記録を追加」の間に収める。
+    // 幅が足りないときだけ全体を縮め、はみ出さないようにする（足りるときは元の大きさ）
+    return FittedBox(fit: BoxFit.scaleDown, child: _row());
+  }
+
+  Widget _row() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         IconButton(
           tooltip: '前の日',
@@ -124,6 +170,7 @@ class _DayListScreenState extends State<DayListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: DayHeader(day: _day, onChanged: (d) => setState(() => _day = d)),
+        actions: [AddDayRecordButton(day: _day, compact: true)],
       ),
       body: DayRecordList(day: _day, catId: widget.catId),
     );
