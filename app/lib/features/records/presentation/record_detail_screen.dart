@@ -10,6 +10,7 @@ import '../../photos/presentation/photo_widgets.dart';
 import '../../../core/widgets/confirm_delete.dart';
 import '../data/record_repository.dart';
 import '../domain/record_detail.dart';
+import '../domain/vet_detail.dart';
 import '../../../core/widgets/readable_width.dart';
 import '../../../core/widgets/save_guard.dart';
 import 'record_edit_screen.dart';
@@ -94,6 +95,10 @@ class _Detail extends ConsumerWidget {
     // 削除のときにセッションを使うので、読み込んでおく
     ref.watch(sessionProvider);
     final level = RecordLevel.parse(r.level);
+    // 病院の名前と次の予定日（F-MD-01）。ほかの項目では空
+    final vet = hasVetDetail(view.kind)
+        ? VetDetail.parse(r.detail)
+        : const VetDetail();
     return Scaffold(
       appBar: AppBar(
         title: const Text('記録の詳細'),
@@ -133,6 +138,9 @@ class _Detail extends ConsumerWidget {
           ),
           const Divider(height: 32),
           if (level != null) _Row(label: '量', value: level.label),
+          if (vet.hospital case final name?) _Row(label: '病院', value: name),
+          if (vet.nextDate case final d?)
+            _Row(label: '次の予定', value: '${d.year}/${d.month}/${d.day}'),
           if (r.valueNumber != null)
             _Row(label: '体重', value: formatWeight(r.valueNumber!)),
           if (r.memo != null) _Row(label: 'メモ', value: r.memo!),
@@ -156,7 +164,7 @@ class _Row extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 64, child: Text(label)),
+          SizedBox(width: 72, child: Text(label)),
           Expanded(child: Text(value)),
         ],
       ),

@@ -5,6 +5,7 @@ import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../../../core/widgets/readable_width.dart';
 import '../../../core/widgets/save_guard.dart';
+import '../../records/domain/record_kind.dart';
 import '../../records/presentation/record_providers.dart';
 import '../../records/presentation/type_icon.dart';
 import '../data/widget_button_repository.dart';
@@ -73,7 +74,7 @@ class WidgetButtonsScreen extends ConsumerWidget {
                                 width: 32,
                                 height: 32,
                                 child: TypeIcon(
-                                  icon: b.type.icon,
+                                  icon: typeIconValue(b.type.kind, b.type.icon),
                                   name: b.type.name,
                                 ),
                               ),

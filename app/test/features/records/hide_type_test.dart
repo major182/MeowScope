@@ -33,9 +33,9 @@ void main() {
     test('UT-HD-01 非表示にすると記録の項目から外れ、すべての項目には残る。同期待ちに残す', () async {
       await repo.setTypeHidden(id: customId, userId: 'u1', hidden: true);
 
-      expect(await repo.watchTypes('h1').first, hasLength(8));
+      expect(await repo.watchTypes('h1').first, hasLength(9));
       final all = await repo.watchTypes('h1', includeHidden: true).first;
-      expect(all, hasLength(9));
+      expect(all, hasLength(10));
       expect(all.last.hidden, isTrue);
       final change = (await db.select(db.pendingChanges).get()).single;
       expect(change.targetTable, 'record_types');
@@ -71,7 +71,7 @@ void main() {
           throwsStateError,
         );
       }
-      expect(await repo.watchTypes('h1').first, hasLength(9));
+      expect(await repo.watchTypes('h1').first, hasLength(10));
       expect(await db.select(db.pendingChanges).get(), isEmpty);
     });
   });

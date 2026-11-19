@@ -79,7 +79,10 @@ class RecordTypesScreen extends ConsumerWidget {
               key: ValueKey(t.id),
               leading: SizedBox(
                 width: 40,
-                child: TypeIcon(icon: t.icon, name: t.name),
+                child: TypeIcon(
+                  icon: typeIconValue(t.kind, t.icon),
+                  name: t.name,
+                ),
               ),
               title: Text(
                 t.kind == RecordKind.custom ? t.name : '${t.name}（標準）',

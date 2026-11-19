@@ -69,35 +69,40 @@ void main() {
     });
   });
 
-  test('UT-CL-07 印のイラスト：標準の8項目はカレンダー用／独自の項目は選んだイラスト／見つからなければ「その他」', () {
-    expect(
-      [for (final k in RecordKind.values) calendarAsset(k.name, k.icon)],
-      [
-        for (final n in [
-          'food',
-          'water',
-          'medicine',
-          'pee',
-          'poop',
-          'vomit',
-          'weight',
-          'brushing',
-        ])
-          _cal(n),
-      ],
-    );
-    expect(
-      calendarAsset('custom', 'custom_vet'),
-      'assets/icons/custom_vet.png',
-    );
-    expect(calendarAsset('custom', 'custom_hospital'), fallbackIconAsset);
-    expect(calendarAsset('custom', null), fallbackIconAsset);
-  });
+  test(
+    'UT-CL-07 印のイラスト：標準の項目はカレンダー用（病院は通院のイラスト）／独自の項目は選んだイラスト／見つからなければ「その他」',
+    () {
+      expect(
+        [for (final k in RecordKind.values) calendarAsset(k.name, k.icon)],
+        [
+          for (final n in [
+            'food',
+            'water',
+            'medicine',
+            'pee',
+            'poop',
+            'vomit',
+            'weight',
+            'brushing',
+          ])
+            _cal(n),
+          'assets/icons/custom_vet.png',
+        ],
+      );
+      expect(
+        calendarAsset('custom', 'custom_vet'),
+        'assets/icons/custom_vet.png',
+      );
+      expect(calendarAsset('custom', 'custom_hospital'), fallbackIconAsset);
+      expect(calendarAsset('custom', null), fallbackIconAsset);
+    },
+  );
 
   test('UT-CL-08 印の並び：標準の順で、独自の項目は後ろ', () {
     expect(kindOrder('food'), 0);
     expect(kindOrder('brushing'), 7);
-    expect(kindOrder('custom'), 8);
+    expect(kindOrder('vet'), 8);
+    expect(kindOrder('custom'), 9);
   });
 
   test('UT-CL-09 日ごとの印：標準の順に1つずつ、メモがあれば最後にメモの印', () {

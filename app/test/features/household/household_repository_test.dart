@@ -58,7 +58,7 @@ void main() {
     expect(household.createdAt.toUtc(), now);
   });
 
-  test('UT-HH-03 おうちを作ると、標準の8項目も登録する', () async {
+  test('UT-HH-03 おうちを作ると、標準の9項目（病院を含む）も登録する', () async {
     final created = await repo.createHousehold(
       householdName: 'みけ家',
       user: user,
@@ -67,7 +67,7 @@ void main() {
     final types = await RecordRepository(db)
         .watchTypes(created.householdId)
         .first;
-    expect(types, hasLength(8));
+    expect(types, hasLength(9));
   });
 
   test('UT-HH-04 おうちの作成を、同期待ちの変更に残す', () async {

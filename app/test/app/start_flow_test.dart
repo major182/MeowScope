@@ -23,6 +23,13 @@ void main() {
   tearDown(() => db.close());
 
   Future<void> start(WidgetTester tester) async {
+    // 標準の項目が9つになり（病院。F-MD-01）、既定のテストの画面（800×600）では
+    // 「今日の記録」が画面の外に出るので、縦に長い画面にする（大きさを決めたテストはそのまま）
+    if (tester.view.devicePixelRatio != 1) {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+    }
     await tester.pumpWidget(
       ProviderScope(
         overrides: [

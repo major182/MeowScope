@@ -21,11 +21,15 @@ enum RecordLevel {
   }
 }
 
-/// 量を入力する項目か。薬・体重・ブラシ以外
+/// 量を入力する項目か。薬・体重・ブラシ・病院以外
 bool hasLevel(String kind) =>
+    kind != RecordKind.vet.name &&
     kind != RecordKind.medicine.name &&
     kind != RecordKind.weight.name &&
     kind != RecordKind.brushing.name;
+
+/// 病院の名前と次の予定日を入力する項目か（F-MD-01）
+bool hasVetDetail(String kind) => kind == RecordKind.vet.name;
 
 /// 体重を入力する項目か
 bool hasWeight(String kind) => kind == RecordKind.weight.name;

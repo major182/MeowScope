@@ -32,7 +32,7 @@ class SyncWriter {
     static final String IGNORED = "ignored";
 
     private static final Set<String> KINDS =
-            Set.of("food", "water", "medicine", "urine", "stool", "vomit", "weight", "brushing", "custom");
+            Set.of("food", "water", "medicine", "urine", "stool", "vomit", "weight", "brushing", "vet", "custom");
     private static final Set<String> LEVELS = Set.of("little", "normal", "much");
     private static final Set<String> SEXES = Set.of("male", "female", "unknown");
     private static final Set<String> CAT_STATUSES = Set.of("active", "farewell");

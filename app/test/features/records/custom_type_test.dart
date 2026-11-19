@@ -59,11 +59,11 @@ void main() {
       await add('爪切り');
 
       final types = await repo.watchTypes('h1').first;
-      expect(types, hasLength(10));
-      expect(types[8].name, '通院');
-      expect(types[8].kind, 'custom');
-      expect(types[8].icon, 'custom_vet');
-      expect(types.map((t) => t.sortOrder).skip(8), [8, 9]);
+      expect(types, hasLength(11));
+      expect(types[9].name, '通院');
+      expect(types[9].kind, 'custom');
+      expect(types[9].icon, 'custom_vet');
+      expect(types.map((t) => t.sortOrder).skip(9), [9, 10]);
       final changes = await db.select(db.pendingChanges).get();
       expect(changes.map((c) => c.targetTable), [
         'record_types',

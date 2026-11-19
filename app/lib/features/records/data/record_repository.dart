@@ -27,7 +27,11 @@ class RecordEntry {
     this.catHasIcon = false,
     this.catSeq,
     this.hasPhoto = false,
+    this.detail,
   });
+
+  /// 項目ごとの追加情報（records.detail の JSON の文字）。病院の名前と次の予定日など
+  final String? detail;
 
   /// 猫のアイコンがサーバーにあるか、その版（猫の行の通し番号）
   final bool catHasIcon;
@@ -118,7 +122,9 @@ class RecordRepository {
   final DateTime Function() _clock;
   final Uuid _uuid;
 
-  /// 標準の8項目を登録する。すでにあれば何もしない
+  /// 標準の9項目（病院を含む）を登録する。すでに標準の項目があれば何もしない
+  ///
+  /// 今あるおうちの病院は、端末では作らずサーバーが足す（BR-37。端末ごとに作ると重なるため）
   Future<void> addStandardTypes(String householdId) async {
     final existing = await (_db.select(
       _db.recordTypes,
@@ -137,7 +143,7 @@ class RecordRepository {
             updatedAt: now,
             householdId: householdId,
             name: kind.label,
-            icon: Value(kind.icon),
+            icon: Value(kind.storedIcon),
             kind: kind.name,
             sortOrder: Value(kind.index),
           ),
@@ -411,6 +417,24 @@ class RecordRepository {
     );
   }
 
+  /// おうちの病院の記録（F-MD-01）を、新しい順に見張る。catId を渡すとその猫だけ
+  ///
+  /// 病院の名前の候補・カレンダーの予定の印・猫のプロフィールの病院の履歴に使う
+  Stream<List<RecordEntry>> watchVetRecords(
+    String householdId, {
+    String? catId,
+  }) {
+    final (q, map) = _range(
+      householdId,
+      from: DateTime(1900),
+      to: DateTime(9999),
+      catId: catId,
+      newestFirst: true,
+    );
+    q.where(_db.recordTypes.kind.equals(RecordKind.vet.name));
+    return q.watch().map(map);
+  }
+
   /// 期間（from 以上 to 未満）の記録を一度だけ読む（古い順）
   Future<List<RecordEntry>> range(
     String householdId, {
@@ -483,6 +507,7 @@ class RecordRepository {
             catHasIcon: row.readTable(c).hasIcon,
             catSeq: row.readTable(c).serverSeq,
             hasPhoto: row.read(hasPhoto) ?? false,
+            detail: row.readTable(r).detail,
           ),
       ],
     );
@@ -547,6 +572,7 @@ class RecordRepository {
     required double? valueNumber,
     required String? memo,
     required Author author,
+    ({String? json})? detail,
   }) {
     final now = _clock().toUtc();
     final trimmed = memo?.trim();
@@ -562,6 +588,10 @@ class RecordRepository {
               level: Value(level),
               valueNumber: Value(valueNumber),
               memo: Value(cleanMemo),
+              // detail を渡したときだけ書き換える（病院の記録。渡さなければ今の値を残す）
+              detail: detail == null
+                  ? const Value.absent()
+                  : Value(detail.json),
             ),
           );
       if (count == 0) {

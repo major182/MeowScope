@@ -16,6 +16,7 @@ import '../data/record_repository.dart';
 import '../../../core/widgets/save_guard.dart';
 import 'cat_picker.dart';
 import '../domain/type_order.dart';
+import '../domain/record_kind.dart';
 import 'record_format.dart';
 import 'record_providers.dart';
 import 'today_detail.dart';
@@ -267,7 +268,10 @@ class RecordTypeButton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Expanded(
-            child: TypeIcon(icon: type.icon, name: type.name),
+            child: TypeIcon(
+              icon: typeIconValue(type.kind, type.icon),
+              name: type.name,
+            ),
           ),
           // 長い名前（独自の項目など）も収まるよう、幅に合わせて文字を縮める
           FittedBox(
