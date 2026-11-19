@@ -14,6 +14,7 @@ import '../features/household/presentation/join_screen.dart';
 import '../features/records/presentation/record_detail_screen.dart';
 import '../features/records/presentation/record_edit_screen.dart';
 import '../features/records/presentation/record_types_screen.dart';
+import '../features/search/presentation/search_screen.dart';
 import '../features/settings/presentation/contact_screen.dart';
 import '../features/sync/presentation/rejected_changes_screen.dart';
 import '../features/medication/presentation/medication_form_screen.dart';
@@ -111,6 +112,11 @@ GoRouter createRouter() => GoRouter(
               RecordTypeFormScreen(typeId: state.pathParameters['id']),
         ),
       ],
+    ),
+    GoRoute(
+      // 記録の検索（S-23）。カレンダーの虫めがねから開く
+      path: '/search',
+      builder: (context, state) => const SearchScreen(),
     ),
     GoRoute(
       path: '/notification-settings',
