@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 06 |
-| 版数 | 0.26 |
+| 版数 | 0.27 |
 | 作成日 | 2026-11-02 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[05 DB 設計書](05_db-design.md) |
@@ -84,7 +84,7 @@
 
 | メソッド | パス | 説明 |
 |---|---|---|
-| POST | `/households` | おうちの作成。端末が作ったおうちの ID と名前、標準の8項目（ID を含む）を受け取って登録し、作った人をメンバーにする。サーバーでは標準の項目を作らない。記録項目の ID がほかのおうちの項目とぶつかったら 409 で、おうちも作らない。入力の誤りは 400 |
+| POST | `/households` | おうちの作成。端末が作ったおうちの ID と名前、標準の9項目（病院を含む。ID を含む）を受け取って登録し、作った人をメンバーにする。病院（`vet`）がなければ（古いアプリ）サーバーが1つ足す（BR-37。DB 設計書 4章）。記録項目の ID がほかのおうちの項目とぶつかったら 409 で、おうちも作らない。入力の誤りは 400 |
 | POST | `/households/{id}/invitations` | 招待のリンクの作成。メンバーだけ（ほかは 404）。応答は `token`・`link`（`meowscope://invite?token=...`）・`expiresAt` |
 | POST | `/invitations/accept` | 招待の受諾。本文は `token`。応答は `householdId`。知らない・期限切れ・使用済みはどれも 404。すでにメンバーの人が受けても使用済みにしない |
 | POST | `/households/{id}/leave` | おうちを抜ける。本文に `keepRecords` |
@@ -157,8 +157,8 @@ POST /sync
 |---|---|
 | `households` | `name` |
 | `cats` | `householdId`、`name`、`birthDate`、`sex`、`conditions`、`status`、`anomalyThresholds`（しきい値。DB 設計書の形）。受け取るときは `hasIcon`（アイコンの有無）も入る |
-| `record_types` | `householdId`、`name`、`icon`、`kind`、`sortOrder`、`hidden`（非表示） |
-| `records` | `catId`、`recordTypeId`、`recordedAt`、`authorName`、`valueNumber`、`level`、`detail`、`memo`。受け取るときは `authorId`（投稿者の ID。退会した人なら空）も入る |
+| `record_types` | `householdId`、`name`、`icon`、`kind`（Ver.1.3.0 から `vet` を受け付ける。2つ目の病院は `constraint`）、`sortOrder`、`hidden`（非表示）。端末ごとの並び順（F-RC-07）は送らない |
+| `records` | `catId`、`recordTypeId`、`recordedAt`、`authorName`、`valueNumber`、`level`、`detail`、`memo`。受け取るときは `authorId`（投稿者の ID。退会した人なら空）も入る。病院へまとめた独自の項目（BR-38）を指す記録は、病院へ付け替えて保存し、付け替えた内容を次の同期で返す。病院の `detail` の形は DB 設計書 4章 |
 | `record_photos` | `recordId`、`sortOrder`（1〜3）。受け取るときは `sizeBytes` と `uploaded`（画像が送られたか）も入る。画像の本体は 6章の API で送受信する |
 | `user_settings` | `weekStart`、`reminderHours`（1〜48、空はオフ）、`notifications`（種類ごとのオン・オフ）、`anomalyMethod`（`statistical` か `threshold`）。`id` は見ず、自分の行を更新する |
 | `medication_schedules` | `householdId`、`catId`、`name`（20文字まで）、`dose`（20文字まで）、`timeOfDay`（`HH:mm`、00:00〜23:59）、`enabled`（送らなければオン）。猫は同じおうちのものであること |
@@ -271,3 +271,4 @@ RFC 9457（Problem Details）の形式で返す。
 | 0.24 | 2026-11-12 | 10章 アプリの更新（#176）を追加。改訂履歴を 11章に。メールの送り方の参照を Q-26 から技術選定書 2章へ |
 | 0.25 | 2026-11-12 | 10章に置くファイルの名前と、版の情報が正しくないときの 500 を記入（#178） |
 | 0.26 | 2026-11-13 | 8章の版を Ver.2.0.0 に（要件定義書のリリースの段階の見直し、#213）。版数の欄を改訂履歴にそろえる |
+| 0.27 | 2026-11-19 | Ver.1.3.0（#258）：おうちの作成で病院を含む9項目を受け取り、なければサーバーが足す。同期で `vet` を受け付け、病院へまとめた項目を指す記録を付け替える |
