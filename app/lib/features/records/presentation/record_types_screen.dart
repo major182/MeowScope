@@ -135,7 +135,7 @@ class RecordTypeFormScreen extends ConsumerStatefulWidget {
 class _RecordTypeFormScreenState extends ConsumerState<RecordTypeFormScreen> {
   final _form = GlobalKey<FormState>();
   final _name = TextEditingController();
-  var _icon = CustomIcon.values.first;
+  var _icon = CustomIcon.selectable.first;
   var _loaded = false;
   var _saving = false;
 
@@ -153,7 +153,7 @@ class _RecordTypeFormScreenState extends ConsumerState<RecordTypeFormScreen> {
     if (type != null && !_loaded) {
       _loaded = true;
       _name.text = type.name;
-      _icon = CustomIcon.parse(type.icon) ?? CustomIcon.values.first;
+      _icon = CustomIcon.parse(type.icon) ?? CustomIcon.selectable.first;
     }
     return type;
   }
@@ -247,13 +247,15 @@ class _RecordTypeFormScreenState extends ConsumerState<RecordTypeFormScreen> {
               spacing: 8,
               runSpacing: 8,
               children: [
+                // 選べるアイコン。まとめる前に作った通院の項目を編集するときだけ、今のアイコンも残す
                 for (final i in CustomIcon.values)
-                  ChoiceChip(
-                    avatar: Image.asset('assets/icons/${i.value}.png'),
-                    label: Text(i.label),
-                    selected: _icon == i,
-                    onSelected: (_) => setState(() => _icon = i),
-                  ),
+                  if (CustomIcon.selectable.contains(i) || i == _icon)
+                    ChoiceChip(
+                      avatar: Image.asset('assets/icons/${i.value}.png'),
+                      label: Text(i.label),
+                      selected: _icon == i,
+                      onSelected: (_) => setState(() => _icon = i),
+                    ),
               ],
             ),
           ],
