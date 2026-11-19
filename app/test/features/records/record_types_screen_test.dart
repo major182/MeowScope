@@ -209,4 +209,54 @@ void main() {
     expect(await customTypes(), hasLength(1));
     await close(tester);
   });
+
+  test('UT-TY-14 選べるアイコンは通院（custom_vet）を除く5つ。通院は値として残り、読める（BR-38）', () {
+    expect(CustomIcon.selectable.map((i) => i.value), [
+      'custom_play',
+      'custom_nail',
+      'custom_teeth',
+      'custom_treat',
+      'custom_other',
+    ]);
+    expect(CustomIcon.parse('custom_vet'), CustomIcon.vet);
+  });
+
+  testWidgets('UT-TY-15 追加の画面には通院のアイコンを出さず、最初は「遊び」を選んでいる', (tester) async {
+    await show(tester, '/record-types/new');
+
+    expect(find.widgetWithText(ChoiceChip, '通院'), findsNothing);
+    expect(find.byType(ChoiceChip), findsNWidgets(5));
+    expect(
+      tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '遊び')).selected,
+      isTrue,
+    );
+    await close(tester);
+  });
+
+  testWidgets('UT-TY-16 まとめる前に作った通院の項目を編集するときは、今のアイコン（通院）を残して出し、別のアイコンに変えられる', (
+    tester,
+  ) async {
+    final id = await repo.addCustomType(
+      householdId: 'h1',
+      userId: 'u1',
+      name: 'かかりつけ',
+      icon: CustomIcon.vet.value,
+    );
+    await show(tester, '/record-types/$id');
+
+    expect(
+      tester.widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '通院')).selected,
+      isTrue,
+    );
+    await tester.tap(find.widgetWithText(ChoiceChip, 'その他'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+
+    final type = await (db.select(
+      db.recordTypes,
+    )..where((t) => t.id.equals(id))).getSingle();
+    expect(type.icon, 'custom_other');
+    await close(tester);
+  });
 }

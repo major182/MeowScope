@@ -16,6 +16,13 @@ enum CustomIcon {
   /// 選ぶときに出す名前
   final String label;
 
+  /// 独自の項目に選べるアイコン。通院（custom_vet）は標準の項目「病院」にまとめたので外す（BR-38）。
+  /// 値としては残し、前に作った項目や記録の表示に使う
+  static List<CustomIcon> get selectable => [
+    for (final i in values)
+      if (i != vet) i,
+  ];
+
   /// 保存した値から戻す。知らない値や空は null
   static CustomIcon? parse(String? value) {
     for (final i in values) {

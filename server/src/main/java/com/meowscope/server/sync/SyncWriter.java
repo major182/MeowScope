@@ -194,7 +194,8 @@ class SyncWriter {
 
     private String record(UUID userId, UUID id, Fields f, Timestamp updatedAt, Timestamp deletedAt) {
         UUID catId = f.uuid("catId");
-        UUID typeId = f.uuid("recordTypeId");
+        // 病院へまとめた独自の項目（BR-38）を指す記録は、病院へ付け替えて保存する（古い端末から届いたとき）
+        UUID typeId = mergedVet(f.uuid("recordTypeId"));
         // 猫と記録項目は同じおうちのもので、自分のおうちであること
         UUID household = access.householdOfCat(catId).orElseThrow(() -> new Rejected("not_found", "catId"));
         UUID typeHousehold = access.householdOfRecordType(typeId)
@@ -236,6 +237,18 @@ class SyncWriter {
                 .param("detail", v[4]).param("memo", v[5]).param("deletedAt", deletedAt)
                 .param("updatedAt", updatedAt).update();
         return APPLIED;
+    }
+
+    /**
+     * 病院へまとめた独自の項目（V10。kind が custom・アイコンが custom_vet・削除の印あり）なら、同じおうちの病院の ID を返す。
+     * それ以外はそのまま返す。付け替えた記録は通し番号が進むので、送った端末にも次の同期で届く。
+     */
+    private UUID mergedVet(UUID typeId) {
+        return jdbc.sql("""
+                SELECT vet.id FROM record_types t
+                JOIN record_types vet ON vet.household_id = t.household_id AND vet.kind = 'vet'
+                WHERE t.id = :id AND t.kind = 'custom' AND t.icon = 'custom_vet' AND t.deleted_at IS NOT NULL
+                """).param("id", typeId).query(UUID.class).optional().orElse(typeId);
     }
 
     /** 1つの記録に付けられる写真の数（データ要件、AC-03）。 */
