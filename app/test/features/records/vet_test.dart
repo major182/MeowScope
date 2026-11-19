@@ -410,7 +410,7 @@ void main() {
   ) async {
     await addVet(
       'c1',
-      DateTime(2026, 10, 1),
+      DateTime(2026, 10, 12),
       hospital: 'A病院',
       memo: '1行目\n2行目',
     );
@@ -424,6 +424,11 @@ void main() {
     final newer = tester.getTopLeft(find.text('病院')).dy;
     expect(newer, lessThan(older));
     expect(find.text('1行目'), findsOneWidget);
+    // 日付の幅（2026/10/12 と 2026/11/1）が違っても、名前の位置はそろう（#272）
+    expect(
+      tester.getTopLeft(find.text('A病院')).dx,
+      tester.getTopLeft(find.text('病院')).dx,
+    );
     expect(find.text('2行目'), findsNothing);
 
     await tester.tap(find.text('2026/11/1'));
