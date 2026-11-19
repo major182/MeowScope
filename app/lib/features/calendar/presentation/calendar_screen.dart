@@ -129,9 +129,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
             onTap: (d) => _selectDay(d, wide),
             // 日付の長押しで、その日の記録を始める（F-VW-06）。未来の日は何もしない（BR-35）
-            onLongPress: (d) {
-              if (!d.isAfter(today)) {
-                context.push(dayRecordAddPath(d));
+            onLongPress: (d) async {
+              if (d.isAfter(today)) {
+                return;
+              }
+              final saved = await context.push<bool>(dayRecordAddPath(d));
+              // 保存したら、その日の日別一覧を開く（狭い幅は S-21 へ進み、広い幅は右の一覧をその日にする。#272）
+              if (saved == true && mounted) {
+                _selectDay(d, wide);
               }
             },
           ),

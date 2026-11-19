@@ -72,9 +72,11 @@ class _DayRecordAddScreenState extends ConsumerState<DayRecordAddScreen> {
       }
       final done = await router.push<bool>('/records/$id/edit');
       if (done == true) {
-        // ④保存できたら、その日の日別一覧へ戻る
+        // ④保存できたら閉じて、保存したことを開いた側へ返す。
+        // 日別一覧から開いたときはそのまま日別一覧に戻り、カレンダーの長押しから開いたときは、
+        // カレンダーがその日の日別一覧を開く（S-24 の④。#272）
         if (mounted) {
-          context.pop();
+          context.pop(true);
         }
         return;
       }

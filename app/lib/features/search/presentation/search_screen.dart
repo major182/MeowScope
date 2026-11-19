@@ -123,46 +123,50 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Wrap(
-              spacing: 12,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                DropdownButton<String?>(
-                  value: types.any((t) => t.id == _query.recordTypeId)
-                      ? _query.recordTypeId
-                      : null,
-                  onChanged: (id) => _update((
-                    words: _query.words,
-                    recordTypeId: id,
-                    catId: _query.catId,
-                    from: _query.from,
-                    to: _query.to,
-                  )),
-                  items: [
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('すべての項目'),
-                    ),
-                    // 非表示の項目も選べる（過去の記録を探すため）
-                    for (final t in types)
-                      DropdownMenuItem<String?>(
-                        value: t.id,
-                        child: Text(t.hidden ? '${t.name}（非表示中）' : t.name),
+            // 左に寄せる（列の中では、中身の幅のまま中央に置かれるため。S-23 の絵。#272）
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: 12,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  DropdownButton<String?>(
+                    value: types.any((t) => t.id == _query.recordTypeId)
+                        ? _query.recordTypeId
+                        : null,
+                    onChanged: (id) => _update((
+                      words: _query.words,
+                      recordTypeId: id,
+                      catId: _query.catId,
+                      from: _query.from,
+                      to: _query.to,
+                    )),
+                    items: [
+                      const DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text('すべての項目'),
                       ),
-                  ],
-                ),
-                // お別れの猫も選べる
-                CatFilter(
-                  selected: _query.catId,
-                  onChanged: (id) => _update((
-                    words: _query.words,
-                    recordTypeId: _query.recordTypeId,
-                    catId: id,
-                    from: _query.from,
-                    to: _query.to,
-                  )),
-                ),
-              ],
+                      // 非表示の項目も選べる（過去の記録を探すため）
+                      for (final t in types)
+                        DropdownMenuItem<String?>(
+                          value: t.id,
+                          child: Text(t.hidden ? '${t.name}（非表示中）' : t.name),
+                        ),
+                    ],
+                  ),
+                  // お別れの猫も選べる
+                  CatFilter(
+                    selected: _query.catId,
+                    onChanged: (id) => _update((
+                      words: _query.words,
+                      recordTypeId: _query.recordTypeId,
+                      catId: id,
+                      from: _query.from,
+                      to: _query.to,
+                    )),
+                  ),
+                ],
+              ),
             ),
           ),
           Padding(

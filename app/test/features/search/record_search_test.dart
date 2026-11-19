@@ -371,6 +371,13 @@ void main() {
     });
   });
 
+  testWidgets('UT-SR-18 項目と猫の絞り込みは左に寄せる（S-23 の絵。#272）', (tester) async {
+    await show(tester, '/search');
+
+    expect(tester.getTopLeft(find.text('すべての項目')).dx, lessThan(40));
+    await close(tester);
+  });
+
   test('UT-SR-17 アプリの道筋に、記録の検索（/search）がある', () {
     final router = createRouter();
     addTearDown(router.dispose);

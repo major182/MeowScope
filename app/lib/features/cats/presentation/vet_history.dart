@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../records/domain/vet_detail.dart';
 import '../../records/presentation/record_providers.dart';
 
+/// 病院の履歴の日付の幅（「2026/11/17」が1行で入る幅）
+const historyDateWidth = 96.0;
+
 /// 猫のプロフィール（S-41）の「病院の履歴」（F-MD-01）
 ///
 /// その猫の病院の記録を新しい順に、日付・病院の名前・メモの1行目で出す。押すと記録の詳細へ進む
@@ -28,8 +31,13 @@ class VetHistory extends ConsumerWidget {
         for (final e in records)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: Text(
-              '${e.recordedAt.year}/${e.recordedAt.month}/${e.recordedAt.day}',
+            // 日付の幅をそろえ、病院の名前の位置を行ごとにそろえる（#272）
+            leading: SizedBox(
+              width: historyDateWidth,
+              child: Text(
+                '${e.recordedAt.year}/${e.recordedAt.month}/${e.recordedAt.day}',
+                maxLines: 1,
+              ),
             ),
             title: Text(VetDetail.parse(e.detail).hospital ?? e.typeName),
             subtitle: switch (e.memo?.split('\n').first) {

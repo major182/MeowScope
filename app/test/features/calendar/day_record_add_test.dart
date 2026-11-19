@@ -215,6 +215,61 @@ void main() {
     });
   });
 
+  group('長押しから保存した後の戻り先（S-24 の④。#272）', () {
+    testWidgets('UT-DA-16 狭い幅：長押しから記録して保存すると、カレンダーではなくその日の日別一覧を開く', (
+      tester,
+    ) async {
+      await show(tester, '/calendar');
+
+      await tester.longPress(find.byKey(const ValueKey('day-11-2')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ご飯'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('保存した'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DayListScreen), findsOneWidget);
+      expect(find.text('11月 2日'), findsOneWidget);
+      expect(find.text('11月2日の記録'), findsNothing);
+      await close(tester);
+    });
+
+    testWidgets('UT-DA-17 広い幅：長押しから記録して保存すると、カレンダーに戻り、右の日別一覧をその日にする', (
+      tester,
+    ) async {
+      await show(tester, '/calendar', width: 1280);
+
+      await tester.longPress(find.byKey(const ValueKey('day-11-2')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ご飯'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('保存した'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CalendarScreen), findsOneWidget);
+      expect(find.byType(DayListScreen), findsNothing);
+      expect(find.text('11月 2日'), findsOneWidget);
+      await close(tester);
+    });
+
+    testWidgets('UT-DA-18 異常系：長押しから始めて③で保存せずに戻ると、日別一覧は開かない', (tester) async {
+      await show(tester, '/calendar');
+
+      await tester.longPress(find.byKey(const ValueKey('day-11-2')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ご飯'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('戻った'));
+      await tester.pumpAndSettle();
+      // ①に戻り、さらに戻るとカレンダー
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.byType(CalendarScreen), findsOneWidget);
+      expect(find.byType(DayListScreen), findsNothing);
+      await close(tester);
+    });
+  });
+
   group('日別一覧の「記録を追加」（S-21）', () {
     testWidgets('UT-DA-07 過去の日と今日には出し、押すとその日の記録を始める', (tester) async {
       await show(tester, '/days/2026-11-19');
