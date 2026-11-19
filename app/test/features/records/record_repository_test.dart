@@ -29,19 +29,26 @@ void main() {
       (await repo.watchTypes(householdId).first).first;
 
   group('addStandardTypes', () {
-    test('UT-RC-05 標準の8項目を並び順どおりに登録する', () async {
-      await repo.addStandardTypes('h1');
+    test(
+      'UT-RC-05 標準の9項目（病院を含む）を並び順どおりに登録する。病院のアイコンは custom_vet で保存する',
+      () async {
+        await repo.addStandardTypes('h1');
 
-      final types = await repo.watchTypes('h1').first;
-      expect(types.map((t) => t.kind), RecordKind.values.map((k) => k.name));
-      expect(types.map((t) => t.icon), RecordKind.values.map((k) => k.icon));
-    });
+        final types = await repo.watchTypes('h1').first;
+        expect(types.map((t) => t.kind), RecordKind.values.map((k) => k.name));
+        expect(
+          types.map((t) => t.icon),
+          RecordKind.values.map((k) => k.storedIcon),
+        );
+        expect(types.last.icon, 'custom_vet');
+      },
+    );
 
     test('UT-RC-06 2回呼んでも重複して登録しない', () async {
       await repo.addStandardTypes('h1');
       await repo.addStandardTypes('h1');
 
-      expect(await repo.watchTypes('h1').first, hasLength(8));
+      expect(await repo.watchTypes('h1').first, hasLength(9));
     });
 
     test('UT-RC-07 独自の項目だけがあるおうちには、標準の項目を登録する', () async {
@@ -61,7 +68,7 @@ void main() {
 
       await repo.addStandardTypes('h1');
 
-      expect(await repo.watchTypes('h1').first, hasLength(9));
+      expect(await repo.watchTypes('h1').first, hasLength(10));
     });
   });
 
@@ -75,7 +82,7 @@ void main() {
 
       final types = await repo.watchTypes('h1').first;
 
-      expect(types, hasLength(7));
+      expect(types, hasLength(8));
       expect(types.every((t) => t.householdId == 'h1'), isTrue);
     });
   });

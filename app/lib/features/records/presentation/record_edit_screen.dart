@@ -5,7 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers.dart';
 import '../../photos/presentation/photo_widgets.dart';
 import '../data/record_repository.dart';
+import '../../../core/widgets/app_date_picker.dart';
+import '../../calendar/domain/calendar_month.dart';
 import '../domain/record_detail.dart';
+import '../domain/vet_detail.dart';
 import '../../../core/widgets/readable_width.dart';
 import '../../../core/widgets/save_guard.dart';
 import 'record_format.dart';
@@ -60,6 +63,10 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
   late RecordLevel? _level;
   late final TextEditingController _weight;
   late final TextEditingController _memo;
+  late final TextEditingController _hospital;
+
+  /// 次の予定日（病院。F-MD-01）
+  DateTime? _nextDate;
   String? _dateError;
 
   @override
@@ -70,12 +77,16 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
     _level = RecordLevel.parse(r.level);
     _weight = TextEditingController(text: r.valueNumber?.toString() ?? '');
     _memo = TextEditingController(text: r.memo ?? '');
+    final vet = VetDetail.parse(r.detail);
+    _hospital = TextEditingController(text: vet.hospital ?? '');
+    _nextDate = vet.nextDate;
   }
 
   @override
   void dispose() {
     _weight.dispose();
     _memo.dispose();
+    _hospital.dispose();
     super.dispose();
   }
 
@@ -109,6 +120,24 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
     });
   }
 
+  /// 次の予定日を選ぶ（S-12）。今日より前の日は選べない
+  Future<void> _pickNextDate() async {
+    final today = dateOnly(DateTime.now());
+    final current = _nextDate;
+    final picked = await showAppDatePicker(
+      context: context,
+      weekStart: ref.read(weekStartProvider).value ?? WeekStart.sunday,
+      // 前に選んだ日が過ぎていたら、今日から選び直す
+      initialDate: current == null || current.isBefore(today) ? today : current,
+      firstDate: today,
+      lastDate: DateTime(today.year + 5, today.month, today.day),
+    );
+    if (picked == null || !mounted) {
+      return;
+    }
+    setState(() => _nextDate = picked);
+  }
+
   Future<void> _save() async {
     final dateError = validateRecordedAt(_recordedAt, DateTime.now());
     setState(() => _dateError = dateError);
@@ -136,6 +165,17 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
                 : null,
             memo: _memo.text,
             author: session.author,
+            // 病院だけ、名前と次の予定日を detail に入れる。ほかの項目は今の detail を残す
+            detail: hasVetDetail(kind)
+                ? (
+                    json: VetDetail(
+                      hospital: _hospital.text.trim().isEmpty
+                          ? null
+                          : _hospital.text.trim(),
+                      nextDate: _nextDate,
+                    ).encode(),
+                  )
+                : null,
           ),
     );
     // 失敗したら画面に残り、入力をやり直せるようにする
@@ -198,6 +238,33 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
                     setState(() => _level = s.isEmpty ? null : s.first),
               ),
             ],
+            if (hasVetDetail(view.kind)) ...[
+              const SizedBox(height: 16),
+              _HospitalField(controller: _hospital),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('次の予定日'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OutlinedButton(
+                      onPressed: _pickNextDate,
+                      child: Text(
+                        _nextDate == null
+                            ? '選ぶ'
+                            : '${_nextDate!.year}/${_nextDate!.month}/${_nextDate!.day}',
+                      ),
+                    ),
+                    if (_nextDate != null)
+                      IconButton(
+                        tooltip: '次の予定日を外す',
+                        onPressed: () => setState(() => _nextDate = null),
+                        icon: const Icon(Icons.close),
+                      ),
+                  ],
+                ),
+              ),
+            ],
             if (hasWeight(view.kind)) ...[
               const SizedBox(height: 16),
               TextFormField(
@@ -223,6 +290,62 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
             // 写真はその場で保存する（「保存」を押さなくても付く）
             PhotoEditor(recordId: widget.view.record.id),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 病院の名前の入力欄（S-12）。同じおうちで前に入れた名前を候補に出す（F-MD-01）
+class _HospitalField extends ConsumerStatefulWidget {
+  const _HospitalField({required this.controller});
+
+  final TextEditingController controller;
+
+  @override
+  ConsumerState<_HospitalField> createState() => _HospitalFieldState();
+}
+
+class _HospitalFieldState extends ConsumerState<_HospitalField> {
+  /// 候補の表示と入力欄で同じものを使う。描き直しても入力中の状態が切れないよう、ここで持つ
+  final _focus = FocusNode();
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final names = ref.watch(hospitalNamesProvider);
+    return RawAutocomplete<String>(
+      textEditingController: widget.controller,
+      focusNode: _focus,
+      optionsBuilder: (value) => filterSuggestions(names, value.text),
+      fieldViewBuilder: (context, controller, focusNode, onSubmitted) =>
+          TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            decoration: const InputDecoration(labelText: '病院の名前'),
+            maxLength: maxHospitalLength,
+            validator: validateHospital,
+          ),
+      optionsViewBuilder: (context, onSelected, options) => Align(
+        alignment: Alignment.topLeft,
+        child: Material(
+          elevation: 4,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 200, maxWidth: 400),
+            child: ListView(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              children: [
+                for (final o in options)
+                  ListTile(title: Text(o), onTap: () => onSelected(o)),
+              ],
+            ),
+          ),
         ),
       ),
     );

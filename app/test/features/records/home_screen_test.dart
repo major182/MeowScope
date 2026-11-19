@@ -33,6 +33,13 @@ void main() {
 
   /// ホームだけを出す。猫の登録画面は目印の文字に置き換える
   Future<void> show(WidgetTester tester, {Session? session = _session}) async {
+    // 標準の項目が9つになり（病院。F-MD-01）、既定のテストの画面（800×600）では
+    // 「今日の記録」が画面の外に出るので、縦に長い画面にする（大きさを決めたテストはそのまま）
+    if (tester.view.devicePixelRatio != 1) {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+    }
     final router = GoRouter(
       routes: [
         GoRoute(path: '/', builder: (context, state) => const HomeScreen()),
@@ -85,13 +92,28 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('UT-HM-02 標準の8項目をイラスト付きのボタンで出す', (tester) async {
+  testWidgets('UT-HM-02 標準の9項目（病院を含む）をイラスト付きのボタンで出す', (tester) async {
     await show(tester);
 
-    for (final name in ['ご飯', '水', '薬', 'おしっこ', 'うんち', '吐いた', '体重', 'ブラシ']) {
+    for (final name in [
+      'ご飯',
+      '水',
+      '薬',
+      'おしっこ',
+      'うんち',
+      '吐いた',
+      '体重',
+      'ブラシ',
+      '病院',
+    ]) {
       expect(find.widgetWithText(OutlinedButton, name), findsOneWidget);
     }
-    expect(find.byType(Image), findsNWidgets(8));
+    expect(find.byType(Image), findsNWidgets(9));
+    // 病院のボタンは、届いた病院のイラスト（vet）を使う
+    expect(
+      find.image(const AssetImage('assets/icons/vet.png')),
+      findsOneWidget,
+    );
     expect(find.text('まだ記録がありません'), findsOneWidget);
     await close(tester);
   });
@@ -247,8 +269,15 @@ void main() {
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await show(tester);
+      // 上の段（通常の大きさ）のボタンだけを見る。9つ目の病院は Android では半分の大きさの段に出る
       return [
-        for (final e in find.byType(OutlinedButton).evaluate())
+        for (final e
+            in find
+                .descendant(
+                  of: find.byType(GridView).first,
+                  matching: find.byType(OutlinedButton),
+                )
+                .evaluate())
           tester.getRect(find.byWidget(e.widget)),
       ];
     }
@@ -335,6 +364,13 @@ void main() {
 
   /// 上書きを足して、ホームだけを出す
   Future<void> showWith(WidgetTester tester, List overrides) async {
+    // 標準の項目が9つになり（病院。F-MD-01）、既定のテストの画面（800×600）では
+    // 「今日の記録」が画面の外に出るので、縦に長い画面にする（大きさを決めたテストはそのまま）
+    if (tester.view.devicePixelRatio != 1) {
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+    }
     final router = GoRouter(
       routes: [
         GoRoute(path: '/', builder: (context, state) => const HomeScreen()),

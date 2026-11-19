@@ -295,9 +295,9 @@ class SyncIntegrationTest {
         // 500件ずつしか送れないので、DB に直接入れる
         jdbc.sql("""
                 INSERT INTO records (id, cat_id, record_type_id, recorded_at, author_name)
-                SELECT gen_random_uuid(), :cat, :type, now(), 'はる' FROM generate_series(1, 497)
+                SELECT gen_random_uuid(), :cat, :type, now(), 'はる' FROM generate_series(1, 496)
                 """).param("cat", catId).param("type", food).update();
-        // ここまでで おうち・メンバー・ユーザー・記録項目・設定・猫・記録497件 ＝ 503件
+        // ここまでで おうち・メンバー・ユーザー・記録項目2つ（ご飯と、サーバーが足す病院。BR-37）・設定・猫・記録496件 ＝ 503件
         Map<String, Object> first = syncBody(haru, 0, List.of());
         assertThat((List<?>) first.get("changes")).hasSize(500);
         assertThat(first.get("hasMore")).isEqualTo(true);

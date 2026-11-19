@@ -4,6 +4,7 @@ import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../data/record_repository.dart';
 import '../domain/type_order.dart';
+import '../domain/vet_detail.dart';
 
 /// 記録に使う項目（並び順、削除済みと非表示を除く）。ホームのボタンと統計の選択
 final recordTypesProvider = StreamProvider.autoDispose<List<RecordTypeRow>>((
@@ -63,4 +64,36 @@ final orderedAllRecordTypesProvider =
       return ref
           .watch(allRecordTypesProvider)
           .whenData((types) => applyTypeOrder(types, order, (t) => t.id));
+    });
+
+/// おうちの病院の記録（新しい順）。名前の候補とカレンダーの予定の印に使う（F-MD-01）
+final vetRecordsProvider = StreamProvider.autoDispose<List<RecordEntry>>((ref) {
+  final session = ref.watch(sessionProvider).value;
+  if (session == null) {
+    return Stream.value(const []);
+  }
+  return ref
+      .watch(recordRepositoryProvider)
+      .watchVetRecords(session.householdId);
+});
+
+/// 病院の名前の候補（同じおうちで前に入れた名前。新しく使った順）
+final hospitalNamesProvider = Provider.autoDispose<List<String>>(
+  (ref) => hospitalSuggestions([
+    for (final e
+        in ref.watch(vetRecordsProvider).value ?? const <RecordEntry>[])
+      e.detail,
+  ]),
+);
+
+/// 猫ごとの病院の履歴（新しい順。猫のプロフィール S-41）
+final catVetHistoryProvider = StreamProvider.autoDispose
+    .family<List<RecordEntry>, String>((ref, catId) {
+      final session = ref.watch(sessionProvider).value;
+      if (session == null) {
+        return Stream.value(const []);
+      }
+      return ref
+          .watch(recordRepositoryProvider)
+          .watchVetRecords(session.householdId, catId: catId);
     });

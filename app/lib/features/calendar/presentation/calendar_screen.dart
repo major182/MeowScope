@@ -10,6 +10,8 @@ import '../../cats/presentation/cat_filter.dart';
 import '../../notifications/domain/birthday_plan.dart';
 import '../../records/data/record_repository.dart';
 import '../../records/domain/record_kind.dart';
+import '../../records/domain/vet_detail.dart';
+import '../../records/presentation/record_providers.dart';
 import 'day_record_add.dart';
 import '../domain/calendar_month.dart';
 import 'calendar_providers.dart';
@@ -120,6 +122,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             selected: wide ? _selected : null,
             marks: dayMarks(entries),
             birthdays: _birthdays(ref.watch(filterCatsProvider).value),
+            plans: vetPlanDays(
+              ref.watch(vetRecordsProvider).value ?? const [],
+              today,
+              catId: _catId,
+            ),
             onTap: (d) => _selectDay(d, wide),
             // 日付の長押しで、その日の記録を始める（F-VW-06）。未来の日は何もしない（BR-35）
             onLongPress: (d) {
@@ -198,6 +205,19 @@ Map<DateTime, List<CalendarMark>> dayMarks(List<RecordEntry> entries) {
   };
 }
 
+/// 病院の次の予定日の印を出す日（F-MD-01、BR-37）。今日と未来の日だけ。catId を渡すとその猫だけ
+Set<DateTime> vetPlanDays(
+  List<RecordEntry> vetRecords,
+  DateTime today, {
+  String? catId,
+}) => {
+  for (final e in vetRecords)
+    if (catId == null || e.catId == catId)
+      if (VetDetail.parse(e.detail).nextDate case final d?
+          when !d.isBefore(dateOnly(today)))
+        d,
+};
+
 /// 月の表の1行の高さの下限。日付（1行）と、その下の記録の印（14px）が切れずに入る高さ
 const calendarMinRowHeight = 44.0;
 
@@ -211,6 +231,7 @@ class _MonthGrid extends StatelessWidget {
     required this.onTap,
     required this.onLongPress,
     this.birthdays = const [],
+    this.plans = const {},
   });
 
   final List<DateTime> days;
@@ -221,6 +242,9 @@ class _MonthGrid extends StatelessWidget {
 
   /// 誕生日の印を出す猫の生年月日
   final List<DateTime> birthdays;
+
+  /// 病院の次の予定日（印を出す日）
+  final Set<DateTime> plans;
   final ValueChanged<DateTime> onTap;
   final ValueChanged<DateTime> onLongPress;
 
@@ -290,6 +314,14 @@ class _MonthGrid extends StatelessWidget {
                           ),
                         ),
                         const Spacer(),
+                        // 病院の予定は、誕生日と同じく右上に出す（予定の印。S-20）
+                        if (plans.contains(dateOnly(day)))
+                          Image.asset(
+                            vetCalendarAsset,
+                            width: 14,
+                            height: 14,
+                            semanticLabel: '病院の予定',
+                          ),
                         // 誕生日はセルの右上に印を出す。イラストがないので標準のケーキのアイコンを使う
                         if (birthdays.any((b) => isBirthday(b, day)))
                           Icon(

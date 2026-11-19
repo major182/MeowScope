@@ -16,6 +16,11 @@ public class HouseholdService {
 
     private static final Logger log = LoggerFactory.getLogger(HouseholdService.class);
 
+    /** 標準の項目「病院」の種類・名前・アイコン（V9 と同じ値。DB 設計書 4章）。 */
+    static final String VET = "vet";
+    static final String VET_NAME = "病院";
+    static final String VET_ICON = "custom_vet";
+
     private final JdbcClient jdbc;
     private final HouseholdAccess access;
 
@@ -25,7 +30,9 @@ public class HouseholdService {
     }
 
     /**
-     * 端末で作ったおうちと記録項目を ID ごと登録し、作った人をメンバーにする。サーバーでは標準の項目を作らない。
+     * 端末で作ったおうちと記録項目を ID ごと登録し、作った人をメンバーにする。
+     * 標準の項目は端末が作って送る。ただし病院（vet）が含まれていなければ（Ver.1.3.0 より前のアプリ）、
+     * サーバーが1つ足す（BR-37。1つのおうちに1つだけにするため、端末に作らせない）。
      *
      * @return 新しく作ったら true。自分のおうちとして登録済みなら false（送り直し）
      * @throws ApiException 他の人のおうちの ID だったとき（404。存在するかどうかも教えない）
@@ -55,6 +62,15 @@ public class HouseholdService {
                 // 記録項目の ID が、ほかのおうちの項目とぶつかった。おうちごと作らず 409 にする（UUID なので実際にはまず起きない）
                 throw new ApiException(ErrorCode.CONFLICT);
             }
+        }
+        if (request.recordTypes().stream().noneMatch(t -> VET.equals(t.kind()))) {
+            jdbc.sql("""
+                    INSERT INTO record_types (id, household_id, name, icon, kind, sort_order)
+                    VALUES (:id, :household, :name, :icon, :kind,
+                            (SELECT COALESCE(max(sort_order), -1) + 1 FROM record_types WHERE household_id = :household))
+                    """)
+                    .param("id", UUID.randomUUID()).param("household", request.id()).param("name", VET_NAME)
+                    .param("icon", VET_ICON).param("kind", VET).update();
         }
         log.atInfo().addKeyValue("evt.name", "household_create").addKeyValue("evt.outcome", "success")
                 .addKeyValue("household.id", request.id().toString())

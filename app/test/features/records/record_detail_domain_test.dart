@@ -10,7 +10,7 @@ void main() {
     expect(RecordLevel.parse('huge'), isNull);
   });
 
-  test('UT-RD-02 量と体重を入力する項目', () {
+  test('UT-RD-02 量・体重・病院の欄を入力する項目', () {
     final level = {for (final k in RecordKind.values) k: hasLevel(k.name)};
     expect(level, {
       RecordKind.food: true,
@@ -21,12 +21,17 @@ void main() {
       RecordKind.vomit: true,
       RecordKind.weight: false,
       RecordKind.brushing: false,
+      RecordKind.vet: false,
     });
     expect(hasLevel(RecordKind.custom), isTrue);
     expect(RecordKind.values.where((k) => hasWeight(k.name)), [
       RecordKind.weight,
     ]);
     expect(hasWeight(RecordKind.custom), isFalse);
+    expect(RecordKind.values.where((k) => hasVetDetail(k.name)), [
+      RecordKind.vet,
+    ]);
+    expect(hasVetDetail(RecordKind.custom), isFalse);
   });
 
   test('UT-RD-03 体重の境界値：0.09 と 30.01 は不可、0.1 と 30 は可', () {

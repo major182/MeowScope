@@ -166,17 +166,17 @@ void main() {
     testWidgets('UT-TO-07 標準の項目も含めてすべてにつまみがあり、動かすとこの端末の並び順に残す', (tester) async {
       await addCustom('おやつ');
       await show(tester, const RecordTypesScreen());
-      expect(find.byIcon(Icons.drag_handle), findsNWidgets(9));
+      expect(find.byIcon(Icons.drag_handle), findsNWidgets(10));
 
-      // つまみで「おやつ」（9番目）を先頭へ動かしたときの呼び出し
+      // つまみで「おやつ」（10番目）を先頭へ動かしたときの呼び出し
       tester
           .widget<ReorderableListView>(find.byType(ReorderableListView))
-          .onReorderItem!(8, 0);
+          .onReorderItem!(9, 0);
       await tester.pumpAndSettle();
 
       final saved = await savedOrder();
       expect(saved.first, ids['おやつ']);
-      expect(saved, hasLength(9));
+      expect(saved, hasLength(10));
       expect(
         order(tester, find.byType(ReorderableListView), ['おやつ', 'ご飯（標準）']),
         ['おやつ', 'ご飯（標準）'],
@@ -196,7 +196,7 @@ void main() {
       final saved = await savedOrder();
       expect(saved.first, ids['水']);
       expect(saved.indexOf(ids['ご飯']!), greaterThan(0));
-      expect(saved, hasLength(8));
+      expect(saved, hasLength(9));
       await close(tester);
     });
 
@@ -235,11 +235,11 @@ void main() {
       );
       expect(
         find.descendant(of: small, matching: find.byType(RecordTypeButton)),
-        findsNWidgets(2),
+        findsNWidgets(3),
       );
-      // 先頭はおやつ、次に体重、あとは登録の順。ブラシと爪切りが半分の大きさへ
+      // 先頭はおやつ、次に体重、あとは登録の順。ブラシ・病院・爪切りが半分の大きさへ
       expect(order(tester, big, ['おやつ', '体重', 'ご飯']), ['おやつ', '体重', 'ご飯']);
-      expect(order(tester, small, ['ブラシ', '爪切り']), ['ブラシ', '爪切り']);
+      expect(order(tester, small, ['ブラシ', '病院', '爪切り']), ['ブラシ', '病院', '爪切り']);
       final bigSize = tester.getSize(
         find.descendant(of: big, matching: find.byType(RecordTypeButton)).first,
       );
@@ -253,7 +253,10 @@ void main() {
     });
 
     testWidgets('UT-TO-11 境界値：項目がちょうど8つなら、半分の大きさの段を出さない', (tester) async {
-      // 独自の項目を2つとも非表示にして8つにする
+      // 8つにする：病院がまだ同期で届いていない今あるおうち（BR-37）で、独自の項目を2つとも非表示に
+      await (db.delete(
+        db.recordTypes,
+      )..where((t) => t.kind.equals('vet'))).go();
       await repo.setTypeHidden(id: ids['おやつ']!, userId: 'u1', hidden: true);
       await repo.setTypeHidden(id: ids['爪切り']!, userId: 'u1', hidden: true);
       await show(tester, const HomeScreen());
@@ -270,7 +273,7 @@ void main() {
       await show(tester, const HomeScreen());
 
       expect(find.byKey(const ValueKey('small-type-buttons')), findsNothing);
-      expect(find.byType(RecordTypeButton), findsNWidgets(10));
+      expect(find.byType(RecordTypeButton), findsNWidgets(11));
       expect(order(tester, find.byType(GridView), ['爪切り', 'ご飯']), [
         '爪切り',
         'ご飯',
@@ -300,7 +303,7 @@ void main() {
       await settings.setTypeOrder('h1', [ids['爪切り']!]);
       await show(tester, DayRecordAddScreen(day: DateTime(2000, 1, 1)));
 
-      expect(find.byType(RecordTypeButton), findsNWidgets(10));
+      expect(find.byType(RecordTypeButton), findsNWidgets(11));
       expect(order(tester, find.byType(GridView), ['爪切り', 'ご飯']), [
         '爪切り',
         'ご飯',

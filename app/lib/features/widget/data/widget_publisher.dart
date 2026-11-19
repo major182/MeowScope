@@ -48,7 +48,9 @@ final widgetSnapshotProvider = Provider.autoDispose<WidgetSnapshot?>((ref) {
           (
             id: b.type.id,
             name: b.type.name,
-            icon: iconAsset(b.type.icon) ?? fallbackIconAsset,
+            icon:
+                iconAsset(typeIconValue(b.type.kind, b.type.icon)) ??
+                fallbackIconAsset,
           ),
     ],
     cats: [for (final c in cats.value!) (id: c.id, name: c.name)],

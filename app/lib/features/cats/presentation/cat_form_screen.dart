@@ -15,6 +15,7 @@ import '../../household/data/household_repository.dart';
 import '../data/cat_repository.dart';
 import '../../../core/widgets/readable_width.dart';
 import '../../../core/widgets/save_guard.dart';
+import 'vet_history.dart';
 
 /// 猫1匹を見張る
 final catProvider = StreamProvider.autoDispose.family<CatRow?, String>(
@@ -272,6 +273,9 @@ class _CatFormScreenState extends ConsumerState<CatFormScreen> {
               child: Text(_editing ? '保存する' : '登録する'),
             ),
             if (widget.initial case final cat? when session != null) ...[
+              const Divider(height: 48),
+              // 病院の履歴（F-MD-01）。新しく登録するとき（S-05）は出さない
+              VetHistory(catId: cat.id),
               const Divider(height: 48),
               // CatProfileScreen が猫を見張っているので、cat は最新の状態
               OutlinedButton(

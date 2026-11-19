@@ -47,12 +47,12 @@ class HouseholdController {
         return new LeaveResponse(leave.leave(CurrentUser.id(jwt), id, request.keepRecords()));
     }
 
-    /** 端末で作った記録項目。標準の8項目を受け取る。 */
+    /** 端末で作った記録項目。標準の9項目（Ver.1.3.0 から病院を含む。古いアプリは8項目）を受け取る。 */
     record RecordTypeInput(
             @NotNull UUID id,
             @NotBlank @Size(max = 20) String name,
             @Size(max = 50) String icon,
-            @NotNull @Pattern(regexp = "food|water|medicine|urine|stool|vomit|weight|brushing|custom") String kind,
+            @NotNull @Pattern(regexp = "food|water|medicine|urine|stool|vomit|weight|brushing|vet|custom") String kind,
             @Min(0) @Max(1000) int sortOrder) {
     }
 

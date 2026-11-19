@@ -6,7 +6,7 @@ import 'package:meowscope/features/records/domain/record_kind.dart';
 
 void main() {
   group('RecordKind', () {
-    test('UT-RC-01 標準の項目は8つで、ブラシを含む', () {
+    test('UT-RC-01 標準の項目は9つで、ブラシと病院（Ver.1.3.0）を含む', () {
       expect(RecordKind.values.map((k) => k.label), [
         'ご飯',
         '水',
@@ -16,6 +16,7 @@ void main() {
         '吐いた',
         '体重',
         'ブラシ',
+        '病院',
       ]);
     });
   });
@@ -48,7 +49,9 @@ void main() {
       fallbackIconAsset,
       memoAsset,
     };
-    expect(paths, hasLength(8 * 2 + 6 + 1));
+    // 標準9＋カレンダー用8（病院のカレンダー用は独自の通院のイラストを使う）＋独自6＋メモ1。
+    // 「その他」は独自の項目のイラストと同じなので重ならない
+    expect(paths, hasLength(9 + 8 + 6 + 1));
     for (final p in paths) {
       expect(File(p).existsSync(), isTrue, reason: p);
     }
