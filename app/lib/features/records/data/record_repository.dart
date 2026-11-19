@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../icons/icon_repository.dart';
+import '../../search/domain/record_search.dart';
 import '../domain/record_kind.dart';
 
 /// 記録の一覧（今日の記録・カレンダー・日別一覧）に出す1行
@@ -379,6 +380,35 @@ class RecordRepository {
       newestFirst: newestFirst,
     );
     return q.watch().map(map);
+  }
+
+  /// 記録を探す（F-VW-03、S-23）。端末にある記録から、新しい順に見張る
+  ///
+  /// 同期で全件が端末に入るので、サーバーには問い合わせない。
+  /// 猫と期間は DB で絞り、項目とメモの言葉は読んだ後に絞る（言葉の数が決まらず、
+  /// 英字の大文字・小文字を区別しないで比べるため）
+  Stream<List<RecordEntry>> watchSearch(String householdId, SearchQuery query) {
+    final from = query.from;
+    final to = query.to;
+    final (q, map) = _range(
+      householdId,
+      from: from == null
+          ? DateTime(1900)
+          : DateTime(from.year, from.month, from.day),
+      to: to == null ? DateTime(9999) : DateTime(to.year, to.month, to.day + 1),
+      catId: query.catId,
+      newestFirst: true,
+    );
+    final words = splitWords(query.words);
+    return q.watch().map(
+      (rows) => [
+        for (final e in map(rows))
+          if ((query.recordTypeId == null ||
+                  e.recordTypeId == query.recordTypeId) &&
+              matchesWords(e.memo, words))
+            e,
+      ],
+    );
   }
 
   /// 期間（from 以上 to 未満）の記録を一度だけ読む（古い順）

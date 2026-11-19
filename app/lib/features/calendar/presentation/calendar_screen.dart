@@ -132,7 +132,17 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       ],
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('カレンダー')),
+      appBar: AppBar(
+        title: const Text('カレンダー'),
+        actions: [
+          // 記録の検索（S-23。F-VW-03）
+          IconButton(
+            tooltip: '記録の検索',
+            onPressed: () => context.push('/search'),
+            icon: const Icon(Icons.search),
+          ),
+        ],
+      ),
       body: wide
           ? Row(
               children: [
