@@ -200,9 +200,15 @@ void main() {
     );
     await tester.pump();
     expect(find.text('ミケのお薬の時間です\n○○錠 1錠'), findsOneWidget);
+    // 開く前は、開いた先（ログインに困ったら）の画面ではない
+    expect(find.widgetWithText(AppBar, 'ログインに困ったら'), findsNothing);
+    // お知らせが下から出きるのを待ってから押す（出てくる途中は画面の外にあり、押しても当たらない。#270）
+    await tester.pump(const Duration(seconds: 1));
     await tester.tap(find.widgetWithText(SnackBarAction, '開く'));
     await tester.pumpAndSettle();
-    expect(find.text('ログインに困ったら'), findsWidgets);
+    // 開いた先の画面だけにあるもの（見出しと項目）で確かめる。ログインの画面にも同じ文字のボタンがあるため
+    expect(find.widgetWithText(AppBar, 'ログインに困ったら'), findsOneWidget);
+    expect(find.text('パスワード再発行'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();

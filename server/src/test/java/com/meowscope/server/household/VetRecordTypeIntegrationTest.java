@@ -197,4 +197,58 @@ class VetRecordTypeIntegrationTest {
 
         db.sql("DROP SCHEMA " + schema + " CASCADE").update();
     }
+
+    @Test
+    @DisplayName("IT-VT-06 病院の detail の検証：名前は1〜50文字（境界値）、日付は YYYY-MM-DD の正しい日付、ほかのキーは不可。病院以外の項目の detail には効かない")
+    void detailの検証() throws Exception {
+        Registered haru = TestUsers.register(mvc);
+        UUID household = UUID.randomUUID();
+        UUID vet = UUID.randomUUID();
+        UUID food = UUID.randomUUID();
+        create(haru, household, List.of(type(food, "ご飯", "food", "food", 0), type(vet, "病院", "custom_vet", "vet", 8)))
+                .andExpect(status().isCreated());
+        UUID cat = UUID.randomUUID();
+        List<Object> details = List.of(
+                Map.of("hospital", "あ".repeat(50), "nextDate", "2026-12-01"),
+                Map.of("hospital", "あ".repeat(51)),
+                Map.of("hospital", "  "),
+                Map.of("nextDate", "2026-02-30"),
+                Map.of("nextDate", "2026/12/01"),
+                Map.of("note", "x"),
+                Map.of("hospital", 1));
+        List<Map<String, Object>> changes = new java.util.ArrayList<>();
+        changes.add(change("cats", cat, Map.of("householdId", household.toString(), "name", "ミケ", "status", "active")));
+        for (Object d : details) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("catId", cat.toString());
+            data.put("recordTypeId", vet.toString());
+            data.put("recordedAt", "2026-11-19T01:00:00Z");
+            data.put("authorName", "はる");
+            data.put("detail", d);
+            changes.add(change("records", UUID.randomUUID(), data));
+        }
+        // 病院以外の項目（ご飯）の detail は、ここでは見ない
+        Map<String, Object> other = new LinkedHashMap<>();
+        other.put("catId", cat.toString());
+        other.put("recordTypeId", food.toString());
+        other.put("recordedAt", "2026-11-19T01:00:00Z");
+        other.put("authorName", "はる");
+        other.put("detail", Map.of("note", "x"));
+        changes.add(change("records", UUID.randomUUID(), other));
+
+        String body = json.writeValueAsString(Map.of("lastSeq", 0, "changes", changes));
+        mvc.perform(post("/api/v1/sync").header("Authorization", haru.bearer())
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.results[0].status").value("applied"))
+                .andExpect(jsonPath("$.results[1].status").value("applied"))
+                .andExpect(jsonPath("$.results[2].field").value("detail"))
+                .andExpect(jsonPath("$.results[3].field").value("detail"))
+                .andExpect(jsonPath("$.results[4].field").value("detail"))
+                .andExpect(jsonPath("$.results[5].field").value("detail"))
+                .andExpect(jsonPath("$.results[6].field").value("detail"))
+                .andExpect(jsonPath("$.results[7].field").value("detail"))
+                .andExpect(jsonPath("$.results[2].reason").value("invalid"))
+                .andExpect(jsonPath("$.results[8].status").value("applied"));
+    }
 }

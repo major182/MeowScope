@@ -92,8 +92,10 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
 
   Future<void> _pickDateTime() async {
     final now = DateTime.now();
-    final date = await showDatePicker(
+    // 週の始まりはアプリの設定に合わせる（F-VW-04。日付の選択はどの画面でも showAppDatePicker を使う）
+    final date = await showAppDatePicker(
       context: context,
+      weekStart: ref.read(weekStartProvider).value ?? WeekStart.sunday,
       initialDate: _recordedAt,
       firstDate: DateTime(2000),
       lastDate: now,
@@ -188,8 +190,9 @@ class _RecordFormState extends ConsumerState<_RecordForm> {
   @override
   Widget build(BuildContext context) {
     final view = widget.view;
-    // 保存のときにセッションを使うので、読み込んでおく
+    // 保存のときにセッションを、日付の選択で週の始まりを使うので、読み込んでおく
     ref.watch(sessionProvider);
+    ref.watch(weekStartProvider);
     return Scaffold(
       appBar: AppBar(
         title: Text(view.typeName),
