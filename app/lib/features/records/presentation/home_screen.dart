@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +15,7 @@ import '../../household/data/household_repository.dart';
 import '../data/record_repository.dart';
 import '../../../core/widgets/save_guard.dart';
 import 'cat_picker.dart';
+import '../domain/type_order.dart';
 import 'record_format.dart';
 import 'record_providers.dart';
 import 'today_detail.dart';
@@ -59,6 +61,24 @@ SliverGridDelegate recordTypeGrid(BuildContext context) =>
         crossAxisSpacing: 8,
       );
 
+/// 半分の大きさのボタン（Android のホームの3段目から）の並べ方。
+/// 狭い画面は8列（通常の2倍）、広い画面は幅の上限を通常の半分にする
+SliverGridDelegate _smallTypeGrid(BuildContext context) =>
+    MediaQuery.sizeOf(context).width >= wideLayoutWidth
+    ? const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: typeButtonMaxWidth / 2,
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
+      )
+    : const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 8,
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
+      );
+
+/// ホームの3段目から半分の大きさにするか。Android だけ（Windows は常に通常の大きさ。S-10）
+bool get splitHomeButtons => defaultTargetPlatform == TargetPlatform.android;
+
 /// ホーム（S-10）。項目 → 猫 → 即保存の流れで記録する
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -70,7 +90,10 @@ class HomeScreen extends ConsumerWidget {
     if (session == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    final types = ref.watch(recordTypesProvider).value ?? const [];
+    // 記録項目の設定（S-43）で決めた、この端末の並び順（F-RC-07）
+    final types = ref.watch(orderedRecordTypesProvider).value ?? const [];
+    // Android は上2段（8つ）を通常の大きさ、残りを半分の大きさで出す
+    final split = splitHomeButtons ? homeFullSizeCount : types.length;
     final today = ref.watch(_todayProvider).value ?? const [];
     // ボタンを押す前に猫の一覧を読み込んでおく
     final cats = ref.watch(activeCatsProvider).value ?? const [];
@@ -100,13 +123,30 @@ class HomeScreen extends ConsumerWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             children: [
-              for (final t in types)
+              for (final t in types.take(split))
                 RecordTypeButton(
                   type: t,
                   onPressed: () => _record(context, ref, session, cats, t),
                 ),
             ],
           ),
+          if (types.length > split) ...[
+            const SizedBox(height: 8),
+            GridView(
+              key: const ValueKey('small-type-buttons'),
+              gridDelegate: _smallTypeGrid(context),
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                for (final t in types.skip(split))
+                  RecordTypeButton(
+                    type: t,
+                    small: true,
+                    onPressed: () => _record(context, ref, session, cats, t),
+                  ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           Text('今日の記録', style: Theme.of(context).textTheme.titleMedium),
           if (today.isEmpty)
@@ -203,9 +243,13 @@ class RecordTypeButton extends StatelessWidget {
     super.key,
     required this.type,
     required this.onPressed,
+    this.small = false,
   });
 
   final RecordTypeRow type;
+
+  /// 半分の大きさのボタン（Android のホームの3段目から）。名前の文字も小さくする
+  final bool small;
 
   /// null なら押せない状態にする
   final VoidCallback? onPressed;
@@ -216,7 +260,7 @@ class RecordTypeButton extends StatelessWidget {
       onPressed: onPressed,
       // 既定の丸い形では名前が枠に重なるので、角丸の四角にする
       style: OutlinedButton.styleFrom(
-        padding: const EdgeInsets.all(4),
+        padding: EdgeInsets.all(small ? 2 : 4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       child: Column(
@@ -226,7 +270,14 @@ class RecordTypeButton extends StatelessWidget {
             child: TypeIcon(icon: type.icon, name: type.name),
           ),
           // 長い名前（独自の項目など）も収まるよう、幅に合わせて文字を縮める
-          FittedBox(fit: BoxFit.scaleDown, child: Text(type.name, maxLines: 1)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              type.name,
+              maxLines: 1,
+              style: small ? Theme.of(context).textTheme.labelSmall : null,
+            ),
+          ),
         ],
       ),
     );

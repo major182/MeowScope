@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../../../core/db/app_database.dart';
 import '../../calendar/domain/calendar_month.dart';
 import '../../notifications/domain/notification_settings.dart';
+import '../../records/domain/type_order.dart';
 
 /// 端末に置くユーザーの設定
 ///
@@ -96,6 +97,21 @@ class SettingsRepository {
     await _put(anomalyMethodKey, value.method.name);
     await _enqueue(userId);
   });
+
+  /// 記録項目の端末の並び順のキー（F-RC-07）。おうちごとに持つ
+  static String typeOrderKey(String householdId) =>
+      'settings.recordTypeOrder.$householdId';
+
+  /// 記録項目の並び順（項目の ID の一覧）を見張る。並べ替えていなければ空
+  Stream<List<String>> watchTypeOrder(String householdId) {
+    final q = _db.select(_db.appStates)
+      ..where((s) => s.key.equals(typeOrderKey(householdId)));
+    return q.watchSingleOrNull().map((row) => parseTypeOrder(row?.value));
+  }
+
+  /// 記録項目の並び順を保存する。端末ごとの設定なので、同期の印は置かない（BR-36）
+  Future<void> setTypeOrder(String householdId, List<String> ids) =>
+      _put(typeOrderKey(householdId), jsonEncode(ids));
 
   Future<void> _put(String key, String value) => _db
       .into(_db.appStates)
