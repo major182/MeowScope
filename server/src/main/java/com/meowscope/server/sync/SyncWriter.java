@@ -6,6 +6,9 @@ import com.meowscope.server.sync.Fields.Rejected;
 import com.meowscope.server.sync.SyncDtos.ChangeIn;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -208,6 +211,7 @@ class SyncWriter {
             f.instant("recordedAt", true), f.text("authorName", true, 20), f.number("valueNumber", 0, 1000),
             f.oneOf("level", false, LEVELS), f.object("detail", 4000), f.text("memo", false, 1000),
         };
+        checkVetDetail(typeId, (String) v[4]);
         if (checkExisting(userId, access.householdOfRecord(id), household)) {
             // 投稿者（author_id）は最初に作った人のまま。編集した人には変えない（BR-17）
             return result(jdbc.sql("""
@@ -237,6 +241,53 @@ class SyncWriter {
                 .param("detail", v[4]).param("memo", v[5]).param("deletedAt", deletedAt)
                 .param("updatedAt", updatedAt).update();
         return APPLIED;
+    }
+
+    /** 病院の名前の長さの上限（DB 設計書 4章、画面設計書 S-12）。 */
+    static final int MAX_HOSPITAL_LENGTH = 50;
+
+    /**
+     * 病院の記録の detail を確かめる（NF-SC-08。DB 設計書 4章）。
+     * 形は {"hospital": 名前（1〜50文字）, "nextDate": "YYYY-MM-DD"} で、どちらも任意。ほかのキーは受け付けない。
+     * 病院以外の項目の detail は、ここでは見ない（JSON の形と長さは Fields で確かめている）。
+     */
+    private void checkVetDetail(UUID typeId, String detail) {
+        if (detail == null) {
+            return;
+        }
+        String kind = jdbc.sql("SELECT kind FROM record_types WHERE id = :id").param("id", typeId)
+                .query(String.class).optional().orElse(null);
+        if (!"vet".equals(kind)) {
+            return;
+        }
+        Map<?, ?> map = json.readValue(detail, Map.class);
+        for (Map.Entry<?, ?> e : map.entrySet()) {
+            boolean ok = switch (String.valueOf(e.getKey())) {
+                case "hospital" -> e.getValue() instanceof String h && !h.isBlank()
+                        && h.codePointCount(0, h.length()) <= MAX_HOSPITAL_LENGTH;
+                case "nextDate" -> e.getValue() instanceof String d && isDate(d);
+                default -> false;
+            };
+            if (!ok) {
+                throw new Rejected("invalid", "detail");
+            }
+        }
+    }
+
+    /** 日付の形（YYYY-MM-DD）。 */
+    private static final Pattern DATE = Pattern.compile("[0-9]{4}-[0-9]{2}-[0-9]{2}");
+
+    /** YYYY-MM-DD の正しい日付か（2月30日などは不可）。 */
+    private static boolean isDate(String value) {
+        if (!DATE.matcher(value).matches()) {
+            return false;
+        }
+        try {
+            LocalDate.parse(value);
+            return true;
+        } catch (DateTimeException e) {
+            return false;
+        }
     }
 
     /**
