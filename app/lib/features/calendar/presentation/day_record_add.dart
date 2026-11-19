@@ -95,7 +95,7 @@ class _DayRecordAddScreenState extends ConsumerState<DayRecordAddScreen> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider).value;
-    final types = ref.watch(recordTypesProvider).value ?? const [];
+    final types = ref.watch(orderedRecordTypesProvider).value ?? const [];
     // ボタンを押す前に猫の一覧を読み込んでおく
     final cats = ref.watch(activeCatsProvider).value ?? const [];
     final day = widget.day;

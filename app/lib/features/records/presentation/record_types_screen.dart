@@ -6,6 +6,7 @@ import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../domain/custom_type.dart';
 import '../domain/record_kind.dart';
+import '../domain/type_order.dart';
 import '../../../core/widgets/readable_width.dart';
 import '../../../core/widgets/save_guard.dart';
 import 'record_providers.dart';
@@ -30,11 +31,31 @@ class RecordTypesScreen extends ConsumerWidget {
         );
   }
 
+  /// 並べ替えを、この端末の並び順として保存する（F-RC-07、BR-36）。
+  /// 非表示の項目も含めた全体の順を残す（表示に戻したときの位置になる）
+  Future<void> _reorder(
+    WidgetRef ref,
+    List<RecordTypeRow> types,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final session = ref.read(sessionProvider).value;
+    if (session == null) {
+      return;
+    }
+    await ref
+        .read(settingsRepositoryProvider)
+        .setTypeOrder(
+          session.householdId,
+          moveTypeOrder([for (final t in types) t.id], oldIndex, newIndex),
+        );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 非表示にするときにセッションを使うので、読み込んでおく
     ref.watch(sessionProvider);
-    final types = ref.watch(allRecordTypesProvider).value ?? const [];
+    final types = ref.watch(orderedAllRecordTypesProvider).value ?? const [];
     return Scaffold(
       appBar: AppBar(
         title: const Text('記録項目'),
@@ -45,11 +66,17 @@ class RecordTypesScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: ListView(
+      body: ReorderableListView(
         padding: readablePadding(context, 0),
+        // つまみ（≡）を押して動かす。一覧のどこでも長押しで動くと、
+        // 「編集」などのボタンやスクロールと取り違えやすいため
+        buildDefaultDragHandles: false,
+        onReorderItem: (oldIndex, newIndex) =>
+            _reorder(ref, types, oldIndex, newIndex),
         children: [
-          for (final t in types)
+          for (final (i, t) in types.indexed)
             ListTile(
+              key: ValueKey(t.id),
               leading: SizedBox(
                 width: 40,
                 child: TypeIcon(icon: t.icon, name: t.name),
@@ -58,21 +85,32 @@ class RecordTypesScreen extends ConsumerWidget {
                 t.kind == RecordKind.custom ? t.name : '${t.name}（標準）',
               ),
               subtitle: t.hidden ? const Text('非表示中') : null,
-              trailing: t.kind == RecordKind.custom
-                  ? Wrap(
-                      children: [
-                        TextButton(
-                          onPressed: () =>
-                              context.push('/record-types/${t.id}'),
-                          child: const Text('編集'),
-                        ),
-                        TextButton(
-                          onPressed: () => _setHidden(ref, t),
-                          child: Text(t.hidden ? '表示に戻す' : '非表示にする'),
-                        ),
-                      ],
-                    )
-                  : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (t.kind == RecordKind.custom) ...[
+                    TextButton(
+                      onPressed: () => context.push('/record-types/${t.id}'),
+                      child: const Text('編集'),
+                    ),
+                    TextButton(
+                      onPressed: () => _setHidden(ref, t),
+                      child: Text(t.hidden ? '表示に戻す' : '非表示にする'),
+                    ),
+                  ],
+                  // すぐにつかめるつまみ（マウスでも指でも動かせる）
+                  ReorderableDragStartListener(
+                    index: i,
+                    child: Tooltip(
+                      message: '${t.name}を動かす',
+                      child: const Padding(
+                        padding: EdgeInsets.all(8),
+                        child: Icon(Icons.drag_handle),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
         ],
       ),
