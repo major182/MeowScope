@@ -37,6 +37,13 @@ class E2eApp {
     await tester.pumpAndSettle();
   }
 
+  /// アプリを開き直す。端末の DB とトークンの置き場はそのまま使う（端末の再起動の代わり）
+  Future<void> restart(WidgetTester tester) async {
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+    await start(tester);
+  }
+
   Future<void> close(WidgetTester tester) async {
     await tester.pumpWidget(const SizedBox());
     await tester.pumpAndSettle();
