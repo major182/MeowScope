@@ -192,8 +192,12 @@ void main() {
     });
   });
 
-  Future<void> show(WidgetTester tester, String location) async {
-    tester.view.physicalSize = const Size(400, 900);
+  Future<void> show(
+    WidgetTester tester,
+    String location, {
+    double width = 400,
+  }) async {
+    tester.view.physicalSize = Size(width, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     final router = GoRouter(
@@ -377,6 +381,27 @@ void main() {
     expect(tester.getTopLeft(find.text('すべての項目')).dx, lessThan(40));
     await close(tester);
   });
+
+  testWidgets(
+    'UT-SR-19 広い窓（1280px）では、言葉の欄と結果の幅を 640px までにして中央に寄せる。狭い画面では左右 12 の余白（NF-UX-02。#274）',
+    (tester) async {
+      await add('c1', 'food', DateTime(2026, 11, 2, 8), memo: 'ふつう');
+      await show(tester, '/search', width: 1280);
+
+      final field = tester.getRect(find.byType(TextField));
+      expect(field.width, lessThanOrEqualTo(640));
+      expect(field.left, closeTo((1280 - 640) / 2, 1));
+      expect(tester.getTopLeft(find.text('すべての項目')).dx, closeTo(320, 1));
+      final row = tester.getRect(find.byType(ListTile));
+      expect(row.left, greaterThanOrEqualTo(300));
+      expect(row.right, lessThanOrEqualTo(980));
+      await close(tester);
+
+      await show(tester, '/search');
+      expect(tester.getRect(find.byType(TextField)).left, closeTo(12, 1));
+      await close(tester);
+    },
+  );
 
   test('UT-SR-17 アプリの道筋に、記録の検索（/search）がある', () {
     final router = createRouter();

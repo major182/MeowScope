@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers.dart';
 import '../../../core/today.dart';
 import '../../../core/widgets/app_date_picker.dart';
+import '../../../core/widgets/readable_width.dart';
 import '../../calendar/domain/calendar_month.dart';
 import '../../cats/presentation/cat_filter.dart';
 import '../../icons/icon_avatar.dart';
@@ -99,12 +100,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final types = ref.watch(allRecordTypesProvider).value ?? const [];
     final results = ref.watch(searchResultsProvider(_query));
     final words = splitWords(_query.words);
+    // 広い窓では中身の幅を 640px までにして中央に寄せる（NF-UX-02。#274）
+    final side = readablePadding(context, 12).left;
     return Scaffold(
       appBar: AppBar(title: const Text('記録の検索')),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            padding: EdgeInsets.fromLTRB(side, 8, side, 0),
             child: TextField(
               controller: _words,
               decoration: const InputDecoration(
@@ -122,7 +125,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: EdgeInsets.symmetric(horizontal: side),
             // 左に寄せる（列の中では、中身の幅のまま中央に置かれるため。S-23 の絵。#272）
             child: Align(
               alignment: Alignment.centerLeft,
@@ -170,7 +173,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: EdgeInsets.symmetric(horizontal: side),
             child: Row(
               children: [
                 const Text('期間'),
@@ -207,6 +210,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               null => const Center(child: CircularProgressIndicator()),
               [] => const Center(child: Text('見つかりませんでした')),
               final list => ListView(
+                // 一覧の行は自分で左右に 16 の余白を持つので、その分を引く
+                padding: EdgeInsets.symmetric(horizontal: side - 12),
                 children: [
                   for (final e in list)
                     ListTile(
