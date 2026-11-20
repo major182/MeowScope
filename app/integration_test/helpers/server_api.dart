@@ -39,7 +39,8 @@ class ServerApi {
     return r.data!['accessToken'] as String;
   }
 
-  /// おうちを作る。記録項目はご飯と水だけ。それぞれの ID を返す
+  /// おうちを作る。記録項目はご飯と水だけ（病院を送らない古い版のアプリと同じ。病院はサーバーが足す）。
+  /// それぞれの ID を返す
   Future<({String household, String food, String water})> createHousehold(
     String token,
     String name,
@@ -128,6 +129,51 @@ class ServerApi {
         },
       },
     ]);
+  }
+
+  /// 独自の項目を作る。項目の ID を返す
+  Future<String> addCustomType(
+    String token, {
+    required String household,
+    required String name,
+    required String icon,
+  }) async {
+    final id = _uuid.v4();
+    await sync(token, [_customType(id, household, name, icon, deleted: false)]);
+    return id;
+  }
+
+  /// 独自の項目に削除の印を付ける（V10 で「通院」をまとめた後の状態を作るため）
+  Future<void> deleteCustomType(
+    String token, {
+    required String id,
+    required String household,
+    required String name,
+    required String icon,
+  }) => sync(token, [_customType(id, household, name, icon, deleted: true)]);
+
+  Map<String, Object?> _customType(
+    String id,
+    String household,
+    String name,
+    String icon, {
+    required bool deleted,
+  }) {
+    final now = DateTime.now().toUtc().toIso8601String();
+    return {
+      'table': 'record_types',
+      'id': id,
+      'updatedAt': now,
+      'deletedAt': deleted ? now : null,
+      'data': {
+        'householdId': household,
+        'name': name,
+        'icon': icon,
+        'kind': 'custom',
+        'sortOrder': 9,
+        'hidden': false,
+      },
+    };
   }
 
   /// 招待のリンクを作る
