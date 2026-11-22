@@ -1,16 +1,70 @@
 # PR ごとに、手元の dart run tool/check.dart --all と同じチェックを GitHub 上でも動かす
+# 変わった場所に関係するジョブだけを動かす（#282）。飛ばしたジョブは「成功」と数えるので、
+# 必須のチェック（app・server）も止まらない。このファイルが変わったときは全部を動かす
 name: CI
 
 on:
   push:
     branches: [main]
   pull_request:
+  # 脆弱性の検査は毎日も動かす。依存が変わらなくても、新しい脆弱性は毎日見つかるため（NF-SC-06）
+  schedule:
+    - cron: "0 18 * * *" # 日本時間の 3 時
 
 permissions:
   contents: read
 
+# 同じ PR に続けてプッシュしたら、古い実行を止める（最新の中身は必ず確かめる）。
+# main へのプッシュは、マージごとの結果を残すために止めない
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  # どこが変わったかを調べる。PR は GitHub の API で、main へのプッシュは前のコミットと比べる
+  changes:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+      server: ${{ steps.filter.outputs.server }}
+      perf: ${{ steps.filter.outputs.perf }}
+      deploy: ${{ steps.filter.outputs.deploy }}
+      deps: ${{ steps.filter.outputs.deps }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4.0.3
+        id: filter
+        with:
+          filters: |
+            app:
+              - app/**
+              - .github/workflows/ci.yml
+            server:
+              - server/**
+              - .github/workflows/ci.yml
+            perf:
+              - perf/**
+              - .github/workflows/ci.yml
+            # バックアップの確認でサーバーを組み立てて動かすので、server/ も含める
+            deploy:
+              - deploy/**
+              - compose.yaml
+              - server/**
+              - .github/workflows/ci.yml
+            # 依存を足した・変えたときは、その PR の中で脆弱性を調べる
+            deps:
+              - app/pubspec.lock
+              - server/gradle.lockfile
+              - perf/package-lock.json
+              - .github/workflows/ci.yml
+
   app:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -21,10 +75,14 @@ jobs:
         with:
           flutter-version: 3.47.9
           cache: true
+      # Android の Kotlin の単体テスト（./gradlew）で、Gradle と依存の取っておいた分を使う
+      - uses: gradle/actions/setup-gradle@v6
       - run: flutter pub get
       - run: dart run tool/check.dart
 
   server:
+    needs: changes
+    if: needs.changes.outputs.server == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -40,6 +98,8 @@ jobs:
 
   # 性能テストのスクリプトの型チェック。性能テストそのものは手元で任意のときに動かす（性能テスト設計書 6章）
   perf:
+    needs: changes
+    if: needs.changes.outputs.perf == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -52,8 +112,11 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
 
-  # 依存ライブラリの脆弱性を検査する（NF-SC-06）。見つかったら失敗する
+  # 依存ライブラリの脆弱性を検査する（NF-SC-06）。見つかったら失敗する。依存が変わったときと、毎日1回動かす
   vulnerability:
+    needs: changes
+    # 毎日の実行では changes を飛ばすので、!cancelled() で飛ばされた changes を待たずに動かす
+    if: ${{ !cancelled() && (github.event_name == 'schedule' || needs.changes.outputs.deps == 'true') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -66,6 +129,8 @@ jobs:
 
   # デプロイの定義の確認（デプロイ設計書）。AWS にはつながない
   deploy:
+    needs: changes
+    if: needs.changes.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
