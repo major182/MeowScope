@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 09 |
-| 版数 | 0.26 |
+| 版数 | 0.27 |
 | 作成日 | 2026-11-11 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md)、[07 ログ設計書](07_logging-design.md)、[08 性能テスト設計書](08_performance-test.md) |
@@ -28,7 +28,7 @@
 | 秘密の値 | パラメーターストア（SecureString）。EC2 は起動のときに読んで、root だけが読める `.env` に書く | 鍵をリポジトリ・イメージに入れない |
 | 自動デプロイ | 行わない。更新は手で1つのコマンド（5.3） | 使う期間が短く、使う人も1人 |
 | バックアップ | 毎日 DB のダンプと写真を固め、7世代を残す（NF-BK-01）。AWS と PC で同じスクリプト | 4章 |
-| PC での接続 | Tailscale の `tailscale serve` で、tailnet の中だけに HTTPS で出す。Ver.1.3.1 からは、名前を `meowscope-api.meowscope.dev` にし、Caddy が PC の tailnet の IP で受ける（2.4） | サーバーをインターネットに公開しない（C-08）。名前で呼ぶと、一般公開で外のサーバーへ移すときも DNS の向き先を変えるだけで済み、アプリを配り直さなくてよい |
+| PC での接続 | tailnet の中だけに HTTPS で出す。Ver.1.3.1 から（2026-11-24 に切り替え）、名前は `meowscope-api.meowscope.dev` で、Caddy が PC の tailnet の IP の 443 で受ける（2.4）。それまでは `tailscale serve` と ts.net の名前を使っていた | サーバーをインターネットに公開しない（C-08）。名前で呼ぶと、一般公開で外のサーバーへ移すときも DNS の向き先を変えるだけで済み、アプリを配り直さなくてよい |
 | ドメイン（Ver.1.3.1） | `meowscope.dev` を Cloudflare で取得し、DNS も Cloudflare で管理する（2.4） | 要件定義書 C-10 |
 | メール（Ver.1.3.1） | 受け取りは `support@meowscope.dev` を Cloudflare の Email Routing で転送する。アプリが送るのは `noreply@meowscope.dev` から、問い合わせへの返信は Gmail から `support@meowscope.dev` として、どちらも Resend の SMTP で送る | 個人のアドレスを出さない。送り元の認証を付ける（NF-SC-13） |
 | Web サイト（Ver.1.3.1） | 公開リポジトリ `major182/meowscope-site` を GitHub Pages で `https://meowscope.dev` に出す。事業のサイトとしてアプリの一覧を置き、アプリのページは `/apps/<アプリ名>/` の下に置く（2.4） | Google Play に要るページ（プライバシーポリシー・アカウントの削除の案内）の置き場所。サーバーと別なので、サーバーを移しても URL が変わらない |
@@ -79,9 +79,9 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  phone["利用者の端末<br>Tailscale"] -- "HTTPS（tailnet の中だけ）" --> ts
+  phone["利用者の端末<br>Tailscale"] -- "https://meowscope-api.meowscope.dev<br>（tailnet の中だけ）" --> caddy
   subgraph pc ["開発者の PC（Docker Desktop）"]
-    ts["tailscale serve"] -- "127.0.0.1:18080" --> server["Spring Boot"]
+    caddy["Caddy<br>tailnet の IP の 443"] -- "server:8080" --> server["Spring Boot"]
     server --> db[("PostgreSQL 18.6")]
     server --> photos[("写真のボリューム")]
     task["タスクスケジューラー：毎日のバックアップ"] --> backup[("バックアップのフォルダー<br>7世代")]
@@ -91,8 +91,9 @@ flowchart LR
 - `deploy/compose.pc.yaml` を重ね、サーバーを `127.0.0.1:18080` だけで受ける（LAN に出さない。開発用の 8080・5432 とぶつけない）。DB は外に出さない
 - 本番のフォルダーの `.env` に `COMPOSE_PATH_SEPARATOR=;` と `COMPOSE_FILE=compose.yaml;deploy/compose.pc.yaml` を書き、そのフォルダーでは `docker compose` だけで本番を操作できるようにする（重ねるファイルの指定の付け忘れを起こさない）
 - PC はサーバー専用ではなく普段使いの PC なので、スリープ・OS の更新による再起動・サインインの前は、サーバーが止まる。Docker Desktop の「サインインしたときに起動」をオンにし、コンテナは `restart: unless-stopped` で戻す。止まっている間もアプリは端末に記録し、動いたら同期する（F-OF-02）
-- `tailscale serve` が tailnet の中だけに HTTPS で出す。証明書は Tailscale が用意する
-- サーバーの URL は `https://<PC の名前>.<tailnet>.ts.net/api/v1`。確かめ方は `tailscale status`
+- Caddy が tailnet の中だけに HTTPS で出す。証明書は Caddy が Cloudflare の DNS で取り、期限の前に自動で取り直す（2.4）
+- サーバーの URL は `https://meowscope-api.meowscope.dev/api/v1`
+- Ver.1.3.0 までは、`tailscale serve` が `https://<PC の名前>.<tailnet>.ts.net` で出していた（5.5 の手順 1）。Ver.1.3.1 の切り替え（5.7）で止めた
 - Tailscale のアクセス制御（管理画面の Access controls）で、メンバーの端末（`autogroup:member`）から **PC の 443 だけ**を許可する。許可がないと、ほかの端末から PC へは何もつながらない（同じ PC の Windows のアプリはつながるので気づきにくい）。PC は `hosts` に tailnet の IP で名前を付けて指す（例：`"hosts": {"meowscope-server": "<PC の tailnet の IP>"}` と、`"grants"` に `{"src": ["autogroup:member"], "dst": ["meowscope-server"], "ip": ["443"]}`）。IP は `tailscale ip -4` で確かめる
 - PC に `tag:server` などのタグは付けない。タグを付けると PC の持ち主が利用者からタグに替わり、PC からほかの端末へつなげなくなるため、普段使いの PC に向かない（サーバー専用の機械を置くときはタグで指す）
 - 利用者の端末に Tailscale を入れ、同じ tailnet に招く
@@ -367,6 +368,8 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 3. **切り替える**：`tailscale serve --https=443 off` で古い名前を止め、`.env` の `CADDY_PORT=443` にして `docker compose up -d caddy`。両端末で同期できることを確かめる
 4. **戻すとき**：`.env` の `CADDY_PORT=18443` にして `docker compose up -d caddy`、`tailscale serve --bg --https=443 http://127.0.0.1:18080` で古い名前に戻す。1.3.1 のアプリはつながらないままになるので、原因を直してから 3 をやり直す
 
+2026-11-24 に 1〜3 を行った。両端末を 1.3.1+10 に更新した後、`tailscale serve` を止めて Caddy を 443 番にした。切り替えの直後から、新しい名前での同期が届いた（テスト仕様書 M-UP-09）。
+
 ## 6. アプリの配り方
 
 ### 6.1 Android
@@ -475,3 +478,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.24 | 2026-11-24 | 2.4 に Caddy のイメージ・.env の値・古い名前との切り替え（tailscale serve と 443 番がぶつかるため、先に 18443 で確かめてから切り替える）・一般公開で移すときの考えを追加。5.7 切り替えの手順を追加（#292。利用者の決定） |
 | 0.25 | 2026-11-24 | 2.4 に本番の構成（compose.pc.yaml の caddy、Caddyfile.pc、.env の CADDY_IMAGE_TAG・CADDY_PORT）を追加（#296） |
 | 0.26 | 2026-11-24 | 6.4 の版の上げ方の例を今の番号（1.3.0+9 → 1.3.1+10）に合わせる（#298） |
+| 0.27 | 2026-11-24 | 独自ドメインの名前への切り替えを反映（決めたこと、2.2 の図と説明を Caddy に、5.7 の結果）（#300） |
