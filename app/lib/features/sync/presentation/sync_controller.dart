@@ -96,7 +96,7 @@ class SyncController extends Notifier<SyncState> {
       // 例外の種類だけをログに残す
       await ref
           .read(appLogProvider)
-          .record('warning', '家族の記録の通知に失敗：${e.runtimeType}');
+          .record('warning', 'おうちの他の利用者の記録の通知に失敗：${e.runtimeType}');
     }
   }
 }

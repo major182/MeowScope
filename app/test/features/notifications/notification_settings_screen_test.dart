@@ -99,12 +99,12 @@ void main() {
       }
       expect(find.text('猫の誕生日の当日、朝9時に通知します'), findsOneWidget);
       expect(
-        find.text('同期した際に家族が記録を行っていた場合、通知します（アプリを開いている間）'),
+        find.text('同期した際におうちの他の利用者が記録を行っていた場合、通知します（アプリを開いている間）'),
         findsOneWidget,
       );
       expect(find.text('しきい値の設定'), findsNothing);
 
-      await tester.tap(find.widgetWithText(SwitchListTile, '家族の記録'));
+      await tester.tap(find.widgetWithText(SwitchListTile, 'おうちの他の利用者の記録'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('自分で決めたしきい値'));
       await tester.pumpAndSettle();
@@ -162,7 +162,7 @@ void main() {
       await show(tester, InAppNotifier());
       expect(find.text('通知が許可されていません'), findsNothing);
       expect(find.textContaining('画面の下でお知らせします'), findsOneWidget);
-      for (final hidden in ['記録忘れ', 'お薬の時間', '家族の記録']) {
+      for (final hidden in ['記録忘れ', 'お薬の時間', 'おうちの他の利用者の記録']) {
         expect(find.widgetWithText(SwitchListTile, hidden), findsNothing);
       }
       expect(find.byType(TextField), findsNothing);
