@@ -191,7 +191,7 @@ class _MedicationFormState extends ConsumerState<_MedicationForm> {
     final ok = await confirmDelete(
       context,
       title: '${schedule.name}の予定を削除しますか？',
-      message: '家族の端末からも消え、お薬の時間の通知も止まります',
+      message: 'おうちの他の利用者の端末からも消え、お薬の時間の通知も止まります',
     );
     if (!ok) {
       return;

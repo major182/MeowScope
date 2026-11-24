@@ -43,7 +43,7 @@ class RejectedChangesScreen extends ConsumerWidget {
           else
             const Padding(
               padding: EdgeInsets.only(bottom: 8),
-              child: Text('次の変更は端末に残っていますが、サーバーに送れていません。家族の端末には届いていません'),
+              child: Text('次の変更は端末に残っていますが、サーバーに送れていません。おうちの他の利用者の端末には届いていません'),
             ),
           for (final c in changes) _RejectedCard(change: c),
           const SizedBox(height: 8),
