@@ -161,11 +161,16 @@ jobs:
           DB_PASSWORD: dummy
           JWT_SECRET: dummy
           SERVER_IMAGE_TAG: dummy
+          CADDY_IMAGE_TAG: dummy
+          CLOUDFLARE_API_TOKEN: dummy
+          # tailnet の IP の見本（CGNAT の範囲の、使われていない番号）
+          TAILSCALE_IP: 100.64.0.1
         run: |
           docker compose -f compose.yaml -f deploy/compose.pc.yaml config --quiet
-          # 名前は本番の meowscope。受けるのは PC の中（127.0.0.1）の 18080 だけで、DB は出さない
+          # 名前は本番の meowscope。受けるのは、Caddy の tailnet の IP の 18443（切り替えの前。デプロイ設計書 5.7）と、
+          # PC の中（127.0.0.1）の 18080 だけで、DB は出さない
           test "$(docker compose -f compose.yaml -f deploy/compose.pc.yaml config --format json | jq -r .name)" = meowscope
-          test "$(docker compose -f compose.yaml -f deploy/compose.pc.yaml config --format json | jq -c '[.services[] | .ports[]? | "\(.host_ip):\(.published)"]')" = '["127.0.0.1:18080"]'
+          test "$(docker compose -f compose.yaml -f deploy/compose.pc.yaml config --format json | jq -c '[.services[] | .ports[]? | "\(.host_ip):\(.published)"]')" = '["100.64.0.1:18443","127.0.0.1:18080"]'
       - name: シェルスクリプトの静的チェック
         # -x：source で読む deploy/lib の関数も合わせて調べる
         run: shellcheck -x deploy/*.sh deploy/lib/*.sh deploy/tests/*.sh

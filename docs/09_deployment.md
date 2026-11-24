@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 09 |
-| 版数 | 0.24 |
+| 版数 | 0.25 |
 | 作成日 | 2026-11-11 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md)、[07 ログ設計書](07_logging-design.md)、[08 性能テスト設計書](08_performance-test.md) |
@@ -233,6 +233,7 @@ flowchart LR
 - tailnet の外から PC へは入れないので、Let's Encrypt に HTTP で確かめてもらえない。代わりに、Caddy が Cloudflare の DNS に確かめの記録を書いて証明書を取る（DNS-01 という方式）
 - Caddy は、部品 `caddy-dns/cloudflare`（v0.2.4）を組み込んだイメージを、GitHub Actions の `caddy-image` で作り、GHCR に `ghcr.io/major182/meowscope-caddy:<コミット>` として置く（サーバーのイメージと同じく、PC では組み立てない）
 - Cloudflare の API のトークンは、`meowscope.dev` の DNS の編集だけを許し、期限を付けずに作る（Caddy が証明書を取り直すたびに使うため）。本番のフォルダーの `.env` の `CLOUDFLARE_API_TOKEN` にだけ置く
+- 本番の構成：`deploy/compose.pc.yaml` の `caddy` が `deploy/Caddyfile.pc` を読み、`meowscope-api.meowscope.dev` を `server:8080` へ渡す。本番の `.env` に `CADDY_IMAGE_TAG`（caddy-image で作ったコミット）と `CADDY_PORT`（切り替えの前は 18443、後は 443）を書く。80 番は出さない（DNS で確かめるので要らない）
 - Caddy は PC の tailnet の IP だけで受け、LAN には出さない。tailnet の IP は本番の `.env` の `TAILSCALE_IP` に書く（`tailscale ip -4` で確かめる。この文書とリポジトリには書かない）。Docker Desktop で、tailnet の IP にだけ出せることを 2026-11-24 に確かめた（PC の中の 127.0.0.1 と LAN からはつながらない）
 - **古い名前との切り替え**：`tailscale serve`（古い名前 `https://<PC の名前>.<tailnet>.ts.net`）は tailnet の IP の 443 番を使っていて、Caddy と同じ番号を同時には使えない。そこで、Caddy は先に別の番号（18443）で動かして確かめ、両端末を古い名前のまま 1.3.1 に更新した後に、`tailscale serve` を止めて Caddy を 443 番に切り替える（5.7。2026-11-24 利用者の決定）。切り替えの間（数分）は 1.3.1 のアプリがつながらないが、記録は端末に残り、切り替えた後に同期する（F-OF-02）
 - **一般公開でサーバーを移すとき**：名前（`meowscope-api.meowscope.dev`）は変えない。新しいサーバーを先に動かして確かめてから、DNS の向き先を替える。古いサーバーと並べて動かせるので、つながらない時間を作らずに移れる。証明書は、新しいサーバーがインターネットに出るなら HTTP で確かめる方式（2.1 の AWS と同じ）にしてもよい
@@ -472,3 +473,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.22 | 2026-11-24 | 2.4 のメールを実際の設定に合わせる（Resend の DNS は CNAME、DMARC は p=reject、support@ の返信の経路、contact@、API キーの分け方）（#286） |
 | 0.23 | 2026-11-24 | 2.4 にサイトの公開を反映（www の CNAME、GitHub Pages の IP、中継をオフにする理由、確かめた結果）（#288） |
 | 0.24 | 2026-11-24 | 2.4 に Caddy のイメージ・.env の値・古い名前との切り替え（tailscale serve と 443 番がぶつかるため、先に 18443 で確かめてから切り替える）・一般公開で移すときの考えを追加。5.7 切り替えの手順を追加（#292。利用者の決定） |
+| 0.25 | 2026-11-24 | 2.4 に本番の構成（compose.pc.yaml の caddy、Caddyfile.pc、.env の CADDY_IMAGE_TAG・CADDY_PORT）を追加（#296） |
