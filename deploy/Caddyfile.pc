@@ -1,0 +1,15 @@
+# PC の本番の HTTPS の入り口（デプロイ設計書 2.4）
+# meowscope-api.meowscope.dev を受け、サーバー（server:8080）へ渡す。tailnet の中だけでつながる
+{
+	# 80 番は出さないので、http から https への転送はしない（証明書は DNS で確かめて取るため 80 番は要らない）
+	auto_https disable_redirects
+}
+
+meowscope-api.meowscope.dev {
+	# tailnet の外から入れないので、Cloudflare の DNS に確かめの記録を書いて証明書を取る（DNS-01）
+	tls {
+		dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+	}
+	encode gzip
+	reverse_proxy server:8080
+}
