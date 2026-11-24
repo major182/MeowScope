@@ -3,14 +3,14 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 09 |
-| 版数 | 0.21 |
+| 版数 | 0.22 |
 | 作成日 | 2026-11-11 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md)、[07 ログ設計書](07_logging-design.md)、[08 性能テスト設計書](08_performance-test.md) |
 
 サーバーを AWS に置いて動作を確かめ（C-04）、その後に開発者の PC の Docker へ移す（C-05・C-08）。そのための構成・費用・手順・バックアップ・アプリの配り方を書く。
 
-アカウント ID・ARN・インスタンス ID・IP アドレス・サーバーの URL・tailnet の名前・メールアドレスは、この文書に書かない。値の確かめ方を各章に書く。ただし、独自ドメインの名前（`meowscope.dev`・`meowscope-api.meowscope.dev`・`support@meowscope.dev`・`noreply@meowscope.dev`）は、利用者に公開する名前なので書く。
+アカウント ID・ARN・インスタンス ID・IP アドレス・サーバーの URL・tailnet の名前・メールアドレスは、この文書に書かない。値の確かめ方を各章に書く。ただし、独自ドメインの名前（`meowscope.dev`・`meowscope-api.meowscope.dev`・`support@meowscope.dev`・`noreply@meowscope.dev`・`contact@meowscope.dev`）は、利用者に公開する名前なので書く。
 
 ---
 
@@ -30,7 +30,7 @@
 | バックアップ | 毎日 DB のダンプと写真を固め、7世代を残す（NF-BK-01）。AWS と PC で同じスクリプト | 4章 |
 | PC での接続 | Tailscale の `tailscale serve` で、tailnet の中だけに HTTPS で出す。Ver.1.3.1 からは、名前を `meowscope-api.meowscope.dev` にし、Caddy が PC の tailnet の IP で受ける（2.4） | サーバーをインターネットに公開しない（C-08）。名前で呼ぶと、一般公開で外のサーバーへ移すときも DNS の向き先を変えるだけで済み、アプリを配り直さなくてよい |
 | ドメイン（Ver.1.3.1） | `meowscope.dev` を Cloudflare で取得し、DNS も Cloudflare で管理する（2.4） | 要件定義書 C-10 |
-| メール（Ver.1.3.1） | 受け取りは `support@meowscope.dev` を Cloudflare の Email Routing で転送する。送るのは `noreply@meowscope.dev` から Resend の SMTP で | 個人のアドレスを出さない。送り元の認証を付ける（NF-SC-13） |
+| メール（Ver.1.3.1） | 受け取りは `support@meowscope.dev` を Cloudflare の Email Routing で転送する。アプリが送るのは `noreply@meowscope.dev` から、問い合わせへの返信は Gmail から `support@meowscope.dev` として、どちらも Resend の SMTP で送る | 個人のアドレスを出さない。送り元の認証を付ける（NF-SC-13） |
 | Web サイト（Ver.1.3.1） | 公開リポジトリ `major182/meowscope-site` を GitHub Pages で `https://meowscope.dev` に出す。事業のサイトとしてアプリの一覧を置き、アプリのページは `/apps/<アプリ名>/` の下に置く（2.4） | Google Play に要るページ（プライバシーポリシー・アカウントの削除の案内）の置き場所。サーバーと別なので、サーバーを移しても URL が変わらない |
 | PC の本番と開発 | 同じ PC の Docker で、名前（本番 `meowscope`・開発 `meowscope-dev`）・ボリューム・ポートを分ける。本番は開発の作業フォルダーとは別のフォルダー（例：`C:\Major182\MeowScope`）に置く（6.3） | データが混ざらず、名前で見分けて取り違えて操作しない。開発のブランチの切り替えやビルドが本番に及ばない |
 | PC の本番のサーバー | AWS と同じ GHCR のイメージを使う | 開発のビルドに左右されない。将来の一般公開で外部のサーバーへ戻すときも同じ形で済む |
@@ -171,6 +171,8 @@ flowchart LR
   server -- "SMTP 587<br>noreply@meowscope.dev" --> resend["Resend"]
   user["問い合わせる人"] -- "support@meowscope.dev" --> cf
   cf -- "転送" --> gmail["開発者の Gmail"]
+  gmail -- "返信（support@meowscope.dev として）<br>SMTP 587" --> resend
+  resend -- "返信" --> user
   browser["ブラウザー・Google Play"] -- "https://meowscope.dev" --> pages["GitHub Pages<br>meowscope-site"]
 ```
 
@@ -178,8 +180,9 @@ flowchart LR
 |---|---|---|
 | `meowscope.dev` | 事業の Web サイト（アプリの一覧と各アプリのページ。下の表） | GitHub Pages（公開リポジトリ `major182/meowscope-site`） |
 | `meowscope-api.meowscope.dev` | アプリ MeowScope のサーバーの名前。アプリの接続先は `https://meowscope-api.meowscope.dev/api/v1`。アプリに埋め込むので、後から変えるとアプリを配り直すことになる | PC の tailnet の IP。tailnet の外からはつながらない（C-08） |
-| `support@meowscope.dev` | 事業として共通の問い合わせ先（アプリの問い合わせの画面・サイト・Google Play の連絡先） | Cloudflare の Email Routing で開発者の Gmail へ転送する（受け取るだけ） |
+| `support@meowscope.dev` | アプリの利用者からの問い合わせ先（アプリの問い合わせの画面・サイトのアプリのページ・Google Play の連絡先） | 受け取り：Cloudflare の Email Routing で開発者の Gmail へ転送する。返信：Gmail の「他のメールアドレスを追加」（送り元の追加）で、Resend の SMTP を通して `support@meowscope.dev` として送る |
 | `noreply@meowscope.dev` | アプリから送るメールの送り元（パスワードの再設定の確認コード） | Resend から送る。受け取りの箱は作らない |
+| `contact@meowscope.dev` | 事業の連絡・ポートフォリオなど（サイトの `/contact/`）。アプリ MeowScope では使わない | Cloudflare の Email Routing で開発者の Gmail へ転送する |
 
 **Web サイトの URL**（フォルダーごとの `index.html` で、最後が `/` の URL にする）
 
@@ -187,7 +190,7 @@ flowchart LR
 |---|---|
 | `/` | トップ（事業の紹介とアプリの一覧） |
 | `/about/` | 運営者の情報（Google Play の「デベロッパーのウェブサイト」） |
-| `/contact/` | 問い合わせ（事業として共通。`support@meowscope.dev`） |
+| `/contact/` | 事業の連絡（`contact@meowscope.dev`。アプリの問い合わせは各アプリのページの `support@meowscope.dev`） |
 | `/apps/meowscope/` | アプリ MeowScope の説明 |
 | `/apps/meowscope/privacy/` | プライバシーポリシー（アプリごとに置く。集めるデータがアプリごとに違うため） |
 | `/apps/meowscope/terms/` | 利用規約 |
@@ -206,9 +209,23 @@ flowchart LR
 | TXT | `_github-pages-challenge-major182` | GitHub が示す確かめの値（ドメインを他人の Pages に使わせない） | - |
 | A | `meowscope-api` | PC の tailnet の IP（`tailscale ip -4` で確かめる。この文書には書かない） | オフ（中継すると tailnet の中に届かない） |
 | MX・TXT（SPF） | `meowscope.dev` | Email Routing を有効にすると Cloudflare が足す | - |
-| MX・TXT（SPF） | `send`（Resend が示す名前） | Resend が示す値（送り元の認証。NF-SC-13） | - |
-| TXT（DKIM） | `resend._domainkey` | Resend が示す値 | - |
-| TXT（DMARC） | `_dmarc` | `v=DMARC1; p=none; rua=mailto:support@meowscope.dev` から始め、届き方を確かめたら `p=quarantine` に上げる | - |
+| CNAME | `send` | Resend が示す名前（届かなかったメールの知らせの受け口。Resend の画面の Custom Return-Path） | オフ |
+| CNAME | `rsend` | Resend が示す名前（Resend が送るときに使う名前） | オフ |
+| TXT（DKIM） | `resend._domainkey` | Resend が示す公開の鍵（NF-SC-13） | - |
+| TXT（DMARC） | `_dmarc` | `v=DMARC1; p=reject;`（Email Routing を有効にしたときに Cloudflare が足した）。認証の通らない `meowscope.dev` からのメールを、受け取る側に断らせる。送るのは Resend だけで、SPF・DKIM が通るので、このままにする | - |
+
+- Resend の3つの記録は、Resend の画面の「Auto configure」で Cloudflare に足した（1回だけの許可で、Resend は後から DNS を書き換えられない）
+- Resend を通さずに `meowscope.dev` を送り元にすると（例：Gmail の送信のサーバーのまま `support@` として送る）、DMARC で断られて届かない。送り元を増やすときは、必ず Resend を通す
+
+**Resend の API キー**（SMTP のパスワードに使う。用途ごとに分け、片方が漏れたらその用途だけを止める）
+
+| キーの名前 | 使う場所 | 置き場所 |
+|---|---|---|
+| `meowscope-server` | 本番のサーバー | 本番のフォルダーの `.env` の `MAIL_PASSWORD` |
+| 開発用（名前に開発と分かる印を付ける） | 開発のサーバー | 開発の作業フォルダーの `.env` の `MAIL_PASSWORD` |
+| `support-gmail` | Gmail から `support@` として返信する | Gmail の送り元の設定（SMTP のパスワード）だけ |
+
+どのキーも、権限は Sending access、ドメインは `meowscope.dev` だけにする。SMTP の設定はどれも、サーバー `smtp.resend.com`・ポート 587（TLS）・ユーザー名 `resend`。
 
 **meowscope-api.meowscope.dev の証明書**
 - tailnet の外から PC へは入れないので、Let's Encrypt に HTTP で確かめてもらえない。代わりに、Caddy が Cloudflare の DNS に確かめの記録を書いて証明書を取る（DNS-01 という方式）
@@ -221,8 +238,9 @@ flowchart LR
 - `nslookup meowscope-api.meowscope.dev 1.1.1.1` で、向き先が PC の tailnet の IP であること（値は画面に出さず、`tailscale ip -4` と同じかだけを見る）
 - tailnet の中の端末のブラウザーで `https://meowscope-api.meowscope.dev/actuator/health` が UP。tailnet の外（Tailscale を切ったスマートフォン）からはつながらない
 - `https://meowscope.dev` が開き、証明書が正しい
-- 外のアドレスから `support@meowscope.dev` へ送ると、開発者の Gmail に届く
-- パスワードの再設定のメールが `noreply@meowscope.dev` から届く。Gmail の「メッセージのソースを表示」で SPF・DKIM・DMARC がすべて `PASS`
+- 外のアドレスから `support@meowscope.dev`・`contact@meowscope.dev` へ送ると、開発者の Gmail に届く（転送のため Gmail で迷惑メールに入ることがあるので、Gmail のフィルタで宛先が `support@meowscope.dev` のメールを「迷惑メールにしない」にする）
+- パスワードの再設定のメールが `noreply@meowscope.dev` から届く。Gmail の「メッセージのソースを表示」で SPF・DKIM・DMARC がすべて `PASS`（2026-11-24 に開発のサーバーで確かめた）
+- Gmail から `support@meowscope.dev` として送ったメールが、外のアドレスに届く（2026-11-24 に確かめた）
 
 ## 3. 費用（A. AWS）
 
@@ -439,3 +457,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.19 | 2026-11-17 | 6.4 の版の上げ方の例を今の番号（1.1.1+7 → 1.2.0+8）に合わせる（#252） |
 | 0.20 | 2026-11-20 | 5.6 PC の本番のサーバーを更新する手順を追加。6.4 の版の上げ方の例を今の番号（1.2.0+8 → 1.3.0+9）に合わせる（#278） |
 | 0.21 | 2026-11-24 | 2.4 ドメイン（Ver.1.3.1。サイトの URL の作り、サーバーの名前 meowscope-api）を追加。決めたことに、ドメイン・メール・Web サイトと、PC での接続の名前を追加（#284） |
+| 0.22 | 2026-11-24 | 2.4 のメールを実際の設定に合わせる（Resend の DNS は CNAME、DMARC は p=reject、support@ の返信の経路、contact@、API キーの分け方）（#286） |
