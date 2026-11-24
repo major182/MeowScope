@@ -46,12 +46,14 @@ https://github.com/user-attachments/assets/7acddb0e-6e1f-4e3b-93d7-d9336a7e906b
 | Android のウィジェット | Kotlin、home_widget |
 | サーバー | Java 25、Spring Boot 4.1.2（Spring Security、Flyway） |
 | データベース | PostgreSQL 18.6 |
-| インフラ | Docker Compose。開発者の PC の Docker Desktop で動かし、Tailscale の VPN の中だけに HTTPS で出す。AWS EC2（Caddy で HTTPS）で動作を確かめた後に移した（AWS の環境は消した） |
+| インフラ | Docker Compose。開発者の PC の Docker Desktop で動かし、Tailscale の VPN の中だけに HTTPS で出す（Ver.1.3.1 から、サーバーの名前は独自ドメインの `meowscope-api.meowscope.dev`。Caddy が証明書を取る）。AWS EC2（Caddy で HTTPS）で動作を確かめた後に移した（AWS の環境は消した） |
 | CI | GitHub Actions（静的チェック・テスト・カバレッジ・OSV-Scanner による脆弱性検査） |
 | テスト | 単体・結合（Testcontainers）・E2E（integration_test）・性能（k6） |
 
 - 採用の理由は [技術選定書](docs/02_tech-stack.md) にまとめています
 - デプロイの構成と手順は [デプロイ設計書](docs/09_deployment.md) にまとめています
+- アプリの説明・プライバシーポリシー・アカウントの削除の案内は、[MeowScope の Web サイト](https://meowscope.dev/apps/meowscope/) に置いています（ソースは [meowscope-site](https://github.com/major182/meowscope-site)）
+- お問い合わせは support@meowscope.dev へお送りください
 
 ## 利用方法
 
@@ -68,7 +70,7 @@ https://github.com/user-attachments/assets/7acddb0e-6e1f-4e3b-93d7-d9336a7e906b
 | Ver.1.5.0 | アプリを閉じている間のおうちの他の利用者の記録の通知（プッシュ通知） |
 | Ver.1.6.0 | 獣医師向けのレポートの出力 |
 | Ver.2.0.0 | 生成 AI（Claude API）による記録の分析 |
-| 一般公開のとき | 利用規約とプライバシーポリシー、招待のリンクをこのアプリだけが開ける https のリンクにする |
+| 一般公開のとき | 利用規約（今は下書き）とプライバシーポリシーの見直し、招待のリンクをこのアプリだけが開ける https のリンクにする |
 
 - 今は開発者が個人で使うツールですが、将来の一般公開を想定して作っています。公開の時期と、外部のサーバーへのデプロイの方法は、公開すると決めたときに決めます
 
