@@ -4,7 +4,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 02 |
-| 版数 | 0.22 |
+| 版数 | 0.23 |
 | 作成日 | 2026-11-01 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md) |
@@ -42,7 +42,7 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 | トークンの保管 | flutter_secure_storage | 11.2.0 | Android は Keystore、Windows は資格情報の保管庫を使う（NF-SC-07） | |
 | 端末内の DB | SQLite（drift） | drift 2.35.3、drift_dev 2.35.2（コード生成。版の番号は drift と別に付く） | Windows と Android で共通に使え、型安全 | |
 | グラフ | fl_chart | 1.3.0 | MIT ライセンスで無料。Flutter のグラフで最も利用が多く（pub.dev の評価 160 点）、折れ線と棒の両方を描ける | syncfusion_flutter_charts：商用ライセンスか登録が必要。graphic：利用者が少ない |
-| 招待のリンク | app_links | 7.2.2 | Android で meowscope:// のリンクを押したときにアプリを開き、リンクを受け取れる。独自ドメインを取らない（C-10）ので、https のリンクは使わない | |
+| 招待のリンク | app_links | 7.2.2 | Android で meowscope:// のリンクを押したときにアプリを開き、リンクを受け取れる。https のリンク（App Links）は一般公開のときに使う（NF-SC-11、Q-30） | |
 | 写真の選択 | image_picker | 1.2.4 | Flutter チームの公式パッケージで、Android のカメラとアルバム、Windows のファイル選択に対応する | |
 | 写真の縮小 | image | 4.12.0 | Dart だけで動き、Windows と Android で同じ処理になる。向きの反映と縮小、JPEG の保存ができる | flutter_image_compress：Windows に対応していない |
 | 端末のフォルダー | path_provider | 2.1.6 | Flutter チームの公式パッケージで、写真を置くアプリ用フォルダーを得る | |
@@ -58,10 +58,12 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 | DB の操作 | Spring の JdbcClient（spring-boot-starter-jdbc） | Spring Boot の管理に従う | SQL をそのまま書ける。同期は表をまたぐ一括の処理が多く、SQL が見える方が確かめやすい | JPA：自動の動き（遅延読み込みや更新の検知）が同期の処理と相性が悪い |
 | 結合テストの DB | Testcontainers | Spring Boot の管理に従う | 本番と同じ PostgreSQL 18.6 をテストのたびにコンテナで動かす。CI（GitHub Actions）でもそのまま動く | H2 などのメモリーの DB：PostgreSQL と SQL の方言が違う |
 | クラウド | AWS EC2（t3.small） | - | Compose をそのまま動かせる | t3.micro：Spring Boot にはメモリが少ない |
-| HTTPS（未導入。AWS へ置くときに入れる） | Caddy | 2.11.7 | 証明書を自動で取得できる（AWS のみ） | |
+| HTTPS | Caddy | 2.11.9 | 証明書を自動で取得できる。AWS は Let's Encrypt が HTTP で確かめる。PC（Ver.1.3.1）は外から入れないので、Cloudflare の DNS に確かめの記録を書いて取る（部品 caddy-dns/cloudflare v0.2.4 を組み込んだイメージを作る） | tailscale serve：証明書は ts.net の名前にしか出せず、独自ドメインに使えない |
 | PC での接続 | Tailscale | 導入時に確定 | サーバーをインターネットに公開しない（C-08） | |
+| ドメインと DNS | Cloudflare（Registrar・DNS・Email Routing） | - | ドメインの取得・DNS・メールの受け取りの転送を、無料で1か所でまかなえる。DNS を API で書き換えられるので、Caddy が証明書を取れる（C-02・C-10） | |
+| Web サイト | GitHub Pages（公開リポジトリ `major182/meowscope-site`） | - | 無料で独自ドメインと HTTPS を使える。事業のサイト（アプリの一覧）として、アプリが増えても同じ場所に置ける。サーバーとは別の場所なので、サーバーを移しても URL が変わらず、外から読める（Q-30 の確かめのファイル） | Cloudflare Pages：同じく無料だが、GitHub の中で完結する方を選んだ（利用者の決定） |
 | 生成 AI | Claude API | 実装時に確定 | サーバーから呼び出す（NF-SC-05）。利用した分の費用がかかる | |
-| メール送信（パスワードの再設定） | Gmail の SMTP（smtp.gmail.com:587。2026-11-11 に決定）。送る仕組みは SMTP（spring-boot-starter-mail）で作り、どのサービスでも設定（環境変数 `MAIL_*`）だけで切り替える | Spring Boot の管理に従う | 無料でドメインが不要。専用の Gmail のアカウントのアプリパスワードで送る | Resend、Amazon SES：送信元の認証にドメインが必要になる可能性がある |
+| メール送信（パスワードの再設定） | Resend の SMTP（smtp.resend.com:587。2026-11-24 に決定、Ver.1.3.1 から）。送る仕組みは SMTP（spring-boot-starter-mail）で作り、どのサービスでも設定（環境変数 `MAIL_*`）だけで切り替える | Spring Boot の管理に従う | 無料で月 3,000 通（1日 100 通）。Cloudflare の DNS に記録を足すだけで、独自ドメインの送り元に DKIM・SPF を付けられる（NF-SC-13）。サーバーのコードは変えずに済む | Gmail の SMTP：独自ドメインの DKIM を付けられない（Ver.1.3.0 まで使った）。Amazon SES：送信の制限を外す申請が要る。Brevo：機能が多く、使う分には過剰 |
 | CI と配布 | GitHub Actions、GitHub Releases | - | 無料で使える | Google Play：登録料がかかる |
 | E2E テスト | integration_test | Flutter に同梱 | Flutter の公式の方法で、Windows と Android の両方で同じテストを動かせる。追加の道具が不要（NF-MT-02） | Patrol：通知の許可など OS の画面を操作できるが、Windows に対応していない |
 | ウィジェットの単体テスト | JUnit | 4.13.2 | Kotlin の表示の決め方（WidgetModel）を Android の端末なしで確かめる。Android の雛形の標準 | JUnit 5：Android の単体テストでは追加の設定が要る |
@@ -128,3 +130,4 @@ Windows 版は、家族での利用の間は署名しない（2026-11-05 決定�
 | 0.20 | 2026-11-11 | メール送信を Gmail の SMTP に決定（Q-26） |
 | 0.21 | 2026-11-12 | アプリの更新に package_info_plus 10.2.2 と crypto 3.0.8 を追加（#180） |
 | 0.22 | 2026-11-14 | 日付の選択の週の始まりのため intl 0.20.3 を追加（#227） |
+| 0.23 | 2026-11-24 | 独自ドメインのため Cloudflare・GitHub Pages を追加。メール送信を Resend に、Caddy を 2.11.9 と PC での DNS の確かめに改める（#284） |
