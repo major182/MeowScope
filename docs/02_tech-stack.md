@@ -61,7 +61,7 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 | HTTPS | Caddy | 2.11.9 | 証明書を自動で取得できる。AWS は Let's Encrypt が HTTP で確かめる。PC（Ver.1.3.1）は外から入れないので、Cloudflare の DNS に確かめの記録を書いて取る（部品 caddy-dns/cloudflare v0.2.4 を組み込んだイメージを作る） | tailscale serve：証明書は ts.net の名前にしか出せず、独自ドメインに使えない |
 | PC での接続 | Tailscale | 導入時に確定 | サーバーをインターネットに公開しない（C-08） | |
 | ドメインと DNS | Cloudflare（Registrar・DNS・Email Routing） | - | ドメインの取得・DNS・メールの受け取りの転送を、無料で1か所でまかなえる。DNS を API で書き換えられるので、Caddy が証明書を取れる（C-02・C-10） | |
-| Web サイト | GitHub Pages（公開リポジトリ `major182/meowscope-site`） | - | 無料で独自ドメインと HTTPS を使える。サーバーとは別の場所なので、サーバーを移しても URL が変わらず、外から読める（Q-30 の確かめのファイル） | Cloudflare Pages：同じく無料だが、GitHub の中で完結する方を選んだ（利用者の決定） |
+| Web サイト | GitHub Pages（公開リポジトリ `major182/meowscope-site`） | - | 無料で独自ドメインと HTTPS を使える。事業のサイト（アプリの一覧）として、アプリが増えても同じ場所に置ける。サーバーとは別の場所なので、サーバーを移しても URL が変わらず、外から読める（Q-30 の確かめのファイル） | Cloudflare Pages：同じく無料だが、GitHub の中で完結する方を選んだ（利用者の決定） |
 | 生成 AI | Claude API | 実装時に確定 | サーバーから呼び出す（NF-SC-05）。利用した分の費用がかかる | |
 | メール送信（パスワードの再設定） | Resend の SMTP（smtp.resend.com:587。2026-11-24 に決定、Ver.1.3.1 から）。送る仕組みは SMTP（spring-boot-starter-mail）で作り、どのサービスでも設定（環境変数 `MAIL_*`）だけで切り替える | Spring Boot の管理に従う | 無料で月 3,000 通（1日 100 通）。Cloudflare の DNS に記録を足すだけで、独自ドメインの送り元に DKIM・SPF を付けられる（NF-SC-13）。サーバーのコードは変えずに済む | Gmail の SMTP：独自ドメインの DKIM を付けられない（Ver.1.3.0 まで使った）。Amazon SES：送信の制限を外す申請が要る。Brevo：機能が多く、使う分には過剰 |
 | CI と配布 | GitHub Actions、GitHub Releases | - | 無料で使える | Google Play：登録料がかかる |
