@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 03 |
-| 版数 | 0.91 |
+| 版数 | 0.92 |
 | 作成日 | 2026-11-01 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md) |
@@ -705,6 +705,7 @@ E2E で自動にできない、次のことは手で確かめる。
 | M-UP-05 | 配布版（AWS）：Windows は自分で更新される。Android は 1.0.3 から自分で更新できる（F-UP-01〜03） | `deploy/publish-release.sh <android か windows> aws` で AWS に置き、配布版を開き直して「今すぐ更新」 | 2026-11-12：Windows は 1.0.1 → 1.0.2 → 1.0.3 と2回とも自分で更新され、画面に新しい版が出た。Android 実機（Android 7.1.1）は 1.0.1 が #198 の不具合で更新できないため、1.0.3 を手で入れ、起動・同期を確かめた。1.0.1〜1.0.3 は Ver.1.1 の途中の版（要件定義書 BR-34）。1.1.0 を出し、Android・Windows とも配布版がアプリから 1.1.0 に自分で更新され、画面に Ver.1.1.0 が出た（#208） |
 | M-UP-06 | 配布版（PC・Tailscale）：Android・Windows とも 1.1.0 から 1.1.1 に自分で更新される（F-UP-01〜03） | `deploy/publish-release.sh <android か windows> pc` で本番に置き、本番の端末で「今すぐ更新」 | 2026-11-15：Android（Pixel 7a）・Windows とも 1.1.1+7 に更新された（Windows は exe の版で確認）。Android はモバイル回線から Tailscale の直接の経路で約 600kbps、73MB で約16分かかった |
 | M-UP-07 | 配布版（PC・Tailscale）：Android・Windows とも 1.1.1 から 1.2.0 に自分で更新される（F-UP-01〜03） | `deploy/publish-release.sh <android か windows> pc` で本番に置き、本番の端末で「今すぐ更新」 | 2026-11-19：Android・Windows とも 1.2.0+8 に更新された（利用者が本番の端末で確認） |
+| M-UP-09 | 配布版（PC・Tailscale）：独自ドメインの名前へ移る（Ver.1.3.1）。両端末が古い名前の経路で 1.3.0 から 1.3.1 に更新され、切り替えの後は新しい名前（`meowscope-api.meowscope.dev`）で同期できる。問い合わせの画面に `support@meowscope.dev` が出る（C-10、デプロイ設計書 5.7） | デプロイ設計書 5.7 の手順。切り替えの前に、更新した端末がつながらない間に記録し、切り替えた後に同期されることも見る | |
 | M-UP-08 | 配布版（PC・Tailscale）：本番のサーバーを Ver.1.3.0 に更新し（V9・V10）、Android・Windows とも 1.2.0 から 1.3.0 に自分で更新される（F-UP-01〜03、BR-37・38） | デプロイ設計書 5.6 の手順で本番のサーバーを更新する（更新の前にバックアップ）。`deploy/publish-release.sh <android か windows> pc` で本番に置き、本番の端末で「今すぐ更新」 | 2026-11-20：本番の DB の版が 8 から 10 になり、おうちに病院が1つだけ入った（重なりなし、通院の独自の項目は 0 件、記録の件数は変わらず）。Android・Windows とも 1.3.0+9 に更新された（利用者が本番の端末で確認） |
 | M-SC-01 | Android：アプリのデータが OS のバックアップに出ない（NF-SC-10） | 実機に開発版を上書きで入れ、`adb shell dumpsys package <アプリの ID>` の flags を見る。`adb shell bmgr backupnow <アプリの ID>` でバックアップを指示する | 2026-11-14（Android 7.1.1）：変更前は flags に ALLOW_BACKUP があり、変更後は消えた。バックアップは「Backup is not allowed」で断られた。Android 12 以降の端末間の移行は UT-AB-02〜03 で指定を確かめた |
 | M-SC-02 | 配布用の鍵がないと release のビルドが止まり、debug は止まらない（NF-SC-12） | key.properties のない作業フォルダー（git worktree）で `flutter build apk --debug` と `--release`、鍵のある手元で `--release` | 2026-11-14：鍵なしの debug は成功、release は「配布版のビルドには配布用の署名の鍵が要ります」で止まった。鍵ありの release は成功し、APK は開発用の鍵で署名されておらず、allowBackup=false が入っていた |
@@ -809,3 +810,4 @@ E2E で自動にできない、次のことは手で確かめる。
 | 0.89 | 2026-11-20 | Ver.1.3.0 の E2E（E2E-06〜10）と、USB の実機での動かし方を追加（#276） |
 | 0.90 | 2026-11-20 | Ver.1.3.0 の配布の結果 M-UP-08 を追加（#280） |
 | 0.91 | 2026-11-22 | 6章に CI のジョブを動かすときを追加（変わった場所に関係するジョブだけ、脆弱性の検査は毎日も）（#282） |
+| 0.92 | 2026-11-24 | Ver.1.3.1 の配布で確かめること M-UP-09 を追加（#298） |
