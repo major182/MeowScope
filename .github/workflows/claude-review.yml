@@ -1,4 +1,4 @@
-# 各リポジトリの .github/workflows/claude-review.yml にコピーして使う
+# PR の自動レビュー（major182/_shared-workflows の claude-review を呼び出す。Secret: CLAUDE_CODE_OAUTH_TOKEN）
 name: Claude Review
 
 on:
