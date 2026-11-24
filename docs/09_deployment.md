@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 09 |
-| 版数 | 0.22 |
+| 版数 | 0.23 |
 | 作成日 | 2026-11-11 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md)、[07 ログ設計書](07_logging-design.md)、[08 性能テスト設計書](08_performance-test.md) |
@@ -205,8 +205,9 @@ flowchart LR
 
 | 記録 | 名前 | 中身 | Cloudflare の中継（Proxy） |
 |---|---|---|---|
-| A・AAAA | `meowscope.dev` | GitHub Pages の IP（GitHub の文書に載る4つずつ） | オフ（GitHub が証明書を取るため） |
-| TXT | `_github-pages-challenge-major182` | GitHub が示す確かめの値（ドメインを他人の Pages に使わせない） | - |
+| A・AAAA | `meowscope.dev` | GitHub Pages の IP（GitHub の文書に載る4つずつ：`185.199.108〜111.153`、`2606:50c0:8000〜8003::153`） | オフ（GitHub が証明書を取るため） |
+| CNAME | `www` | `major182.github.io`（GitHub Pages が `https://meowscope.dev` の同じページへ転送する。`www` を付けて打ち込んだ人を取りこぼさず、名前を空けておかないため） | オフ |
+| TXT | `_github-pages-challenge-major182` | GitHub が示す確かめの値（ドメインを他人の Pages に使わせない。GitHub のアカウントの Settings → Pages で確認済みにする） | - |
 | A | `meowscope-api` | PC の tailnet の IP（`tailscale ip -4` で確かめる。この文書には書かない） | オフ（中継すると tailnet の中に届かない） |
 | MX・TXT（SPF） | `meowscope.dev` | Email Routing を有効にすると Cloudflare が足す | - |
 | CNAME | `send` | Resend が示す名前（届かなかったメールの知らせの受け口。Resend の画面の Custom Return-Path） | オフ |
@@ -214,6 +215,7 @@ flowchart LR
 | TXT（DKIM） | `resend._domainkey` | Resend が示す公開の鍵（NF-SC-13） | - |
 | TXT（DMARC） | `_dmarc` | `v=DMARC1; p=reject;`（Email Routing を有効にしたときに Cloudflare が足した）。認証の通らない `meowscope.dev` からのメールを、受け取る側に断らせる。送るのは Resend だけで、SPF・DKIM が通るので、このままにする | - |
 
+- Cloudflare の DNS の画面には「ほとんどのセキュリティとパフォーマンス機能にはプロキシが必要です」と出るが、中継（プロキシ）はすべてオフのままにする。GitHub Pages は証明書の取得と更新のため、`meowscope-api` は tailnet の中だけの名前のため、メールの記録はもともと中継の対象外のため
 - Resend の3つの記録は、Resend の画面の「Auto configure」で Cloudflare に足した（1回だけの許可で、Resend は後から DNS を書き換えられない）
 - Resend を通さずに `meowscope.dev` を送り元にすると（例：Gmail の送信のサーバーのまま `support@` として送る）、DMARC で断られて届かない。送り元を増やすときは、必ず Resend を通す
 
@@ -237,7 +239,7 @@ flowchart LR
 **確かめ方**
 - `nslookup meowscope-api.meowscope.dev 1.1.1.1` で、向き先が PC の tailnet の IP であること（値は画面に出さず、`tailscale ip -4` と同じかだけを見る）
 - tailnet の中の端末のブラウザーで `https://meowscope-api.meowscope.dev/actuator/health` が UP。tailnet の外（Tailscale を切ったスマートフォン）からはつながらない
-- `https://meowscope.dev` が開き、証明書が正しい
+- `https://meowscope.dev` が開き、証明書が正しい。`http://` と `www.` は `https://meowscope.dev` へ転送される（2026-11-24 に公開して確かめた。詳しくは meowscope-site のテスト仕様書 IT-01〜06）
 - 外のアドレスから `support@meowscope.dev`・`contact@meowscope.dev` へ送ると、開発者の Gmail に届く（転送のため Gmail で迷惑メールに入ることがあるので、Gmail のフィルタで宛先が `support@meowscope.dev` のメールを「迷惑メールにしない」にする）
 - パスワードの再設定のメールが `noreply@meowscope.dev` から届く。Gmail の「メッセージのソースを表示」で SPF・DKIM・DMARC がすべて `PASS`（2026-11-24 に開発のサーバーで確かめた）
 - Gmail から `support@meowscope.dev` として送ったメールが、外のアドレスに届く（2026-11-24 に確かめた）
@@ -458,3 +460,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.20 | 2026-11-20 | 5.6 PC の本番のサーバーを更新する手順を追加。6.4 の版の上げ方の例を今の番号（1.2.0+8 → 1.3.0+9）に合わせる（#278） |
 | 0.21 | 2026-11-24 | 2.4 ドメイン（Ver.1.3.1。サイトの URL の作り、サーバーの名前 meowscope-api）を追加。決めたことに、ドメイン・メール・Web サイトと、PC での接続の名前を追加（#284） |
 | 0.22 | 2026-11-24 | 2.4 のメールを実際の設定に合わせる（Resend の DNS は CNAME、DMARC は p=reject、support@ の返信の経路、contact@、API キーの分け方）（#286） |
+| 0.23 | 2026-11-24 | 2.4 にサイトの公開を反映（www の CNAME、GitHub Pages の IP、中継をオフにする理由、確かめた結果）（#288） |
