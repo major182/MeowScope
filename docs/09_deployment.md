@@ -3,7 +3,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 09 |
-| 版数 | 0.23 |
+| 版数 | 0.24 |
 | 作成日 | 2026-11-11 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md)、[02 技術選定書](02_tech-stack.md)、[07 ログ設計書](07_logging-design.md)、[08 性能テスト設計書](08_performance-test.md) |
@@ -231,10 +231,11 @@ flowchart LR
 
 **meowscope-api.meowscope.dev の証明書**
 - tailnet の外から PC へは入れないので、Let's Encrypt に HTTP で確かめてもらえない。代わりに、Caddy が Cloudflare の DNS に確かめの記録を書いて証明書を取る（DNS-01 という方式）
-- Caddy は、部品 `caddy-dns/cloudflare` を組み込んで作る
-- Cloudflare の API のトークンは、`meowscope.dev` の DNS の編集だけを許したものを作り、本番のフォルダーの `.env` にだけ置く
-- Caddy は PC の tailnet の IP の 443 だけで受け、LAN には出さない
-- 古い名前（`https://<PC の名前>.<tailnet>.ts.net`、`tailscale serve`）は、すべての端末が 1.3.1 に更新し終わるまで残す（古い版のアプリは古い名前でつなぎ、新しい版を受け取るため）
+- Caddy は、部品 `caddy-dns/cloudflare`（v0.2.4）を組み込んだイメージを、GitHub Actions の `caddy-image` で作り、GHCR に `ghcr.io/major182/meowscope-caddy:<コミット>` として置く（サーバーのイメージと同じく、PC では組み立てない）
+- Cloudflare の API のトークンは、`meowscope.dev` の DNS の編集だけを許し、期限を付けずに作る（Caddy が証明書を取り直すたびに使うため）。本番のフォルダーの `.env` の `CLOUDFLARE_API_TOKEN` にだけ置く
+- Caddy は PC の tailnet の IP だけで受け、LAN には出さない。tailnet の IP は本番の `.env` の `TAILSCALE_IP` に書く（`tailscale ip -4` で確かめる。この文書とリポジトリには書かない）。Docker Desktop で、tailnet の IP にだけ出せることを 2026-11-24 に確かめた（PC の中の 127.0.0.1 と LAN からはつながらない）
+- **古い名前との切り替え**：`tailscale serve`（古い名前 `https://<PC の名前>.<tailnet>.ts.net`）は tailnet の IP の 443 番を使っていて、Caddy と同じ番号を同時には使えない。そこで、Caddy は先に別の番号（18443）で動かして確かめ、両端末を古い名前のまま 1.3.1 に更新した後に、`tailscale serve` を止めて Caddy を 443 番に切り替える（5.7。2026-11-24 利用者の決定）。切り替えの間（数分）は 1.3.1 のアプリがつながらないが、記録は端末に残り、切り替えた後に同期する（F-OF-02）
+- **一般公開でサーバーを移すとき**：名前（`meowscope-api.meowscope.dev`）は変えない。新しいサーバーを先に動かして確かめてから、DNS の向き先を替える。古いサーバーと並べて動かせるので、つながらない時間を作らずに移れる。証明書は、新しいサーバーがインターネットに出るなら HTTP で確かめる方式（2.1 の AWS と同じ）にしてもよい
 
 **確かめ方**
 - `nslookup meowscope-api.meowscope.dev 1.1.1.1` で、向き先が PC の tailnet の IP であること（値は画面に出さず、`tailscale ip -4` と同じかだけを見る）
@@ -356,6 +357,15 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 
 戻すときは、前のイメージのタグに戻し、2 のバックアップから戻す（Flyway は古い版へ戻さないため、DB もバックアップから戻す）。
 
+### 5.7 独自ドメインの名前へ切り替える（Ver.1.3.1）
+
+2.4 の「古い名前との切り替え」の手順。
+
+1. **先に確かめる**：本番に Caddy を 18443 番で足し（`.env` の `CADDY_PORT=18443`）、tailnet の中の端末から `https://meowscope-api.meowscope.dev:18443/actuator/health` が UP になり、証明書が正しいことを確かめる
+2. **アプリを配る**：1.3.1（接続先が `https://meowscope-api.meowscope.dev/api/v1`）を、6.4 の手順で古い名前の経路から配り、両端末を 1.3.1 に更新する。この時点では、1.3.1 のアプリはサーバーにつながらない（記録は端末に残る）
+3. **切り替える**：`tailscale serve --https=443 off` で古い名前を止め、`.env` の `CADDY_PORT=443` にして `docker compose up -d caddy`。両端末で同期できることを確かめる
+4. **戻すとき**：`.env` の `CADDY_PORT=18443` にして `docker compose up -d caddy`、`tailscale serve --bg --https=443 http://127.0.0.1:18080` で古い名前に戻す。1.3.1 のアプリはつながらないままになるので、原因を直してから 3 をやり直す
+
 ## 6. アプリの配り方
 
 ### 6.1 Android
@@ -461,3 +471,4 @@ AWS のバックアップは EC2 のディスクの中だけにある。AWS を�
 | 0.21 | 2026-11-24 | 2.4 ドメイン（Ver.1.3.1。サイトの URL の作り、サーバーの名前 meowscope-api）を追加。決めたことに、ドメイン・メール・Web サイトと、PC での接続の名前を追加（#284） |
 | 0.22 | 2026-11-24 | 2.4 のメールを実際の設定に合わせる（Resend の DNS は CNAME、DMARC は p=reject、support@ の返信の経路、contact@、API キーの分け方）（#286） |
 | 0.23 | 2026-11-24 | 2.4 にサイトの公開を反映（www の CNAME、GitHub Pages の IP、中継をオフにする理由、確かめた結果）（#288） |
+| 0.24 | 2026-11-24 | 2.4 に Caddy のイメージ・.env の値・古い名前との切り替え（tailscale serve と 443 番がぶつかるため、先に 18443 で確かめてから切り替える）・一般公開で移すときの考えを追加。5.7 切り替えの手順を追加（#292。利用者の決定） |
