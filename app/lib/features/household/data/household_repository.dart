@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/db/app_database.dart';
+import '../../../core/db/household_choice.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../records/data/record_repository.dart';
 
@@ -97,5 +98,32 @@ class HouseholdRepository {
       });
       return Session(author: author, householdId: householdId);
     });
+  }
+
+  /// 自分が入っているおうちを見張る（入った順。BR-39）
+  ///
+  /// 見張る表（今のおうちを置く app_states など）はほかの用事でもよく変わるので、
+  /// おうちの顔ぶれと名前が前と同じなら流さない
+  Stream<List<HouseholdRow>> watchHouseholds(String userId) =>
+      myHouseholds(_db, userId).watch().distinct(_sameHouseholds);
+
+  static bool _sameHouseholds(List<HouseholdRow> a, List<HouseholdRow> b) =>
+      a.length == b.length &&
+      [
+        for (var i = 0; i < a.length; i++)
+          a[i].id == b[i].id && a[i].name == b[i].name,
+      ].every((same) => same);
+
+  /// 今のおうちを切り替える（BR-39）。入っていないおうちなら何もせず false を返す
+  Future<bool> switchHousehold({
+    required String userId,
+    required String householdId,
+  }) async {
+    final mine = await myHouseholds(_db, userId).get();
+    if (!mine.any((h) => h.id == householdId)) {
+      return false;
+    }
+    await selectHousehold(_db, userId, householdId);
+    return true;
   }
 }

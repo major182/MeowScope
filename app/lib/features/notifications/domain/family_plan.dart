@@ -1,4 +1,5 @@
 import '../data/notifier.dart';
+import 'notification_target.dart';
 import 'reminder_plan.dart' show notificationId;
 
 /// 家族の記録の通知に使う記録（同期で受け取った、自分以外の人の新しい記録）
@@ -11,6 +12,7 @@ class FamilyRecord {
     required this.typeName,
     required this.catId,
     required this.recordedAt,
+    this.householdId,
   });
 
   final String id;
@@ -24,6 +26,9 @@ class FamilyRecord {
 
   /// 記録の日時（端末の時刻）
   final DateTime recordedAt;
+
+  /// 猫のおうち。通知を押したときに、このおうちへ切り替える（BR-39）
+  final String? householdId;
 }
 
 /// 家族の記録の通知を押したときに開く場所：最初の記録の日の日別一覧（S-21）。
@@ -33,20 +38,23 @@ String familyPayload(List<FamilyRecord> group) {
   final date =
       '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
   final cats = {for (final r in group) r.catId};
-  return Uri(
+  final path = Uri(
     path: '/days/$date',
     queryParameters: cats.length == 1 ? {'cat': cats.single} : null,
   ).toString();
+  // まとめる単位がおうちごとなので、最初の記録のおうちがまとめ全体のおうち
+  return withHousehold(path, group.first.householdId);
 }
 
 /// 家族の記録の通知（画面設計書 4章、F-NT-04、BR-08）
 ///
-/// 記録した人ごとに1つにまとめる。1件なら「なつさんがミケのご飯を記録しました」、
+/// おうちと記録した人ごとに1つにまとめる。1件なら「なつさんがミケのご飯を記録しました」、
 /// 何件もあれば「なつさんが3件記録しました」。通知の文に、メモや記録の詳細は入れない
 List<AppNotification> familyNotifications(List<FamilyRecord> records) {
-  final byAuthor = <String, List<FamilyRecord>>{};
+  // おうちが違えば別の通知にする（押したときに開くおうちを1つに決めるため。BR-39）
+  final byAuthor = <(String?, String), List<FamilyRecord>>{};
   for (final r in records) {
-    byAuthor.putIfAbsent(r.authorKey, () => []).add(r);
+    byAuthor.putIfAbsent((r.householdId, r.authorKey), () => []).add(r);
   }
   return [
     for (final group in byAuthor.values)

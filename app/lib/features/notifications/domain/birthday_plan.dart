@@ -1,5 +1,6 @@
 import '../data/notifier.dart';
 import 'notification_settings.dart';
+import 'notification_target.dart';
 import 'reminder_plan.dart';
 
 /// 誕生日の対象の猫（お別れの猫と、生年月日のない猫は渡さない。BR-32）
@@ -8,11 +9,15 @@ class BirthdayCat {
     required this.id,
     required this.name,
     required this.birthDate,
+    this.householdId,
   });
 
   final String id;
   final String name;
   final DateTime birthDate;
+
+  /// 猫のおうち。通知を押したときに、このおうちへ切り替える（BR-39）
+  final String? householdId;
 }
 
 /// 保存した生年月日（UTC の0時で保存している）を、端末の日付に戻す。地域の時刻に直すと日付がずれることがあるので、年月日だけを使う
@@ -60,7 +65,7 @@ List<PlannedNotification> planBirthdays({
             id: notificationId('birthday', cat.id),
             title:
                 '今日は${cat.name}の誕生日です。${at.year - cat.birthDate.year}歳おめでとう！',
-            payload: '/',
+            payload: withHousehold('/', cat.householdId),
           ),
           at,
         ),

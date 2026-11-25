@@ -36,7 +36,7 @@ class FamilyAlerts {
                     c.status.equals('active'),
               ))
               .get())
-        c.id: c.name,
+        c.id: c,
     };
     final types = {
       for (final t
@@ -56,10 +56,11 @@ class FamilyAlerts {
             id: r.id,
             authorKey: r.authorId ?? r.authorName,
             authorName: r.authorName,
-            catName: cat,
+            catName: cat.name,
             typeName: type,
             catId: r.catId,
             recordedAt: r.recordedAt.toLocal(),
+            householdId: cat.householdId,
           ),
     ]);
     for (final n in notifications) {

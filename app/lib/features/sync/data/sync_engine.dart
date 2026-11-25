@@ -6,9 +6,9 @@ import 'package:drift/drift.dart';
 
 import '../../../core/api/api_error.dart';
 import '../../../core/db/app_database.dart';
+import '../../../core/db/household_choice.dart';
 import '../../../core/db/local_cleanup.dart';
 import '../../../core/db/tables.dart' show SyncColumns;
-import '../../auth/data/auth_repository.dart';
 import '../../auth/data/token_store.dart';
 import '../../settings/data/settings_repository.dart';
 
@@ -815,31 +815,9 @@ class SyncEngine {
     }
   }
 
-  /// おうちを選んでいなければ、属しているおうちを選ぶ（機種変更の後など。S-04 を出さずに済む）
-  Future<void> _chooseHousehold(String userId) async {
-    if (await _state(SessionKeys.householdId) != null) {
-      return;
-    }
-    final member =
-        await (_db.select(_db.householdMembers)
-              ..where(
-                (m) =>
-                    m.userId.equals(userId) &
-                    m.deletedAt.isNull() &
-                    m.householdId.isInQuery(
-                      _db.selectOnly(_db.households)
-                        ..addColumns([_db.households.id])
-                        ..where(_db.households.deletedAt.isNull()),
-                    ),
-              )
-              ..orderBy([(m) => OrderingTerm.asc(m.createdAt)])
-              ..limit(1))
-            .getSingleOrNull();
-    if (member != null) {
-      await _setState(SessionKeys.householdId, member.householdId);
-      await _setState(SessionKeys.householdOf(userId), member.householdId);
-    }
-  }
+  /// おうちを選んでいなければ、属しているおうちを選ぶ（機種変更の後・別の端末で今のおうちを抜けた後。S-04 を出さずに済む。BR-39）
+  Future<void> _chooseHousehold(String userId) =>
+      chooseHouseholdIfNone(_db, userId);
 
   Future<String?> _state(String key) async => (await (_db.select(
     _db.appStates,

@@ -10,6 +10,7 @@ import '../features/calendar/presentation/day_records.dart';
 import '../features/cats/presentation/cat_form_screen.dart';
 import '../features/cats/presentation/cat_list_screen.dart';
 import '../features/household/presentation/household_screen.dart';
+import '../features/household/presentation/household_setup_screen.dart';
 import '../features/household/presentation/join_screen.dart';
 import '../features/records/presentation/record_detail_screen.dart';
 import '../features/records/presentation/record_edit_screen.dart';
@@ -59,6 +60,13 @@ GoRouter createRouter() => GoRouter(
     GoRoute(
       path: '/household',
       builder: (context, state) => const HouseholdScreen(),
+      routes: [
+        // 2つ目以後のおうちを作る（BR-39）
+        GoRoute(
+          path: 'new',
+          builder: (context, state) => const HouseholdSetupScreen(adding: true),
+        ),
+      ],
     ),
     GoRoute(
       path: '/sync',

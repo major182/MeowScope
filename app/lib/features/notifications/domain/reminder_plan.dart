@@ -1,5 +1,6 @@
 import '../data/notifier.dart';
 import 'notification_settings.dart';
+import 'notification_target.dart';
 
 /// 予約する通知。[at] の時刻に [notification] を知らせる。[daily] なら、その後も毎日同じ時刻に知らせる
 class PlannedNotification {
@@ -12,10 +13,13 @@ class PlannedNotification {
 
 /// 記録忘れの対象の猫（お別れの猫は渡さない）
 class ReminderCat {
-  const ReminderCat({required this.id, required this.name});
+  const ReminderCat({required this.id, required this.name, this.householdId});
 
   final String id;
   final String name;
+
+  /// 猫のおうち。通知を押したときに、このおうちへ切り替える（BR-39）
+  final String? householdId;
 }
 
 /// 通知の id。種類と対象（猫の ID など）から、いつも同じ値を作る（予約を置き換え・取り消すため）。
@@ -53,7 +57,7 @@ List<PlannedNotification> planReminders({
             AppNotification(
               id: notificationId('reminder', cat.id),
               title: '${cat.name}の記録が$hours時間ありません',
-              payload: '/',
+              payload: withHousehold('/', cat.householdId),
             ),
             at,
           ),
