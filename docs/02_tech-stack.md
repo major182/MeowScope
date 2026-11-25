@@ -4,7 +4,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 02 |
-| 版数 | 0.23 |
+| 版数 | 0.24 |
 | 作成日 | 2026-11-01 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md) |
@@ -46,6 +46,7 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 | 写真の選択 | image_picker | 1.2.4 | Flutter チームの公式パッケージで、Android のカメラとアルバム、Windows のファイル選択に対応する | |
 | 写真の縮小 | image | 4.12.0 | Dart だけで動き、Windows と Android で同じ処理になる。向きの反映と縮小、JPEG の保存ができる | flutter_image_compress：Windows に対応していない |
 | 端末のフォルダー | path_provider | 2.1.6 | Flutter チームの公式パッケージで、写真を置くアプリ用フォルダーを得る | |
+| 保存の画面 | file_selector | 1.1.0 | Flutter チームの公式パッケージで、Windows の「名前を付けて保存」の画面を出せる。CSV の出力（F-EX-01）で保存する場所と名前を選ぶ（利用者の決定） | file_picker：公式ではない。ダウンロードのフォルダーへの決め打ちの保存：場所を選べない |
 | 通知 | flutter_local_notifications | 22.3.3 | 端末内で通知でき、時刻を予約できる。アプリ未使用時の処理が不要になったので、workmanager は採用しない。Android は新しい Java の日時の機能を古い端末でも使えるよう、desugar_jdk_libs 2.1.4 で変換する（部品の指定）。Windows は OS の通知を使わず、アプリの画面の中で知らせる（BR-09） | workmanager：定期実行が不要になった |
 | サーバー | Spring Boot | 4.1.2 | 開発者の経験があり、Spring Security で認証と認可を標準的に作れる | 2人の利用には大きいが、経験と安全性を優先した |
 | 認証 | Spring Security（OAuth2 Resource Server） | Spring Boot の管理に従う | アクセストークンは JWT とし、標準の仕組みで検証する。毎回 DB を見ない | すべて DB のトークン：自作の部分が増える |
@@ -131,3 +132,4 @@ Windows 版は、家族での利用の間は署名しない（2026-11-05 決定�
 | 0.21 | 2026-11-12 | アプリの更新に package_info_plus 10.2.2 と crypto 3.0.8 を追加（#180） |
 | 0.22 | 2026-11-14 | 日付の選択の週の始まりのため intl 0.20.3 を追加（#227） |
 | 0.23 | 2026-11-24 | 独自ドメインのため Cloudflare・GitHub Pages を追加。メール送信を Resend に、Caddy を 2.11.9 と PC での DNS の確かめに改める（#284） |
+| 0.24 | 2026-11-25 | CSV の出力の保存の画面に file_selector 1.1.0 を追加（#314。利用者の決定） |

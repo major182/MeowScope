@@ -31,6 +31,9 @@ class SettingsScreen extends ConsumerWidget {
           _Link(label: 'お薬の予定', path: '/medications'),
           _Link(label: '通知の設定', path: '/notification-settings'),
           if (android) _Link(label: 'ウィジェットのボタン', path: '/widget-buttons'),
+          // CSV の出力は Windows だけ（BR-41）
+          if (defaultTargetPlatform == TargetPlatform.windows)
+            _Link(label: 'CSV の出力', path: '/export'),
           _Link(label: 'アカウント', path: '/account'),
           _Link(label: '同期の状態', path: '/sync'),
           _Link(label: '問い合わせ', path: '/contact'),
