@@ -117,7 +117,7 @@ void main() {
   });
 
   test(
-    'UT-WB-11 上限と並び順はおうちごと：別のおうちにもそれぞれ4つまで置け、並び順はおうちの中で 0〜3（BR-40）',
+    'UT-WB-12 上限と並び順はおうちごと：別のおうちにもそれぞれ4つまで置け、並び順はおうちの中で 0〜3（BR-40）',
     () async {
       for (final t in ['t1', 't2', 't3', 't4']) {
         await repo.add(userId: 'u1', recordTypeId: t);

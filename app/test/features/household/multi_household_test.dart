@@ -232,6 +232,33 @@ void main() {
   });
 
   group('すべてのおうちの通知の材料', () {
+    test('UT-MH-17 おうちの ID は、ログインの状態が届く前の空の一覧を流さず、名前を変えても途切れない', () async {
+      final container = ProviderContainer(
+        overrides: [databaseProvider.overrideWithValue(db)],
+      );
+      addTearDown(container.dispose);
+      final seen = <List<String>?>[];
+      final sub = container.listen(
+        householdIdsProvider,
+        (_, next) => seen.add(next),
+        fireImmediately: true,
+      );
+      addTearDown(sub.close);
+      for (var i = 0; i < 20 && seen.lastOrNull == null; i++) {
+        await pumpEventQueue();
+      }
+      expect(seen.last, ['h1', 'h2']);
+      // 空の一覧（おうちなし）として流れたことはない。そろうまでは null
+      expect(seen.where((ids) => ids != null && ids.isEmpty), isEmpty);
+
+      final before = seen.length;
+      await (db.update(db.households)..where((h) => h.id.equals('h2'))).write(
+        const HouseholdsCompanion(name: Value('とら家')),
+      );
+      await pumpEventQueue();
+      expect(seen.skip(before), everyElement(['h1', 'h2']));
+    });
+
     test('UT-MH-08 猫・最後の記録・お薬の予定を、いくつかのおうちについてまとめて読む', () async {
       final records = RecordRepository(db);
       final cats = await records.watchActiveCatsIn(['h1', 'h2']).first;

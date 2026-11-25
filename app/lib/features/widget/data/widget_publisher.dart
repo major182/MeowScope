@@ -10,7 +10,11 @@ import 'widget_host.dart';
 /// 記録できる猫（ウィジェットの選択に出す）。入っているすべてのおうちの猫（BR-40）
 final _widgetCatsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
   final ids = ref.watch(householdIdsProvider);
-  if (ids == null || ids.isEmpty) {
+  // 材料がそろうまでは流さない
+  if (ids == null) {
+    return const Stream.empty();
+  }
+  if (ids.isEmpty) {
     return Stream.value(const []);
   }
   return ref.watch(recordRepositoryProvider).watchActiveCatsIn(ids);
@@ -42,7 +46,7 @@ final widgetSnapshotProvider = Provider.autoDispose<WidgetState?>((ref) {
     return const WidgetState.needsApp();
   }
   // 読み込み中（ログインの状態が届く前の空の一覧など）は渡さない
-  if (households.isLoading ||
+  if (ref.watch(householdIdsProvider) == null ||
       !households.hasValue ||
       !buttons.hasValue ||
       !cats.hasValue) {
