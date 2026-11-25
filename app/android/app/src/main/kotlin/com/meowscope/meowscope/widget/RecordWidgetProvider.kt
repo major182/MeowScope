@@ -29,7 +29,10 @@ import org.json.JSONObject
  * 記録のウィジェット（F-WG-01）。表示と動きは [WidgetModel] が決め、ここでは描くことと受け取ることだけをする。
  *
  * ボタン・「次へ」・「やめる」は、ここですぐに表示を切り替える。記録は Dart の裏側の処理
- * （widgetBackgroundCallback）に `meowscope://widget/record?type=...&cat=...` で頼む。
+ * （widgetBackgroundCallback）に `meowscope://widget/record?type=...&cat=...&widget=...` で頼む。
+ *
+ * おうちごとに置けるよう（BR-40）、表示・記録待ちの印・どのおうちかは、ウィジェットごと（appWidgetId）に持つ。
+ * 押したときの道筋にも、どのウィジェットかを入れる（`meowscope://widget/<appWidgetId>/button/0` など）
  */
 class RecordWidgetProvider : HomeWidgetProvider() {
 
@@ -39,46 +42,73 @@ class RecordWidgetProvider : HomeWidgetProvider() {
         appWidgetIds: IntArray,
         widgetData: SharedPreferences,
     ) {
-        val screen = WidgetModel.screen(snapshot(widgetData), ui(widgetData), System.currentTimeMillis())
+        val state = state(widgetData)
+        val now = System.currentTimeMillis()
         for (id in appWidgetIds) {
-            appWidgetManager.updateAppWidget(id, views(context, screen))
+            val screen = WidgetModel.screen(state, widgetData.getString(keyHousehold(id), null), ui(widgetData, id), now)
+            appWidgetManager.updateAppWidget(id, views(context, id, screen))
         }
+    }
+
+    /** ウィジェットを外したら、そのウィジェットの分（表示・記録待ちの印・おうち）を消す。 */
+    override fun onDeleted(context: Context, appWidgetIds: IntArray) {
+        val edit = HomeWidgetPlugin.getData(context).edit()
+        for (id in appWidgetIds) {
+            edit.remove(keyUi(id)).remove(keyPending(id)).remove(keyHousehold(id))
+        }
+        edit.apply()
+        super.onDeleted(context, appWidgetIds)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == ACTION_TAP) {
-            parseAction(intent.data)?.let { apply(context, it) }
+            parseTap(intent.data)?.let { (widgetId, action) ->
+                if (widgetId == EXPIRE_ALL) {
+                    // 予備のアラーム：すべてのウィジェットの期限を確かめる
+                    for (id in widgetIds(context)) {
+                        apply(context, id, Action.Expire)
+                    }
+                } else {
+                    apply(context, widgetId, action)
+                }
+            }
         } else {
             super.onReceive(context, intent)
         }
         armExpire(context)
     }
 
-    private fun apply(context: Context, action: Action) {
+    private fun apply(context: Context, widgetId: Int, action: Action) {
         val prefs = HomeWidgetPlugin.getData(context)
         val now = System.currentTimeMillis()
-        val outcome = WidgetModel.onAction(snapshot(prefs), ui(prefs), action, now)
-        val edit = prefs.edit().putString(KEY_UI, uiJson(outcome.ui))
+        val assigned = prefs.getString(keyHousehold(widgetId), null)
+        val outcome = WidgetModel.onAction(state(prefs), assigned, ui(prefs, widgetId), action, now)
+        val edit = prefs.edit().putString(keyUi(widgetId), uiJson(outcome.ui))
+        // おうちを選んだら、このウィジェットのおうちとして覚える
+        outcome.assign?.let { edit.putString(keyHousehold(widgetId), it) }
         // 記録待ちの印。Dart が保存を終えたら消す。残ったままなら失敗を出す
         if (outcome.record != null) {
-            edit.putLong(KEY_PENDING, now)
+            edit.putLong(keyPending(widgetId), now)
         } else {
-            WidgetModel.overdue(pendingSince(prefs), now)?.let {
-                edit.putString(KEY_UI, uiJson(it)).remove(KEY_PENDING)
+            WidgetModel.overdue(pendingSince(prefs, widgetId), now)?.let {
+                edit.putString(keyUi(widgetId), uiJson(it)).remove(keyPending(widgetId))
             }
         }
         edit.apply()
         outcome.record?.let {
-            val uri = Uri.parse("meowscope://widget/record?type=${Uri.encode(it.typeId)}&cat=${Uri.encode(it.catId)}")
+            val uri = Uri.parse(
+                "meowscope://widget/record?type=${Uri.encode(it.typeId)}&cat=${Uri.encode(it.catId)}&widget=$widgetId",
+            )
             HomeWidgetBackgroundIntent.getBroadcast(context, uri).send()
         }
         redraw(context)
     }
 
+    private fun widgetIds(context: Context): IntArray =
+        AppWidgetManager.getInstance(context).getAppWidgetIds(ComponentName(context, RecordWidgetProvider::class.java))
+
     private fun redraw(context: Context) {
-        val manager = AppWidgetManager.getInstance(context)
-        val ids = manager.getAppWidgetIds(ComponentName(context, RecordWidgetProvider::class.java))
-        onUpdate(context, manager, ids, HomeWidgetPlugin.getData(context))
+        onUpdate(context, AppWidgetManager.getInstance(context), widgetIds(context), HomeWidgetPlugin.getData(context))
     }
 
     /**
@@ -87,20 +117,23 @@ class RecordWidgetProvider : HomeWidgetProvider() {
      * 結果は Dart の裏側の処理が書くが、その処理は書いた後すぐに止められるので、戻すのはこちらで行う。
      * アラームは OS がまとめて遅らせる（1分ほど）ため、アプリの中のタイマーで戻す。
      * 受け取りの処理を延ばす（goAsync）と、その間は次に押した知らせが待たされて反応が数秒遅れるので使わない。
-     * アプリが凍結されてタイマーが止まったときのために、アラームも予備として掛けておく
+     * アプリが凍結されてタイマーが止まったときのために、アラームも予備として掛けておく。
+     * ウィジェットが2つ以上あるときは、いちばん早い期限で掛け、期限が来たらすべてのウィジェットを確かめる
      */
     private fun armExpire(context: Context) {
         val now = System.currentTimeMillis()
         val prefs = HomeWidgetPlugin.getData(context)
-        val until = listOfNotNull(
-            ui(prefs).until,
-            pendingSince(prefs)?.plus(WidgetModel.SAVE_TIMEOUT_MS),
-        ).filter { it > now }.minOrNull() ?: return
+        val ids = widgetIds(context)
+        val until = ids.flatMap { id ->
+            listOfNotNull(ui(prefs, id).until, pendingSince(prefs, id)?.plus(WidgetModel.SAVE_TIMEOUT_MS))
+        }.filter { it > now }.minOrNull() ?: return
         scheduleExpire(context, until - now)
         val app = context.applicationContext
         timer.removeCallbacksAndMessages(null)
         timer.postDelayed({
-            apply(app, Action.Expire)
+            for (id in widgetIds(app)) {
+                apply(app, id, Action.Expire)
+            }
             // 失敗の文に変わったときなど、次の期限を掛け直す
             armExpire(app)
         }, until - now)
@@ -115,11 +148,11 @@ class RecordWidgetProvider : HomeWidgetProvider() {
         alarms.setAndAllowWhileIdle(
             AlarmManager.ELAPSED_REALTIME,
             SystemClock.elapsedRealtime() + delayMs.coerceAtLeast(0),
-            tap(context, "expire"),
+            tap(context, EXPIRE_ALL, "expire"),
         )
     }
 
-    private fun views(context: Context, screen: Screen): RemoteViews {
+    private fun views(context: Context, widgetId: Int, screen: Screen): RemoteViews {
         val v = RemoteViews(context.packageName, R.layout.widget_record)
         val showMessage = screen.message != null
         v.setViewVisibility(R.id.widget_message, if (showMessage) View.VISIBLE else View.GONE)
@@ -136,26 +169,27 @@ class RecordWidgetProvider : HomeWidgetProvider() {
             val icon = cell?.icon?.let { loadIcon(context, it) }
             v.setViewVisibility(ICONS[i], if (icon == null) View.GONE else View.VISIBLE)
             icon?.let { v.setImageViewBitmap(ICONS[i], it) }
-            // イラストのない枠（次へ・やめる）は、文字を大きくして枠の真ん中に出す
+            // イラストのない枠（次へ・やめる・おうち）は、文字を大きくして枠の真ん中に出す
             v.setTextViewTextSize(LABELS[i], TypedValue.COMPLEX_UNIT_SP, if (icon == null) 15f else 13f)
             val click = when {
                 cell == null -> null
                 screen.openApp -> open
-                else -> cell.action?.let { tap(context, actionPath(it)) }
+                else -> cell.action?.let { tap(context, widgetId, actionPath(it)) }
             }
             v.setOnClickPendingIntent(cellId, click)
         }
         // 空いている所を押しても何もしない。押し先がないと、ランチャーがアプリを開いてしまう（意図しない動き）
-        val ignore = tap(context, "none")
+        val ignore = tap(context, widgetId, "none")
         v.setOnClickPendingIntent(R.id.widget_root, ignore)
         v.setOnClickPendingIntent(R.id.widget_message, if (screen.openApp) open else ignore)
         return v
     }
 
-    private fun tap(context: Context, path: String): PendingIntent {
+    /** 押したときの知らせ。道筋（data）がウィジェットと枠ごとに違うので、知らせは別々のものになる。 */
+    private fun tap(context: Context, widgetId: Int, path: String): PendingIntent {
         val intent = Intent(context, RecordWidgetProvider::class.java)
             .setAction(ACTION_TAP)
-            .setData(Uri.parse("meowscope://widget/$path"))
+            .setData(Uri.parse("meowscope://widget/$widgetId/$path"))
         return PendingIntent.getBroadcast(
             context,
             0,
@@ -169,8 +203,19 @@ class RecordWidgetProvider : HomeWidgetProvider() {
         private val timer by lazy { Handler(Looper.getMainLooper()) }
         const val ACTION_TAP = "com.meowscope.meowscope.widget.TAP"
         const val KEY_SNAPSHOT = "meowscope.snapshot"
-        const val KEY_UI = "meowscope.ui"
-        const val KEY_PENDING = "meowscope.pending"
+
+        /** 予備のアラームの知らせ。どのウィジェットのものでもないので、期限を過ぎたすべてのウィジェットを確かめる。 */
+        private const val EXPIRE_ALL = -1
+
+        /** ウィジェットごとの表示（Dart の WidgetKeys.ui と同じ）。 */
+        fun keyUi(widgetId: Int) = "meowscope.ui.$widgetId"
+
+        /** ウィジェットごとの記録待ちの印（Dart の WidgetKeys.pending と同じ）。 */
+        fun keyPending(widgetId: Int) = "meowscope.pending.$widgetId"
+
+        /** ウィジェットごとのおうち（BR-40）。Android の側だけで持つ。 */
+        fun keyHousehold(widgetId: Int) = "meowscope.household.$widgetId"
+
         private val CELLS = intArrayOf(R.id.widget_cell0, R.id.widget_cell1, R.id.widget_cell2, R.id.widget_cell3)
         private val ICONS =
             intArrayOf(R.id.widget_cell0_icon, R.id.widget_cell1_icon, R.id.widget_cell2_icon, R.id.widget_cell3_icon)
@@ -198,18 +243,29 @@ class RecordWidgetProvider : HomeWidgetProvider() {
         fun actionPath(action: Action): String = when (action) {
             is Action.Button -> "button/${action.index}"
             is Action.Cat -> "cat/${action.index}"
+            is Action.Household -> "household/${action.index}"
             Action.Next -> "next"
             Action.Cancel -> "cancel"
             Action.Expire -> "expire"
         }
 
-        fun parseAction(uri: Uri?): Action? = uri?.pathSegments?.let(::parsePath)
+        /**
+         * 押したときの道筋から、どのウィジェットの何を押したかを読む。
+         * 予備のアラームは、ウィジェットの番号の代わりに [EXPIRE_ALL] が入る
+         */
+        fun parseTap(uri: Uri?): Pair<Int, Action>? = uri?.pathSegments?.let(::parseTapPath)
+
+        fun parseTapPath(segments: List<String>): Pair<Int, Action>? {
+            val widgetId = segments.firstOrNull()?.toIntOrNull() ?: return null
+            return parsePath(segments.drop(1))?.let { widgetId to it }
+        }
 
         fun parsePath(segments: List<String>): Action? {
             val index = segments.getOrNull(1)?.toIntOrNull()
             return when (segments.firstOrNull()) {
                 "button" -> index?.let { Action.Button(it) }
                 "cat" -> index?.let { Action.Cat(it) }
+                "household" -> index?.let { Action.Household(it) }
                 "next" -> Action.Next
                 "cancel" -> Action.Cancel
                 "expire" -> Action.Expire
@@ -217,27 +273,42 @@ class RecordWidgetProvider : HomeWidgetProvider() {
             }
         }
 
-        private fun snapshot(prefs: SharedPreferences): Snapshot? {
-            val text = prefs.getString(KEY_SNAPSHOT, null) ?: return null
+        /** Dart の WidgetState の JSON を読む。古い形や壊れた内容なら null（アプリを開いてもらう）。 */
+        fun parseState(text: String?): WidgetState? {
+            if (text == null) {
+                return null
+            }
             return try {
                 val json = JSONObject(text)
-                Snapshot(
+                val households = json.getJSONArray("households")
+                WidgetState(
                     status = json.getString("status"),
                     message = json.optString("message").takeIf { !json.isNull("message") },
-                    buttons = items(json.getJSONArray("buttons")),
-                    pages = json.getJSONArray("pages").let { pages -> List(pages.length()) { items(pages.getJSONArray(it)) } },
-                    onlyCat = json.optJSONObject("onlyCat")?.let(::item),
+                    households = List(households.length()) { i ->
+                        val h = households.getJSONObject(i)
+                        HouseholdSnapshot(h.getString("id"), h.getString("name"), snapshot(h.getJSONObject("snapshot")))
+                    },
                 )
             } catch (e: org.json.JSONException) {
                 null
             }
         }
 
-        private fun pendingSince(prefs: SharedPreferences): Long? =
-            if (prefs.contains(KEY_PENDING)) prefs.getLong(KEY_PENDING, 0) else null
+        private fun state(prefs: SharedPreferences): WidgetState? = parseState(prefs.getString(KEY_SNAPSHOT, null))
 
-        private fun ui(prefs: SharedPreferences): Ui {
-            val text = prefs.getString(KEY_UI, null) ?: return Ui()
+        private fun snapshot(json: JSONObject) = Snapshot(
+            status = json.getString("status"),
+            message = json.optString("message").takeIf { !json.isNull("message") },
+            buttons = items(json.getJSONArray("buttons")),
+            pages = json.getJSONArray("pages").let { pages -> List(pages.length()) { items(pages.getJSONArray(it)) } },
+            onlyCat = json.optJSONObject("onlyCat")?.let(::item),
+        )
+
+        private fun pendingSince(prefs: SharedPreferences, widgetId: Int): Long? =
+            if (prefs.contains(keyPending(widgetId))) prefs.getLong(keyPending(widgetId), 0) else null
+
+        private fun ui(prefs: SharedPreferences, widgetId: Int): Ui {
+            val text = prefs.getString(keyUi(widgetId), null) ?: return Ui()
             return try {
                 val json = JSONObject(text)
                 Ui(
@@ -246,6 +317,7 @@ class RecordWidgetProvider : HomeWidgetProvider() {
                     until = if (json.has("until")) json.getLong("until") else null,
                     type = json.optJSONObject("type")?.let(::item),
                     page = json.optInt("page", 0),
+                    rev = if (json.has("rev")) json.getInt("rev") else null,
                 )
             } catch (e: org.json.JSONException) {
                 Ui()
@@ -258,6 +330,7 @@ class RecordWidgetProvider : HomeWidgetProvider() {
             ui.until?.let { put("until", it) }
             ui.type?.let { put("type", JSONObject().put("id", it.id).put("name", it.name)) }
             put("page", ui.page)
+            ui.rev?.let { put("rev", it) }
         }.toString()
 
         private fun items(array: JSONArray): List<Item> = List(array.length()) { item(array.getJSONObject(it)) }

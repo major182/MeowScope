@@ -96,23 +96,54 @@ void main() {
     await expectLater(repo.remove(userId: 'u2', id: a), throwsStateError);
   });
 
-  test('UT-WB-05 並べ替え：変わった行だけを同期待ちに積み、出ていない他のおうちのボタンは後ろに回す', () async {
+  test('UT-WB-05 並べ替え：変わった行だけを同期待ちに積む。ほかのおうちのボタンは変えない（BR-40）', () async {
     final x = await repo.add(userId: 'u1', recordTypeId: 'x1');
     final a = await repo.add(userId: 'u1', recordTypeId: 't1');
     final b = await repo.add(userId: 'u1', recordTypeId: 't2');
+    final c = await repo.add(userId: 'u1', recordTypeId: 't3');
     final before = (await pendings()).length;
 
-    await repo.reorder(userId: 'u1', orderedIds: [b, a]);
+    await repo.reorder(userId: 'u1', householdId: 'h1', orderedIds: [b, a, c]);
 
-    expect(await shown(), ['t2', 't1']);
+    expect(await shown(), ['t2', 't1', 't3']);
     final changed = (await pendings()).skip(before).map((p) => p.rowId);
-    // 並びは x・a・b から b・a・x になる。a は1番目のままなので積まない
-    expect(changed, unorderedEquals([b, x]));
+    // h1 の並びは a・b・c から b・a・c になる。c は3番目のままなので積まない。h2 の x も変えない
+    expect(changed, unorderedEquals([a, b]));
+    expect(changed, isNot(contains(x)));
 
     final again = (await pendings()).length;
-    await repo.reorder(userId: 'u1', orderedIds: [b, a]);
+    await repo.reorder(userId: 'u1', householdId: 'h1', orderedIds: [b, a, c]);
     expect(await pendings(), hasLength(again));
   });
+
+  test(
+    'UT-WB-12 上限と並び順はおうちごと：別のおうちにもそれぞれ4つまで置け、並び順はおうちの中で 0〜3（BR-40）',
+    () async {
+      for (final t in ['t1', 't2', 't3', 't4']) {
+        await repo.add(userId: 'u1', recordTypeId: t);
+      }
+      // h1 が4つでも、h2 には置ける（境界値：h1 は4つ目まで、5つ目は不可）
+      final x = await repo.add(userId: 'u1', recordTypeId: 'x1');
+      await expectLater(
+        repo.add(userId: 'u1', recordTypeId: 't5'),
+        throwsStateError,
+      );
+      final orders = {
+        for (final w in await db.select(db.widgetButtons).get())
+          w.recordTypeId: w.sortOrder,
+      };
+      expect(orders, {'t1': 0, 't2': 1, 't3': 2, 't4': 3, 'x1': 0});
+
+      // h1 のボタンを消しても、h2 の並び順は変えない
+      final first = (await repo.watchButtons('u1', 'h1').first).first.id;
+      await repo.remove(userId: 'u1', id: first);
+      final after = (await (db.select(
+        db.widgetButtons,
+      )..where((w) => w.id.equals(x))).getSingle()).sortOrder;
+      expect(after, 0);
+      expect(await shown(), ['t2', 't3', 't4']);
+    },
+  );
 
   test('UT-WB-06 非表示の項目のボタンは出し、削除された項目のボタンは出さない', () async {
     await repo.add(userId: 'u1', recordTypeId: 't5');

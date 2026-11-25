@@ -26,7 +26,7 @@ class WidgetButtonRepository {
   final DateTime Function() _clock;
   final Uuid _uuid;
 
-  /// 1人が登録できるボタンの数（サーバーと同じ）
+  /// 1人が1つのおうちに登録できるボタンの数（サーバーと同じ。BR-40）
   static const maxButtons = 4;
 
   /// 今のおうちのボタンを並び順に見張る。削除された項目のボタンは出さない。
@@ -34,14 +34,23 @@ class WidgetButtonRepository {
   Stream<List<WidgetButtonView>> watchButtons(
     String userId,
     String householdId,
-  ) {
+  ) => _watch(userId, householdId);
+
+  /// すべてのおうちのボタンを見張る（おうちごとのウィジェットに渡す。BR-40）。
+  /// おうちは項目の [RecordTypeRow.householdId] で分ける
+  Stream<List<WidgetButtonView>> watchAllButtons(String userId) =>
+      _watch(userId, null);
+
+  Stream<List<WidgetButtonView>> _watch(String userId, String? householdId) {
     final b = _db.widgetButtons;
     final t = _db.recordTypes;
     final q = _db.select(b).join([innerJoin(t, t.id.equalsExp(b.recordTypeId))])
       ..where(
         b.userId.equals(userId) &
             b.deletedAt.isNull() &
-            t.householdId.equals(householdId) &
+            (householdId == null
+                ? const Constant(true)
+                : t.householdId.equals(householdId)) &
             t.deletedAt.isNull(),
       )
       ..orderBy([OrderingTerm.asc(b.sortOrder), OrderingTerm.asc(b.createdAt)]);
@@ -53,20 +62,45 @@ class WidgetButtonRepository {
     );
   }
 
-  /// 自分の残っているボタン（どのおうちの項目も含む）を並び順に返す
-  Future<List<WidgetButtonRow>> _active(String userId) =>
-      (_db.select(_db.widgetButtons)
-            ..where((w) => w.userId.equals(userId) & w.deletedAt.isNull())
-            ..orderBy([
-              (w) => OrderingTerm.asc(w.sortOrder),
-              (w) => OrderingTerm.asc(w.createdAt),
-            ]))
-          .get();
+  /// 自分の残っているボタンのうち、[householdId] のおうちの項目のものを並び順に返す
+  ///
+  /// 上限と並び順（0〜3）は、おうちごとに数える（BR-40）。おうちごとにウィジェットを置くため
+  Future<List<WidgetButtonRow>> _active(String userId, String householdId) {
+    final types = _db.selectOnly(_db.recordTypes)
+      ..addColumns([_db.recordTypes.id])
+      ..where(_db.recordTypes.householdId.equals(householdId));
+    return (_db.select(_db.widgetButtons)
+          ..where(
+            (w) =>
+                w.userId.equals(userId) &
+                w.deletedAt.isNull() &
+                w.recordTypeId.isInQuery(types),
+          )
+          ..orderBy([
+            (w) => OrderingTerm.asc(w.sortOrder),
+            (w) => OrderingTerm.asc(w.createdAt),
+          ]))
+        .get();
+  }
 
-  /// ボタンを最後に足す。上限に達しているときと、同じ項目のボタンがあるときは [StateError]
+  /// 記録項目のおうち。項目がなければ [StateError]
+  Future<String> _householdOfType(String recordTypeId) async {
+    final type = await (_db.select(
+      _db.recordTypes,
+    )..where((t) => t.id.equals(recordTypeId))).getSingleOrNull();
+    if (type == null) {
+      throw StateError('記録項目が見つかりません: $recordTypeId');
+    }
+    return type.householdId;
+  }
+
+  /// ボタンを最後に足す。そのおうちで上限に達しているときと、同じ項目のボタンがあるときは [StateError]
   Future<String> add({required String userId, required String recordTypeId}) {
     return _db.transaction(() async {
-      final active = await _active(userId);
+      final active = await _active(
+        userId,
+        await _householdOfType(recordTypeId),
+      );
       if (active.length >= maxButtons) {
         throw StateError('ボタンは$maxButtonsつまでです');
       }
@@ -113,27 +147,42 @@ class WidgetButtonRepository {
         throw StateError('ボタンが見つかりません: $id');
       }
       await _addPending(userId, id);
-      await _renumber(userId, [for (final w in await _active(userId)) w.id]);
+      // 消したボタンと同じおうちのボタンだけを詰める
+      final removed = await (_db.select(
+        _db.widgetButtons,
+      )..where((w) => w.id.equals(id))).getSingle();
+      final householdId = await _householdOfType(removed.recordTypeId);
+      await _renumber(userId, householdId, [
+        for (final w in await _active(userId, householdId)) w.id,
+      ]);
     });
   }
 
-  /// 並べ替える。[orderedIds] は画面に出ている順。出ていないボタン（他のおうちの項目）は後ろに回す
+  /// [householdId] のおうちのボタンを並べ替える。[orderedIds] は画面に出ている順。
+  /// 出ていないボタン（同じおうちで、画面に出ていないもの）は後ろに回す。ほかのおうちのボタンは変えない
   Future<void> reorder({
     required String userId,
+    required String householdId,
     required List<String> orderedIds,
   }) {
     return _db.transaction(() async {
       final others = [
-        for (final w in await _active(userId))
+        for (final w in await _active(userId, householdId))
           if (!orderedIds.contains(w.id)) w.id,
       ];
-      await _renumber(userId, [...orderedIds, ...others]);
+      await _renumber(userId, householdId, [...orderedIds, ...others]);
     });
   }
 
-  /// 並び順を 0 から振り直す。変わった行だけを同期に回す
-  Future<void> _renumber(String userId, List<String> ids) async {
-    final current = {for (final w in await _active(userId)) w.id: w.sortOrder};
+  /// [householdId] のおうちのボタンの並び順を 0 から振り直す。変わった行だけを同期に回す
+  Future<void> _renumber(
+    String userId,
+    String householdId,
+    List<String> ids,
+  ) async {
+    final current = {
+      for (final w in await _active(userId, householdId)) w.id: w.sortOrder,
+    };
     final now = _clock().toUtc();
     for (final (i, id) in ids.indexed) {
       if (!current.containsKey(id) || current[id] == i) {

@@ -66,7 +66,15 @@ final sessionProvider = StreamProvider<Session?>(
 /// おうちの切り替え（S-42）と、すべてのおうちについて出す通知に使う。
 /// 今のおうちを切り替えても見張り直さないよう、ユーザーの ID だけを見る
 final householdsProvider = StreamProvider<List<HouseholdRow>>((ref) {
-  final userId = ref.watch(sessionProvider.select((s) => s.value?.author.id));
+  final (:loaded, :userId) = ref.watch(
+    sessionProvider.select(
+      (s) => (loaded: s.hasValue, userId: s.value?.author.id),
+    ),
+  );
+  // セッションを読み込む前は流さない（「おうちなし」と取り違えないため）
+  if (!loaded) {
+    return const Stream.empty();
+  }
   if (userId == null) {
     return Stream.value(const []);
   }
@@ -75,8 +83,17 @@ final householdsProvider = StreamProvider<List<HouseholdRow>>((ref) {
 
 /// 自分が入っているおうちの ID（通知の予約に使う）
 final householdIdsProvider = Provider<List<String>?>((ref) {
-  final households = ref.watch(householdsProvider).value;
-  return households == null ? null : [for (final h in households) h.id];
+  final households = ref.watch(householdsProvider);
+  if (!households.hasValue) {
+    return null;
+  }
+  // ログインの状態が届いた直後は、ログイン前の空の一覧を持ったまま読み直すことがある。
+  // それを「おうちなし」として使うと通知の予約が一瞬消えるので、材料がそろっていない（null）にする。
+  // 前の一覧があるときの読み直し（おうちの名前の変更など）は、前の一覧を使い続ける
+  if (households.isLoading && households.value!.isEmpty) {
+    return null;
+  }
+  return [for (final h in households.value!) h.id];
 });
 
 final settingsRepositoryProvider = Provider<SettingsRepository>(

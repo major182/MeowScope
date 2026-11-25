@@ -129,7 +129,7 @@ class WidgetModelTest {
 
     @Test
     fun `UT-WG-10 押したときの道筋を行き来できる。知らない道筋は無視する`() {
-        for (action in listOf(Action.Button(2), Action.Cat(1), Action.Next, Action.Cancel, Action.Expire)) {
+        for (action in listOf(Action.Button(2), Action.Cat(1), Action.Household(0), Action.Next, Action.Cancel, Action.Expire)) {
             val path = RecordWidgetProvider.actionPath(action)
             assertEquals(action, parse(path))
         }
@@ -150,4 +150,85 @@ class WidgetModelTest {
 
     /** android.net.Uri は単体テストでは使えないので、道筋の部分だけで確かめる。 */
     private fun parse(path: String): Action? = RecordWidgetProvider.parsePath(path.split("/"))
+
+    // おうちごとのウィジェット（BR-40）
+
+    private fun household(id: String, name: String, snapshot: Snapshot = ready(mike, tama)) =
+        HouseholdSnapshot(id, name, snapshot)
+
+    private fun state(vararg households: HouseholdSnapshot) = WidgetState("ready", null, households.toList())
+
+    @Test
+    fun `UT-WG-23 おうちが1つなら選ばずにそのおうちのボタンを出す。決めたおうちがあればそのおうち`() {
+        val one = state(household("h1", "みけ家"))
+        assertEquals(listOf("ご飯", "水", null, null), labels(WidgetModel.screen(one, null, Ui(), now)))
+
+        val other = ready(mike).copy(buttons = listOf(water))
+        val two = state(household("h1", "みけ家"), household("h2", "たま家", other))
+        assertEquals(listOf("水", null, null, null), labels(WidgetModel.screen(two, "h2", Ui(), now)))
+        // そのおうちの猫で記録を頼む
+        val out = WidgetModel.onAction(two, "h2", Ui(), Action.Button(0), now)
+        assertEquals(Record("t2", "c1"), out.record)
+    }
+
+    @Test
+    fun `UT-WG-24 おうちが2つ以上で決まっていなければ、おうちを選ぶ表示を出し、押したおうちに決める`() {
+        val two = state(household("h1", "みけ家"), household("h2", "たま家"))
+        val screen = WidgetModel.screen(two, null, Ui(), now)
+        assertEquals("どのおうちのボタン？", screen.title)
+        assertEquals(listOf("みけ家", "たま家", null, null), labels(screen))
+
+        val out = WidgetModel.onAction(two, null, Ui(), Action.Household(1), now)
+        assertEquals("h2", out.assign)
+        assertNull(out.record)
+        // ない枠は決めない
+        assertNull(WidgetModel.onAction(two, null, Ui(), Action.Household(3), now).assign)
+    }
+
+    @Test
+    fun `UT-WG-25 決めたおうちを抜けたら、また選ぶ表示に戻る。残りが1つならそのおうち`() {
+        val two = state(household("h2", "たま家"), household("h3", "とら家"))
+        assertEquals("どのおうちのボタン？", WidgetModel.screen(two, "h1", Ui(), now).title)
+        assertEquals(null, WidgetModel.screen(state(household("h2", "たま家")), "h1", Ui(), now).title)
+    }
+
+    @Test
+    fun `UT-WG-26 境界値：おうちが4つなら1ページ、5つなら3つずつと次へ。最後の次は最初に戻る`() {
+        val four = state(*Array(4) { household("h$it", "家$it") })
+        assertEquals(listOf("家0", "家1", "家2", "家3"), labels(WidgetModel.screen(four, null, Ui(), now)))
+
+        val five = state(*Array(5) { household("h$it", "家$it") })
+        assertEquals(listOf("家0", "家1", "家2", "次へ ▶"), labels(WidgetModel.screen(five, null, Ui(), now)))
+        val next = WidgetModel.onAction(five, null, Ui(), Action.Next, now).ui
+        assertEquals(listOf("家3", "家4", null, "次へ ▶"), labels(WidgetModel.screen(five, null, next, now)))
+        assertEquals("h4", WidgetModel.onAction(five, null, next, Action.Household(1), now).assign)
+        assertEquals(0, WidgetModel.onAction(five, null, next, Action.Next, now).ui.page)
+    }
+
+    @Test
+    fun `UT-WG-27 猫の選択の途中におうちの内容が変わったら、ボタンに戻す`() {
+        val before = state(household("h1", "みけ家", ready(mike, tama)))
+        val selecting = WidgetModel.onAction(before, null, Ui(), Action.Button(0), now).ui
+        assertEquals(Ui.CATS, selecting.mode)
+        // 内容が同じなら選択のまま
+        assertEquals("ご飯：どの子？", WidgetModel.screen(before, null, selecting, now).title)
+
+        val after = state(household("h1", "みけ家", ready(mike, kuro)))
+        assertEquals(listOf("ご飯", "水", null, null), labels(WidgetModel.screen(after, null, selecting, now)))
+        assertNull(WidgetModel.onAction(after, null, selecting, Action.Cat(1), now).record)
+    }
+
+    @Test
+    fun `UT-WG-28 ログインしていない・内容がないときは、案内を出して押すとアプリを開く。押した道筋にウィジェットの番号が入る`() {
+        val signedOut = WidgetState("needsApp", "MeowScope を開いてください", emptyList())
+        val screen = WidgetModel.screen(signedOut, null, Ui(), now)
+        assertEquals("MeowScope を開いてください", screen.message)
+        assertTrue(screen.openApp)
+        assertTrue(WidgetModel.screen(null, null, Ui(), now).openApp)
+
+        assertEquals(12 to Action.Household(2), RecordWidgetProvider.parseTapPath(listOf("12", "household", "2")))
+        assertEquals(-1 to Action.Expire, RecordWidgetProvider.parseTapPath(listOf("-1", "expire")))
+        assertNull(RecordWidgetProvider.parseTapPath(listOf("button", "0")))
+        assertNull(RecordWidgetProvider.parseTapPath(listOf("12", "other")))
+    }
 }

@@ -85,7 +85,10 @@ class WidgetSnapshot {
   };
 
   /// Android の側へ渡す JSON
-  String toJson() => jsonEncode({
+  String toJson() => jsonEncode(toMap());
+
+  /// JSON にする前の形（[WidgetState] がおうちごとに並べる）
+  Map<String, Object?> toMap() => {
     'status': status.name,
     'message': message,
     'buttons': [
@@ -106,5 +109,37 @@ class WidgetSnapshot {
             'icon': widgetCatIcon,
           }
         : null,
+  };
+}
+
+/// おうち1つ分の、ウィジェットに渡す内容（BR-40）
+typedef WidgetHousehold = ({String id, String name, WidgetSnapshot snapshot});
+
+/// ウィジェットに渡すデータの全体（BR-40）
+///
+/// おうちごとにウィジェットを置けるよう、入っているおうちの内容をすべて渡す。
+/// どのウィジェットがどのおうちかは Android の側が持ち、選ばれていなければ、ウィジェットの中で選んでもらう
+/// （おうちが1つなら選ばない）。ログインしていない・おうちがないときは、アプリを開くだけにする
+class WidgetState {
+  const WidgetState({required this.households});
+
+  /// ログインしていない、またはおうちがないとき
+  const WidgetState.needsApp() : households = const [];
+
+  final List<WidgetHousehold> households;
+
+  WidgetStatus get status =>
+      households.isEmpty ? WidgetStatus.needsApp : WidgetStatus.ready;
+
+  /// Android の側へ渡す JSON
+  String toJson() => jsonEncode({
+    'status': status.name,
+    'message': status == WidgetStatus.needsApp
+        ? const WidgetSnapshot(status: WidgetStatus.needsApp).message
+        : null,
+    'households': [
+      for (final h in households)
+        {'id': h.id, 'name': h.name, 'snapshot': h.snapshot.toMap()},
+    ],
   });
 }

@@ -30,7 +30,11 @@ final notificationSchedulerProvider = Provider<NotificationScheduler>(
 /// 記録忘れの対象の猫（お別れを除く。BR-13）。今のおうちに限らず、入っているすべてのおうちの猫（BR-39）
 final _activeCatsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
   final ids = ref.watch(householdIdsProvider);
-  if (ids == null || ids.isEmpty) {
+  // 材料がそろうまでは流さない（空として流すと、予約が一瞬消える）
+  if (ids == null) {
+    return const Stream.empty();
+  }
+  if (ids.isEmpty) {
     return Stream.value(const []);
   }
   return ref.watch(recordRepositoryProvider).watchActiveCatsIn(ids);
@@ -40,7 +44,10 @@ final _activeCatsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
 final _lastRecordTimesProvider =
     StreamProvider.autoDispose<Map<String, DateTime>>((ref) {
       final ids = ref.watch(householdIdsProvider);
-      if (ids == null || ids.isEmpty) {
+      if (ids == null) {
+        return const Stream.empty();
+      }
+      if (ids.isEmpty) {
         return Stream.value(const {});
       }
       return ref.watch(recordRepositoryProvider).watchLastRecordTimesIn(ids);
@@ -101,7 +108,11 @@ final _medicationsProvider = StreamProvider.autoDispose<List<MedicationEntry>>((
   ref,
 ) {
   final ids = ref.watch(householdIdsProvider);
-  if (ids == null || ids.isEmpty) {
+  // 材料がそろうまでは流さない（空として流すと、予約が一瞬消える）
+  if (ids == null) {
+    return const Stream.empty();
+  }
+  if (ids.isEmpty) {
     return Stream.value(const []);
   }
   return ref.watch(medicationRepositoryProvider).watchSchedulesIn(ids);
