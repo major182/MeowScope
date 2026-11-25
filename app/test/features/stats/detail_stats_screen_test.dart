@@ -66,14 +66,18 @@ void main() {
   testWidgets('UT-DS-04 S-30 の「くわしく見る」は Windows だけに出す（Android の統計は今のまま）', (
     tester,
   ) async {
-    debugDefaultTargetPlatformOverride = TargetPlatform.android;
-    await show(tester, StatsScreen(today: _today));
-    expect(find.text('くわしく見る'), findsNothing);
+    // 途中で失敗しても、後のテストに上書きを残さない（テストの終わりの確かめより前に戻す）
+    try {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      await show(tester, StatsScreen(today: _today));
+      expect(find.text('くわしく見る'), findsNothing);
 
-    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
-    await show(tester, StatsScreen(today: _today));
-    expect(find.text('くわしく見る'), findsOneWidget);
-    debugDefaultTargetPlatformOverride = null;
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+      await show(tester, StatsScreen(today: _today));
+      expect(find.text('くわしく見る'), findsOneWidget);
+    } finally {
+      debugDefaultTargetPlatformOverride = null;
+    }
   });
 
   testWidgets('UT-DS-05 はじめは月・先頭の猫・先頭の項目の1本。猫を足すと重なり、凡例に名前と目盛りを出す', (
@@ -149,5 +153,18 @@ void main() {
     await tester.pumpAndSettle();
     expect(chart(tester).lineBarsData, hasLength(8));
     expect(find.textContaining('はじめの8本だけ'), findsOneWidget);
+  });
+
+  testWidgets('UT-DS-09 回数の項目だけを選んでも、期間に記録がなければ 0 の線ではなく案内を出す', (tester) async {
+    await show(tester, const DetailStatsScreen());
+    // 水の記録はない。ご飯を外して水だけにする
+    await tester.tap(find.widgetWithText(FilterChip, '水'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilterChip, 'ご飯'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LineChart), findsNothing);
+    expect(find.text('この期間の記録はありません'), findsOneWidget);
+    expect(find.text('ミケ・水（回・左）'), findsOneWidget);
   });
 }

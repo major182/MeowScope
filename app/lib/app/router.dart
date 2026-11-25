@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/stats/presentation/detail_stats_screen.dart';
@@ -131,11 +133,13 @@ GoRouter createRouter() => GoRouter(
     GoRoute(
       // 記録の CSV の出力（S-52）。Windows だけ（設定に入口を出す。BR-41）
       path: '/export',
+      redirect: _windowsOnly,
       builder: (context, state) => const CsvExportScreen(),
     ),
     GoRoute(
       // くわしい統計（S-31）。Windows だけ（統計の画面に入口を出す。BR-42）
       path: '/stats-detail',
+      redirect: _windowsOnly,
       builder: (context, state) => const DetailStatsScreen(),
     ),
     GoRoute(
@@ -195,3 +199,8 @@ GoRouter createRouter() => GoRouter(
     ),
   ],
 );
+
+/// Windows だけの画面（CSV の出力・くわしい統計）を、ほかの端末で開かせない（BR-41・42）。
+/// 入口を隠すだけでなく、リンクで直接開かれたときもホームへ戻す
+String? _windowsOnly(BuildContext context, GoRouterState state) =>
+    defaultTargetPlatform == TargetPlatform.windows ? null : '/';

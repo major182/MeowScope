@@ -198,7 +198,7 @@ class _DetailStatsScreenState extends ConsumerState<DetailStatsScreen> {
                       style: TextStyle(color: theme.colorScheme.error),
                     ),
                   // どの線にも点がなければ、空のグラフの代わりに案内を出す
-                  if (series.every((s) => s.points.isEmpty))
+                  if (series.every((s) => s.records == 0))
                     const SizedBox(
                       height: 120,
                       child: Center(child: Text('この期間の記録はありません')),

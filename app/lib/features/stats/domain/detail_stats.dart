@@ -58,8 +58,14 @@ typedef SeriesKey = ({String catId, String typeId});
 /// 線の1点。体重のない日・記録のない日（体重）は点を打たない
 typedef SeriesPoint = ({int dayIndex, double value});
 
-/// 1本の線。[weight] なら値は kg（右の目盛り）、そうでなければ回数（左の目盛り）
-typedef Series = ({SeriesKey key, bool weight, List<SeriesPoint> points});
+/// 1本の線。[weight] なら値は kg（右の目盛り）、そうでなければ回数（左の目盛り）。
+/// [records] は期間の中のその猫・項目の記録の数（回数の線は記録がなくても 0 の点を持つので、点では決められない）
+typedef Series = ({
+  SeriesKey key,
+  bool weight,
+  List<SeriesPoint> points,
+  int records,
+});
 
 /// 選んだ猫と項目の組ごとに線を作る（F-ST-05・06）
 ///
@@ -92,7 +98,10 @@ Series _series(
 ) {
   final mine = [
     for (final e in entries)
-      if (e.catId == key.catId && e.recordTypeId == key.typeId) e,
+      if (e.catId == key.catId &&
+          e.recordTypeId == key.typeId &&
+          index.containsKey(dateOnly(e.recordedAt)))
+        e,
   ];
   if (!weight) {
     final counts = List.filled(length, 0);
@@ -108,6 +117,7 @@ Series _series(
         for (var i = 0; i < length; i++)
           (dayIndex: i, value: counts[i].toDouble()),
       ],
+      records: mine.length,
     );
   }
   // その日の最後の記録の値（同じ日に何度か量ったときは、最後のものを使う）
@@ -128,6 +138,8 @@ Series _series(
       for (final i in last.keys.toList()..sort())
         (dayIndex: i, value: last[i]!.valueNumber!),
     ],
+    // 体重は数値のある日だけが点になるので、点の数を記録の数とする
+    records: last.length,
   );
 }
 

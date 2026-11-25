@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/core/providers.dart';
 import 'package:meowscope/core/today.dart';
@@ -109,6 +110,8 @@ void main() {
     debugDefaultTargetPlatformOverride = windows
         ? TargetPlatform.windows
         : TargetPlatform.android;
+    // 途中で失敗しても、後のテストに上書きを残さない
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -277,6 +280,20 @@ void main() {
         '${dir.path}${Platform.pathSeparator}none${Platform.pathSeparator}out.csv';
     await export(tester);
     expect(find.text('保存できませんでした。別の場所か名前でお試しください'), findsOneWidget);
+    await close(tester);
+  });
+
+  testWidgets('UT-EX-11 Android では、CSV の出力とくわしい統計をリンクで直接開いてもホームへ戻す（BR-41・42）', (
+    tester,
+  ) async {
+    await start(tester, windows: false);
+    final router = GoRouter.of(tester.element(find.byType(Scaffold).first));
+    for (final path in ['/export', '/stats-detail']) {
+      router.go(path);
+      await tester.pumpAndSettle();
+      expect(find.text('CSV の出力'), findsNothing);
+      expect(find.text('くわしい統計'), findsNothing);
+    }
     await close(tester);
   });
 }

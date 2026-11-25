@@ -110,6 +110,8 @@ void main() {
       // 体重はその日の最後の値。記録のない日は点を打たない
       expect([for (final p in s[1].points) (p.dayIndex, p.value)], [(1, 4.2)]);
       expect(s[3].points, isEmpty);
+      // 記録の数（期間の外は数えない。体重は点の数）
+      expect([for (final x in s) x.records], [2, 1, 1, 0]);
     });
   });
 
