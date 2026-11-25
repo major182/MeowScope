@@ -8,6 +8,8 @@
 // 端末の DB とトークンの置き場は、テストの側でメモリーに差し替えるので、端末のデータは使わない
 import 'dart:io';
 
+import 'stay_on.dart';
+
 /// 端末の種類ごとの、テストから見たサーバーの場所と flutter の端末の指定
 const targets = {
   'windows': (device: 'windows', api: 'http://localhost:8080/api/v1'),
@@ -113,8 +115,7 @@ Future<String?> _stayOnSetting(String device) async {
     'global',
     'stay_on_while_plugged_in',
   ], runInShell: Platform.isWindows);
-  final value = r.stdout.toString().trim();
-  return r.exitCode == 0 && RegExp(r'^d+$').hasMatch(value) ? value : null;
+  return parseStayOn(r.exitCode, r.stdout.toString());
 }
 
 /// adb を、決めた端末に向けて動かす
