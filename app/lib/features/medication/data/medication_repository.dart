@@ -27,7 +27,11 @@ class MedicationRepository {
   static const maxLength = 20;
 
   /// おうちの予定を、猫の登録順・時刻の順に見張る。削除した予定と、削除した猫の予定は除く
-  Stream<List<MedicationEntry>> watchSchedules(String householdId) {
+  Stream<List<MedicationEntry>> watchSchedules(String householdId) =>
+      watchSchedulesIn([householdId]);
+
+  /// お薬の予定を、いくつかのおうちについて見張る（通知はすべてのおうちについて出す。BR-39）
+  Stream<List<MedicationEntry>> watchSchedulesIn(List<String> householdIds) {
     final q =
         _db.select(_db.medicationSchedules).join([
             innerJoin(
@@ -36,7 +40,7 @@ class MedicationRepository {
             ),
           ])
           ..where(
-            _db.medicationSchedules.householdId.equals(householdId) &
+            _db.medicationSchedules.householdId.isIn(householdIds) &
                 _db.medicationSchedules.deletedAt.isNull() &
                 _db.cats.deletedAt.isNull(),
           )

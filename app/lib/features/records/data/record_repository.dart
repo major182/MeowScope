@@ -295,17 +295,23 @@ class RecordRepository {
 
   /// 記録できる猫（お別れと削除済みを除く）を見張る
   Stream<List<CatRow>> watchActiveCats(String householdId) =>
-      _activeCats(householdId).watch();
+      _activeCats([householdId]).watch();
+
+  /// 記録できる猫を、いくつかのおうちについて見張る（通知はすべてのおうちについて出す。BR-39）
+  Stream<List<CatRow>> watchActiveCatsIn(List<String> householdIds) =>
+      _activeCats(householdIds).watch();
 
   /// 記録できる猫を一度だけ読む
   Future<List<CatRow>> activeCats(String householdId) =>
-      _activeCats(householdId).get();
+      _activeCats([householdId]).get();
 
-  SimpleSelectStatement<$CatsTable, CatRow> _activeCats(String householdId) {
+  SimpleSelectStatement<$CatsTable, CatRow> _activeCats(
+    List<String> householdIds,
+  ) {
     final q = _db.select(_db.cats)
       ..where(
         (c) =>
-            c.householdId.equals(householdId) &
+            c.householdId.isIn(householdIds) &
             c.deletedAt.isNull() &
             c.status.equals('active'),
       )
@@ -514,14 +520,20 @@ class RecordRepository {
   }
 
   /// 猫ごとの最後の記録の日時を見張る（記録忘れ、BR-13）。家族の記録も含む。削除した記録と猫は除く
-  Stream<Map<String, DateTime>> watchLastRecordTimes(String householdId) {
+  Stream<Map<String, DateTime>> watchLastRecordTimes(String householdId) =>
+      watchLastRecordTimesIn([householdId]);
+
+  /// 猫ごとの最後の記録の日時を、いくつかのおうちについて見張る（BR-39）
+  Stream<Map<String, DateTime>> watchLastRecordTimesIn(
+    List<String> householdIds,
+  ) {
     final r = _db.records;
     final c = _db.cats;
     final last = r.recordedAt.max();
     final q = _db.selectOnly(r).join([innerJoin(c, c.id.equalsExp(r.catId))])
       ..addColumns([r.catId, last])
       ..where(
-        c.householdId.equals(householdId) &
+        c.householdId.isIn(householdIds) &
             c.deletedAt.isNull() &
             r.deletedAt.isNull(),
       )

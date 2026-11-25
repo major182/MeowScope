@@ -67,7 +67,12 @@ class AnomalyAlerts {
         continue;
       }
       await _notifier.show(
-        anomalyNotification(a, method: settings.method, now: now),
+        anomalyNotification(
+          a,
+          method: settings.method,
+          now: now,
+          householdId: householdId,
+        ),
       );
       await _db
           .into(_db.appStates)

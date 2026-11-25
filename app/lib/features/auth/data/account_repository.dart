@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 
 import '../../../core/api/api_error.dart';
 import '../../../core/db/app_database.dart';
+import '../../../core/db/household_choice.dart';
 import '../../../core/db/local_cleanup.dart';
 import '../../icons/icon_repository.dart';
 import 'auth_repository.dart';
@@ -231,9 +232,11 @@ class AccountRepository {
     } on DioException catch (e) {
       throw ApiError.from(e);
     }
-    await _db.transaction(
-      () => removeHouseholdLocally(_db, userId, householdId),
-    );
+    await _db.transaction(() async {
+      await removeHouseholdLocally(_db, userId, householdId);
+      // 今のおうちを抜けたら、残りのおうちのどれかを今のおうちにする（なければ S-04。BR-39）
+      await chooseHouseholdIfNone(_db, userId);
+    });
   }
 
   /// 退会する（BR-15、BR-16）。端末のデータとトークンを消し、ログイン（S-01）へ戻る

@@ -61,6 +61,24 @@ final sessionProvider = StreamProvider<Session?>(
   (ref) => ref.watch(householdRepositoryProvider).watchSession(),
 );
 
+/// 自分が入っているおうち（入った順。BR-39）。おうちがまだなければ空
+///
+/// おうちの切り替え（S-42）と、すべてのおうちについて出す通知に使う。
+/// 今のおうちを切り替えても見張り直さないよう、ユーザーの ID だけを見る
+final householdsProvider = StreamProvider<List<HouseholdRow>>((ref) {
+  final userId = ref.watch(sessionProvider.select((s) => s.value?.author.id));
+  if (userId == null) {
+    return Stream.value(const []);
+  }
+  return ref.watch(householdRepositoryProvider).watchHouseholds(userId);
+});
+
+/// 自分が入っているおうちの ID（通知の予約に使う）
+final householdIdsProvider = Provider<List<String>?>((ref) {
+  final households = ref.watch(householdsProvider).value;
+  return households == null ? null : [for (final h in households) h.id];
+});
+
 final settingsRepositoryProvider = Provider<SettingsRepository>(
   (ref) => SettingsRepository(ref.watch(databaseProvider)),
 );

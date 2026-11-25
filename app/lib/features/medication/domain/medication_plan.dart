@@ -1,5 +1,6 @@
 import '../../notifications/data/notifier.dart';
 import '../../notifications/domain/notification_settings.dart';
+import '../../notifications/domain/notification_target.dart';
 import '../../notifications/domain/reminder_plan.dart';
 
 /// 予定の時刻（`HH:mm`）を時と分にする。形が違えば null
@@ -24,6 +25,7 @@ class MedicationPlanItem {
     required this.dose,
     required this.timeOfDay,
     required this.enabled,
+    this.householdId,
   });
 
   final String id;
@@ -32,6 +34,9 @@ class MedicationPlanItem {
   final String? dose;
   final String timeOfDay;
   final bool enabled;
+
+  /// 予定のおうち。通知を押したときに、このおうちへ切り替える（BR-39）
+  final String? householdId;
 }
 
 /// お薬の時間の予約（F-NT-01、BR-06）
@@ -57,7 +62,7 @@ List<PlannedNotification> planMedications({
               id: notificationId('medication', s.id),
               title: '${s.catName}のお薬の時間です',
               body: s.dose == null ? s.name : '${s.name} ${s.dose}',
-              payload: '/',
+              payload: withHousehold('/', s.householdId),
             ),
             _next(now, t.hour, t.minute),
             daily: true,

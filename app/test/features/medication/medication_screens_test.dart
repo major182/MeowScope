@@ -326,6 +326,8 @@ void main() {
       overrides: [
         databaseProvider.overrideWithValue(db),
         sessionProvider.overrideWith((ref) => Stream.value(_session)),
+        // 通知はすべてのおうちについて出す（BR-39）。入っているおうちを h1 だけにする
+        householdIdsProvider.overrideWithValue(const ['h1']),
         notifierProvider.overrideWithValue(notifier),
       ],
     );

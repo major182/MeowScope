@@ -4,6 +4,7 @@ import 'dart:math';
 import '../../records/domain/record_kind.dart';
 import '../data/notifier.dart';
 import 'notification_settings.dart';
+import 'notification_target.dart';
 import 'reminder_plan.dart';
 
 /// 回数で判定する記録の種類（BR-31。薬・ブラシ・独自の項目は判定しない）
@@ -310,6 +311,9 @@ AppNotification anomalyNotification(
   Anomaly a, {
   required AnomalyMethod method,
   required DateTime now,
+
+  /// 猫のおうち。通知を押したときに、このおうちへ切り替える（BR-39）
+  String? householdId,
 }) {
   final id = notificationId('anomaly', a.key);
   final low = a.direction == AnomalyDirection.low;
@@ -317,7 +321,7 @@ AppNotification anomalyNotification(
     return AppNotification(
       id: id,
       title: '${a.catName}の体重がいつもより ${a.observed}% ${low ? '減って' : '増えて'}います',
-      payload: anomalyPayload(a),
+      payload: withHousehold(anomalyPayload(a), householdId),
     );
   }
   final label = RecordKind.values.byName(a.kind).label;
@@ -329,6 +333,6 @@ AppNotification anomalyNotification(
     id: id,
     title: '${a.catName}の$labelがいつもより${low ? '少なめ' : '多め'}です',
     body: '$day ${a.observed}回（$usual）',
-    payload: anomalyPayload(a),
+    payload: withHousehold(anomalyPayload(a), householdId),
   );
 }

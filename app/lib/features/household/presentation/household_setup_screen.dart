@@ -12,8 +12,13 @@ import '../../../core/widgets/save_guard.dart';
 ///
 /// 作った人はログイン中のユーザーで、投稿者名には新規登録の名前を使う（BR-17）。
 /// おうちのない人もログアウトと退会ができるよう、画面の下に小さく入口を置く
+///
+/// [adding] が真なら、おうちのある人が2つ目以後のおうちを作る（S-42 から開く。BR-39）。
+/// そのときは戻るボタンを出し、ログアウトと退会の入口は出さない（S-45 にあるため）
 class HouseholdSetupScreen extends ConsumerStatefulWidget {
-  const HouseholdSetupScreen({super.key});
+  const HouseholdSetupScreen({super.key, this.adding = false});
+
+  final bool adding;
 
   @override
   ConsumerState<HouseholdSetupScreen> createState() =>
@@ -50,6 +55,10 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
       // もう一度押せるように戻す
       if (mounted) setState(() => _saving = false);
       return;
+    }
+    // 2つ目以後のおうちなら、前のおうちの画面を残さないよう、ホームに戻してから進む
+    if (widget.adding) {
+      router.go('/');
     }
     // おうちができたら、続けて最初の猫を登録する（S-05）
     router.push('/cats/new');
@@ -97,7 +106,7 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
     // ref.read で読めるよう、ログイン中のユーザーを見張っておく
     ref.watch(authUserProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('おうちを準備します')),
+      appBar: AppBar(title: Text(widget.adding ? '新しいおうちを作る' : 'おうちを準備します')),
       body: Form(
         key: _form,
         child: ListView(
@@ -113,31 +122,39 @@ class _HouseholdSetupScreenState extends ConsumerState<HouseholdSetupScreen> {
               onPressed: _saving ? null : _create,
               child: const Text('新しいおうちを作る'),
             ),
-            const SizedBox(height: 24),
-            OutlinedButton(
-              onPressed: () => context.push('/join'),
-              child: const Text('招待されたおうちに参加'),
-            ),
+            // 2つ目を作るときの参加は S-42 から開くので、ここには出さない
+            if (!widget.adding) ...[
+              const SizedBox(height: 24),
+              OutlinedButton(
+                onPressed: () => context.push('/join'),
+                child: const Text('招待されたおうちに参加'),
+              ),
+            ],
           ],
         ),
       ),
       // 新規登録した人も見る画面なので、目立たないよう下に小さく置く
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _QuietButton(label: 'ログアウト', onPressed: _saving ? null : _logout),
-              const SizedBox(width: 16),
-              _QuietButton(
-                label: 'アカウントを削除',
-                onPressed: _saving ? null : _delete,
+      bottomNavigationBar: widget.adding
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _QuietButton(
+                      label: 'ログアウト',
+                      onPressed: _saving ? null : _logout,
+                    ),
+                    const SizedBox(width: 16),
+                    _QuietButton(
+                      label: 'アカウントを削除',
+                      onPressed: _saving ? null : _delete,
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ),
+            ),
     );
   }
 }

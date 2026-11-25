@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api/api_error.dart';
+import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../../../core/widgets/confirm_delete.dart';
 import '../../../core/widgets/keep_records_dialog.dart';
@@ -35,7 +36,9 @@ class HouseholdScreen extends ConsumerStatefulWidget {
 
 class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
   final _name = TextEditingController();
-  var _loaded = false;
+
+  /// おうち名の欄に読み込んだおうち。おうちを切り替えたら読み込み直す（BR-39）
+  String? _loadedFor;
   var _busy = false;
   String? _nameError;
 
@@ -108,6 +111,19 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
     }
   }
 
+  /// 今のおうちを切り替える（BR-39）。端末の中だけで済むので、通信は要らない
+  Future<void> _switch(String userId, HouseholdRow household) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final switched = await ref
+        .read(householdRepositoryProvider)
+        .switchHousehold(userId: userId, householdId: household.id);
+    if (switched) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('${household.name}に切り替えました')),
+      );
+    }
+  }
+
   Future<void> _leave(String householdId, String userId, bool last) async {
     final bool? keep;
     if (last) {
@@ -154,10 +170,12 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
     }
     final id = session.householdId;
     final name = ref.watch(_householdNameProvider(id)).value;
-    if (!_loaded && name != null) {
+    if (_loadedFor != id && name != null) {
       _name.text = name;
-      _loaded = true;
+      _nameError = null;
+      _loadedFor = id;
     }
+    final households = ref.watch(householdsProvider).value ?? const [];
     final members = ref.watch(_membersProvider(id)).value ?? const <Member>[];
     // 同期でまだ届いていなければ、自分だけのおうちとして扱う
     final others = members.where((m) => m.userId != session.author.id);
@@ -166,6 +184,24 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
       body: ListView(
         padding: readablePadding(context, 16),
         children: [
+          // おうちが2つ以上あるときだけ、切り替えを出す（BR-39）
+          if (households.length > 1) ...[
+            Text('おうちを切り替える', style: Theme.of(context).textTheme.titleSmall),
+            for (final h in households)
+              ListTile(
+                leading: Icon(
+                  h.id == id
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                ),
+                title: Text(h.name.isEmpty ? '（読み込み中）' : h.name),
+                selected: h.id == id,
+                onTap: _busy || h.id == id
+                    ? null
+                    : () => _switch(session.author.id, h),
+              ),
+            const Divider(),
+          ],
           TextField(
             controller: _name,
             maxLength: 50,
@@ -201,6 +237,18 @@ class _HouseholdScreenState extends ConsumerState<HouseholdScreen> {
             onPressed: _busy ? null : () => _invite(id, name ?? ''),
             icon: const Icon(Icons.link),
             label: const Text('リンクで招待する'),
+          ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: _busy ? null : () => context.push('/household/new'),
+            icon: const Icon(Icons.add_home_outlined),
+            label: const Text('新しいおうちを作る'),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: _busy ? null : () => context.push('/join'),
+            icon: const Icon(Icons.group_add_outlined),
+            label: const Text('招待されたおうちに参加'),
           ),
           const SizedBox(height: 16),
           OutlinedButton(

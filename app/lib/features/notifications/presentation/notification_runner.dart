@@ -27,27 +27,23 @@ final notificationSchedulerProvider = Provider<NotificationScheduler>(
   ),
 );
 
-/// 記録忘れの対象の猫（お別れを除く。BR-13）
+/// 記録忘れの対象の猫（お別れを除く。BR-13）。今のおうちに限らず、入っているすべてのおうちの猫（BR-39）
 final _activeCatsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
-  final session = ref.watch(sessionProvider).value;
-  if (session == null) {
+  final ids = ref.watch(householdIdsProvider);
+  if (ids == null || ids.isEmpty) {
     return Stream.value(const []);
   }
-  return ref
-      .watch(recordRepositoryProvider)
-      .watchActiveCats(session.householdId);
+  return ref.watch(recordRepositoryProvider).watchActiveCatsIn(ids);
 });
 
-/// 猫ごとの最後の記録の日時（家族の記録を含む）
+/// 猫ごとの最後の記録の日時（家族の記録を含む）。すべてのおうちの猫（BR-39）
 final _lastRecordTimesProvider =
     StreamProvider.autoDispose<Map<String, DateTime>>((ref) {
-      final session = ref.watch(sessionProvider).value;
-      if (session == null) {
+      final ids = ref.watch(householdIdsProvider);
+      if (ids == null || ids.isEmpty) {
         return Stream.value(const {});
       }
-      return ref
-          .watch(recordRepositoryProvider)
-          .watchLastRecordTimes(session.householdId);
+      return ref.watch(recordRepositoryProvider).watchLastRecordTimesIn(ids);
     });
 
 /// 記録忘れの予約。材料がそろうまでは null
@@ -63,7 +59,10 @@ final reminderPlanProvider = Provider.autoDispose<List<PlannedNotification>?>((
     return null;
   }
   return planReminders(
-    cats: [for (final c in cats) ReminderCat(id: c.id, name: c.name)],
+    cats: [
+      for (final c in cats)
+        ReminderCat(id: c.id, name: c.name, householdId: c.householdId),
+    ],
     lastRecordAt: last,
     settings: settings,
     now: DateTime.now(),
@@ -84,7 +83,12 @@ final birthdayPlanProvider = Provider.autoDispose<List<PlannedNotification>?>((
     cats: [
       for (final c in cats)
         if (c.birthDate case final birth?)
-          BirthdayCat(id: c.id, name: c.name, birthDate: birthDateOf(birth)),
+          BirthdayCat(
+            id: c.id,
+            name: c.name,
+            birthDate: birthDateOf(birth),
+            householdId: c.householdId,
+          ),
     ],
     settings: settings,
     now: DateTime.now(),
@@ -92,17 +96,15 @@ final birthdayPlanProvider = Provider.autoDispose<List<PlannedNotification>?>((
   );
 });
 
-/// おうちのお薬の予定（家族の追加・変更も同期で届く）
+/// おうちのお薬の予定（家族の追加・変更も同期で届く）。すべてのおうちの予定（BR-39）
 final _medicationsProvider = StreamProvider.autoDispose<List<MedicationEntry>>((
   ref,
 ) {
-  final session = ref.watch(sessionProvider).value;
-  if (session == null) {
+  final ids = ref.watch(householdIdsProvider);
+  if (ids == null || ids.isEmpty) {
     return Stream.value(const []);
   }
-  return ref
-      .watch(medicationRepositoryProvider)
-      .watchSchedules(session.householdId);
+  return ref.watch(medicationRepositoryProvider).watchSchedulesIn(ids);
 });
 
 /// お薬の時間の予約（F-NT-01、BR-06）。予定・猫（お別れ）・通知の設定が変わるたびに計算し直す
@@ -125,6 +127,7 @@ final medicationPlanProvider = Provider.autoDispose<List<PlannedNotification>?>(
               dose: e.schedule.dose,
               timeOfDay: e.schedule.timeOfDay,
               enabled: e.schedule.enabled,
+              householdId: e.schedule.householdId,
             ),
       ],
       settings: settings,
@@ -190,18 +193,21 @@ class _NotificationRunnerState extends ConsumerState<NotificationRunner> {
   Future<void> _checkAnomalies() async {
     final log = ref.read(appLogProvider);
     try {
-      final session = ref.read(sessionProvider).value;
       final settings = await ref.read(notificationSettingsProvider.future);
-      if (session == null || !mounted) {
+      final households = await ref.read(householdsProvider.future);
+      if (!mounted) {
         return;
       }
-      await ref
-          .read(anomalyAlertsProvider)
-          .check(
-            householdId: session.householdId,
-            settings: settings,
-            android: defaultTargetPlatform == TargetPlatform.android,
-          );
+      // 今のおうちに限らず、入っているすべてのおうちの猫を判定する（BR-39）
+      for (final h in households) {
+        await ref
+            .read(anomalyAlertsProvider)
+            .check(
+              householdId: h.id,
+              settings: settings,
+              android: defaultTargetPlatform == TargetPlatform.android,
+            );
+      }
     } on Object catch (e) {
       // 判定に失敗しても、アプリの操作は止めない。例外の種類だけをログに残す
       await log.record('warning', 'いつもとの差の判定に失敗：${e.runtimeType}');

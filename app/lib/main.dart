@@ -12,6 +12,7 @@ import 'package:go_router/go_router.dart';
 import 'app/router.dart';
 import 'core/providers.dart';
 import 'features/notifications/data/notifier.dart';
+import 'features/notifications/domain/notification_target.dart';
 import 'features/update/data/update_installer.dart';
 import 'features/widget/widget_bridge.dart';
 
@@ -107,10 +108,31 @@ class _MeowScopeAppState extends State<MeowScopeApp> {
     }
   }
 
-  void _openPath(String? path) {
-    if (path != null && path.startsWith('/')) {
-      _router.push(path);
+  /// 通知を押したときに開く。別のおうちの通知なら、そのおうちへ切り替えてから開く（BR-39）
+  Future<void> _openPath(String? payload) async {
+    if (payload == null || !payload.startsWith('/')) {
+      return;
     }
+    final target = splitHousehold(payload);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final session = container.read(sessionProvider).value;
+    if (target.householdId case final id?
+        when session != null && session.householdId != id) {
+      final switched = await container
+          .read(householdRepositoryProvider)
+          .switchHousehold(userId: session.author.id, householdId: id);
+      if (!switched || !mounted) {
+        // もう入っていないおうちの通知（抜けた後に押した）は開かない
+        return;
+      }
+      // 前のおうちの画面を残さないよう、ホームに戻してから開く
+      _router.go('/');
+      if (target.path != '/') {
+        _router.push(target.path);
+      }
+      return;
+    }
+    _router.push(target.path);
   }
 
   void _showInApp(AppNotification n) {
