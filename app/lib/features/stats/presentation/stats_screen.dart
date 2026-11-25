@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../calendar/presentation/calendar_providers.dart';
 import '../../cats/presentation/cat_filter.dart';
@@ -70,7 +72,18 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   .value ??
               const [];
     return Scaffold(
-      appBar: AppBar(title: const Text('統計')),
+      appBar: AppBar(
+        title: const Text('統計'),
+        actions: [
+          // くわしい統計（S-31）は Windows だけ。Android の統計の画面は今のまま（BR-42）
+          if (defaultTargetPlatform == TargetPlatform.windows)
+            TextButton.icon(
+              onPressed: () => context.push('/stats-detail'),
+              icon: const Icon(Icons.query_stats),
+              label: const Text('くわしく見る'),
+            ),
+        ],
+      ),
       body: catId == null
           ? const Center(child: Text('猫が登録されていません'))
           : ListView(
