@@ -350,7 +350,7 @@ class SyncWriter {
         return APPLIED;
     }
 
-    /** 1人が登録できるウィジェットのボタンの数（画面設計書 S-44）。 */
+    /** 1人が1つのおうちに登録できるウィジェットのボタンの数（画面設計書 S-44、BR-40）。 */
     static final int MAX_WIDGET_BUTTONS = 4;
 
     /**
@@ -369,9 +369,13 @@ class SyncWriter {
             throw new Rejected("forbidden", null);
         }
         if (deletedAt == null) {
+            // 上限はおうちごとに数える（BR-40）。おうちごとにウィジェットを置くので、
+            // ボタンの記録項目が同じおうちのものだけを数える
             long others = jdbc.sql("""
-                    SELECT count(*) FROM widget_buttons WHERE user_id = :user AND deleted_at IS NULL AND id <> :id
-                    """).param("user", userId).param("id", id).query(Long.class).single();
+                    SELECT count(*) FROM widget_buttons b JOIN record_types t ON t.id = b.record_type_id
+                    WHERE b.user_id = :user AND b.deleted_at IS NULL AND b.id <> :id AND t.household_id = :household
+                    """).param("user", userId).param("id", id).param("household", household)
+                    .query(Long.class).single();
             if (others >= MAX_WIDGET_BUTTONS) {
                 throw new Rejected("too_many", null);
             }
