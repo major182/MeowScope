@@ -4,77 +4,101 @@ import '../../../core/db/app_database.dart';
 import '../../../core/providers.dart';
 import '../../records/domain/record_kind.dart';
 import '../domain/widget_snapshot.dart';
-import '../presentation/widget_buttons_screen.dart';
+import 'widget_button_repository.dart';
 import 'widget_host.dart';
 
-/// 記録できる猫（ウィジェットの選択に出す）
+/// 記録できる猫（ウィジェットの選択に出す）。入っているすべてのおうちの猫（BR-40）
 final _widgetCatsProvider = StreamProvider.autoDispose<List<CatRow>>((ref) {
-  final session = ref.watch(sessionProvider).value;
-  if (session == null) {
+  final ids = ref.watch(householdIdsProvider);
+  if (ids == null || ids.isEmpty) {
     return Stream.value(const []);
   }
-  return ref
-      .watch(recordRepositoryProvider)
-      .watchActiveCats(session.householdId);
+  return ref.watch(recordRepositoryProvider).watchActiveCatsIn(ids);
 });
 
+/// 自分のボタン。入っているすべてのおうちのもの（BR-40）
+final _widgetButtonsProvider =
+    StreamProvider.autoDispose<List<WidgetButtonView>>((ref) {
+      final userId = ref.watch(
+        sessionProvider.select((s) => s.value?.author.id),
+      );
+      if (userId == null) {
+        return Stream.value(const []);
+      }
+      return ref.watch(widgetButtonRepositoryProvider).watchAllButtons(userId);
+    });
+
 /// ウィジェットに渡す内容。読み込みの途中は null（中途半端な内容を渡さない）
-final widgetSnapshotProvider = Provider.autoDispose<WidgetSnapshot?>((ref) {
+final widgetSnapshotProvider = Provider.autoDispose<WidgetState?>((ref) {
   final user = ref.watch(authUserProvider);
   final session = ref.watch(sessionProvider);
-  final buttons = ref.watch(widgetButtonsProvider);
+  final households = ref.watch(householdsProvider);
+  final buttons = ref.watch(_widgetButtonsProvider);
   final cats = ref.watch(_widgetCatsProvider);
   if (!user.hasValue || !session.hasValue) {
     return null;
   }
   if (user.value == null || session.value == null) {
-    return WidgetSnapshot.of(
-      signedIn: user.value != null,
-      householdReady: false,
-      buttons: const [],
-      cats: const [],
-    );
+    return const WidgetState.needsApp();
   }
-  if (!buttons.hasValue || !cats.hasValue) {
+  // 読み込み中（ログインの状態が届く前の空の一覧など）は渡さない
+  if (households.isLoading ||
+      !households.hasValue ||
+      !buttons.hasValue ||
+      !cats.hasValue) {
     return null;
   }
-  return WidgetSnapshot.of(
-    signedIn: true,
-    householdReady: true,
-    // 非表示の項目のボタンはウィジェットに出さない（S-44）
-    buttons: [
-      for (final b in buttons.value!)
-        if (!b.type.hidden)
-          (
-            id: b.type.id,
-            name: b.type.name,
-            icon:
-                iconAsset(typeIconValue(b.type.kind, b.type.icon)) ??
-                fallbackIconAsset,
+  return WidgetState(
+    households: [
+      for (final h in households.value!)
+        (
+          id: h.id,
+          name: h.name,
+          snapshot: WidgetSnapshot.of(
+            signedIn: true,
+            householdReady: true,
+            // 非表示の項目のボタンはウィジェットに出さない（S-44）
+            buttons: [
+              for (final b in buttons.value!)
+                if (b.type.householdId == h.id && !b.type.hidden)
+                  (
+                    id: b.type.id,
+                    name: b.type.name,
+                    icon:
+                        iconAsset(typeIconValue(b.type.kind, b.type.icon)) ??
+                        fallbackIconAsset,
+                  ),
+            ],
+            cats: [
+              for (final c in cats.value!)
+                if (c.householdId == h.id) (id: c.id, name: c.name),
+            ],
           ),
+        ),
     ],
-    cats: [for (final c in cats.value!) (id: c.id, name: c.name)],
   );
 });
 
 /// ウィジェットへ渡す。前と同じ内容なら渡さない
+///
+/// 猫の選択の途中に内容が変わったとき（消えた猫やボタン）は、Android の側がボタンの表示に戻す
+/// （ウィジェットごとに、選び始めたときの内容を覚えて比べる）
 class WidgetPublisher {
   WidgetPublisher(this._host);
 
   final WidgetHost _host;
   String? _last;
 
-  Future<void> publish(WidgetSnapshot? snapshot) async {
-    if (snapshot == null) {
+  Future<void> publish(WidgetState? state) async {
+    if (state == null) {
       return;
     }
-    final json = snapshot.toJson();
+    final json = state.toJson();
     if (json == _last) {
       return;
     }
     _last = json;
     await _host.save(WidgetKeys.snapshot, json);
-    // 内容が変わったら、選択の途中の表示（消えた猫やボタン）を残さず、ボタンに戻す
-    await _host.showUi('buttons');
+    await _host.refresh();
   }
 }

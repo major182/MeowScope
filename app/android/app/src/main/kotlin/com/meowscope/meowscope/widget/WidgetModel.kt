@@ -19,13 +19,18 @@ data class Snapshot(
     val onlyCat: Item?,
 )
 
-/** 今の表示。mode は buttons・cats・done。until を過ぎたらボタンに戻す。 */
+/** 今の表示。mode は buttons・cats・done。until を過ぎたらボタンに戻す。
+ *
+ * rev は、猫の選択を始めたときのおうちの内容（[Snapshot] の hashCode）。内容が変わったら（消えた猫など）ボタンに戻す。
+ * page は、猫の選択のページと、おうちを選ぶ表示のページに使う
+ */
 data class Ui(
     val mode: String = BUTTONS,
     val message: String? = null,
     val until: Long? = null,
     val type: Item? = null,
     val page: Int = 0,
+    val rev: Int? = null,
 ) {
     companion object {
         const val BUTTONS = "buttons"
@@ -41,6 +46,9 @@ sealed interface Action {
     data object Next : Action
     data object Cancel : Action
     data object Expire : Action
+
+    /** おうちを選ぶ（BR-40）。index は今のページの中の位置。 */
+    data class Household(val index: Int) : Action
 }
 
 /** 枠の1つ。action が null なら押せない。icon はアプリのイラストの場所（なければ文字だけ）。 */
@@ -57,8 +65,14 @@ data class Screen(
 /** 押した結果、Dart の側で記録する内容。 */
 data class Record(val typeId: String, val catId: String)
 
-/** 押した後の表示と、記録するもの。 */
-data class Outcome(val ui: Ui, val record: Record? = null)
+/** 押した後の表示と、記録するもの。assign は、このウィジェットに決めたおうち（BR-40）。 */
+data class Outcome(val ui: Ui, val record: Record? = null, val assign: String? = null)
+
+/** おうち1つ分の内容（BR-40）。 */
+data class HouseholdSnapshot(val id: String, val name: String, val snapshot: Snapshot)
+
+/** Dart から渡される内容の全体。ログインしていない・おうちがないときは status が ready 以外。 */
+data class WidgetState(val status: String, val message: String?, val households: List<HouseholdSnapshot>)
 
 object WidgetModel {
     /** 選ばずに放っておいたら、ボタンに戻すまでの時間。 */
@@ -171,6 +185,76 @@ object WidgetModel {
             Action.Cancel -> Outcome(Ui())
             // 期限の知らせ。期限を過ぎていれば current でボタンに戻っている
             Action.Expire -> Outcome(shown)
+            // おうちが決まった後に、古い表示のおうちの枠が押されたときは、ボタンに戻す
+            is Action.Household -> Outcome(Ui())
+        }
+    }
+
+    // ここから下は、おうちごとのウィジェット（BR-40）。ウィジェットごとに「どのおうちか」を Android の側が持ち、
+    // 決まったおうちの内容（Snapshot）を上の処理に渡す
+
+    /** おうちを選ぶ表示の1ページの枠。4つより多いときは3つと「次へ」にする。 */
+    private const val HOUSEHOLDS_PER_PAGE = 3
+
+    /**
+     * このウィジェットのおうち。決めたおうちがあればそれ、なければ（決めたおうちを抜けたときも）、
+     * おうちが1つならそのおうち。2つ以上で決まっていなければ null（選んでもらう）
+     */
+    fun resolve(state: WidgetState, assigned: String?): HouseholdSnapshot? =
+        state.households.firstOrNull { it.id == assigned } ?: state.households.singleOrNull()
+
+    /** おうちを選ぶ表示のページ。4つまでなら1ページに全部出す。 */
+    private fun householdPages(state: WidgetState): List<List<HouseholdSnapshot>> =
+        if (state.households.size <= 4) listOf(state.households) else state.households.chunked(HOUSEHOLDS_PER_PAGE)
+
+    /** 猫の選択を始めた後に、おうちの内容が変わっていたらボタンに戻す。 */
+    private fun checked(ui: Ui, snapshot: Snapshot): Ui = if (ui.rev != null && ui.rev != snapshot.hashCode()) Ui() else ui
+
+    fun screen(state: WidgetState?, assigned: String?, ui: Ui, now: Long): Screen {
+        if (state == null) {
+            return Screen(message = "MeowScope を開いてください", openApp = true)
+        }
+        if (state.status != READY) {
+            return Screen(message = state.message, openApp = true)
+        }
+        val household = resolve(state, assigned)
+        if (household != null) {
+            return screen(household.snapshot, checked(ui, household.snapshot), now)
+        }
+        val pages = householdPages(state)
+        val page = pages.getOrElse(ui.page) { pages.first() }
+        val more = pages.size > 1
+        return Screen(
+            title = "どのおうちのボタン？",
+            cells = List(4) { i ->
+                when {
+                    i < page.size -> Cell(page[i].name.ifEmpty { "（読み込み中）" }, Action.Household(i))
+                    more && i == 3 -> Cell("次へ ▶", Action.Next)
+                    else -> null
+                }
+            },
+        )
+    }
+
+    fun onAction(state: WidgetState?, assigned: String?, ui: Ui, action: Action, now: Long): Outcome {
+        if (state == null || state.status != READY) {
+            return Outcome(Ui())
+        }
+        val household = resolve(state, assigned)
+        if (household != null) {
+            val out = onAction(household.snapshot, checked(ui, household.snapshot), action, now)
+            // 猫の選択を始めたら、そのときの内容を覚えておく
+            return if (out.ui.mode == Ui.CATS) out.copy(ui = out.ui.copy(rev = household.snapshot.hashCode())) else out
+        }
+        val pages = householdPages(state)
+        val page = ui.page.coerceIn(0, pages.size - 1)
+        return when (action) {
+            is Action.Household -> pages[page].getOrNull(action.index)
+                ?.let { Outcome(Ui(), assign = it.id) }
+                ?: Outcome(Ui(page = page))
+            // 最後のページの次は最初に戻る
+            Action.Next -> Outcome(Ui(page = (page + 1) % pages.size))
+            else -> Outcome(Ui(page = page))
         }
     }
 }

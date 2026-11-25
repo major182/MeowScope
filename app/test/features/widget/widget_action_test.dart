@@ -15,6 +15,9 @@ import 'package:meowscope/features/widget/domain/widget_snapshot.dart';
 import '../../helpers/test_db.dart';
 
 /// 渡した内容を覚えておく口
+/// ウィジェットの ID（Android が振る番号）
+const widgetId = 7;
+
 class FakeHost extends WidgetHost {
   final saved = <(String, String)>[];
   final removed = <String>[];
@@ -31,7 +34,7 @@ class FakeHost extends WidgetHost {
 
   List<Map<String, dynamic>> uis() => [
     for (final (k, v) in saved)
-      if (k == WidgetKeys.ui) jsonDecode(v) as Map<String, dynamic>,
+      if (k == WidgetKeys.ui(widgetId)) jsonDecode(v) as Map<String, dynamic>,
   ];
 }
 
@@ -85,8 +88,13 @@ void main() {
     ]),
   );
 
-  Future<void> run(String uri) =>
-      handleWidgetAction(Uri.parse(uri), db: db, host: host, clock: () => now);
+  /// ウィジェットからのリンク。[widget] を付けなければ、ウィジェット 7 から押したものにする
+  Future<void> run(String uri, {bool widget = true}) => handleWidgetAction(
+    Uri.parse(widget ? '$uri&widget=$widgetId' : uri),
+    db: db,
+    host: host,
+    clock: () => now,
+  );
 
   test(
     'UT-WG-14 保存して記録待ちの印を消す。結果は Android が先に出すので書き換えない。同期待ちに積み、投稿者はログイン中の人',
@@ -102,7 +110,7 @@ void main() {
       );
       expect(await db.select(db.pendingChanges).get(), hasLength(1));
       expect(host.uis(), isEmpty);
-      expect(host.removed, [WidgetKeys.pending]);
+      expect(host.removed, [WidgetKeys.pending(widgetId)]);
     },
   );
 
@@ -127,14 +135,14 @@ void main() {
         if (ui['mode'] == 'done') ui['message'],
     ];
     expect(messages, List.filled(8, widgetFailedMessage));
-    expect(host.removed, List.filled(8, WidgetKeys.pending));
+    expect(host.removed, List.filled(8, WidgetKeys.pending(widgetId)));
     expect(
       host.uis().first['until'],
       now.add(failedDuration).millisecondsSinceEpoch,
     );
   });
 
-  test('UT-WG-16 おうちが選ばれていなければ記録しない', () async {
+  test('UT-WG-16 入っていないおうちの猫と項目には記録しない（抜けたおうちのウィジェットなど）', () async {
     await signIn(household: false);
     await run('meowscope://widget/record?type=t1&cat=c1');
     expect(await db.select(db.records).get(), isEmpty);
@@ -153,37 +161,94 @@ void main() {
     expect(host.saved, isEmpty);
   });
 
+  test('UT-WG-21 今のおうちに限らず、押した項目と猫のおうちに記録する（おうちごとのウィジェット。BR-40）', () async {
+    await signIn();
+    // はるは h1（今のおうち）と h2 に入っている
+    for (final (id, household) in [('m1', 'h1'), ('m2', 'h2')]) {
+      await db
+          .into(db.householdMembers)
+          .insert(
+            HouseholdMembersCompanion.insert(
+              id: id,
+              createdAt: testTime,
+              updatedAt: testTime,
+              householdId: household,
+              userId: const Value('u1'),
+            ),
+          );
+    }
+
+    await run('meowscope://widget/record?type=t3&cat=c2');
+    // 項目と猫のおうちが違うときは記録しない
+    await run('meowscope://widget/record?type=t3&cat=c1');
+
+    final records = await db.select(db.records).get();
+    expect(
+      [for (final r in records) (r.catId, r.recordTypeId)],
+      [('c2', 't3')],
+    );
+    expect(host.removed, [
+      WidgetKeys.pending(widgetId),
+      WidgetKeys.pending(widgetId),
+    ]);
+    expect(host.uis(), hasLength(1));
+  });
+
+  test('UT-WG-22 異常系：どのウィジェットから押したか分からなければ、記録も表示の書き換えもしない', () async {
+    await signIn();
+    await run('meowscope://widget/record?type=t1&cat=c1', widget: false);
+    await run(
+      'meowscope://widget/record?type=t1&cat=c1&widget=x',
+      widget: false,
+    );
+    expect(await db.select(db.records).get(), isEmpty);
+    expect(host.saved, isEmpty);
+    expect(host.removed, isEmpty);
+  });
+
   group('UT-WG-18 ウィジェットへ渡す内容', () {
-    test('同じ内容は渡し直さない。変わったら渡して、表示をボタンに戻す。読み込み中は渡さない', () async {
+    test('同じ内容は渡し直さない。変わったら渡して描き直す。読み込み中は渡さない', () async {
       final publisher = WidgetPublisher(host);
-      const a = WidgetSnapshot(status: WidgetStatus.needsApp);
+      const a = WidgetState.needsApp();
       await publisher.publish(null);
       await publisher.publish(a);
       await publisher.publish(a);
       await publisher.publish(
-        const WidgetSnapshot(status: WidgetStatus.noButtons),
+        const WidgetState(
+          households: [
+            (
+              id: 'h1',
+              name: 'みけ家',
+              snapshot: WidgetSnapshot(status: WidgetStatus.noButtons),
+            ),
+          ],
+        ),
       );
 
       expect(
         [for (final (k, _) in host.saved) k],
-        [
-          WidgetKeys.snapshot,
-          WidgetKeys.ui,
-          WidgetKeys.snapshot,
-          WidgetKeys.ui,
-        ],
+        [WidgetKeys.snapshot, WidgetKeys.snapshot],
       );
-      expect(host.uis(), [
-        {'mode': 'buttons'},
-        {'mode': 'buttons'},
-      ]);
+      expect(host.refreshed, 2);
     });
 
-    test('ログイン中のおうちのボタンと記録できる猫を渡す。非表示の項目のボタンは出さない', () async {
+    test('入っているおうちごとに、ボタンと記録できる猫を渡す。非表示の項目のボタンは出さない', () async {
       await signIn();
+      await db
+          .into(db.householdMembers)
+          .insert(
+            HouseholdMembersCompanion.insert(
+              id: 'm2',
+              createdAt: testTime,
+              updatedAt: testTime,
+              householdId: 'h2',
+              userId: const Value('u1'),
+            ),
+          );
       final repo = WidgetButtonRepository(db);
       await repo.add(userId: 'u1', recordTypeId: 't1');
       await repo.add(userId: 'u1', recordTypeId: 't2');
+      await repo.add(userId: 'u1', recordTypeId: 't3');
       final container = ProviderContainer(
         overrides: [
           databaseProvider.overrideWithValue(db),
@@ -196,16 +261,22 @@ void main() {
       final sub = container.listen(widgetSnapshotProvider, (_, _) {});
       addTearDown(sub.close);
 
-      WidgetSnapshot? snapshot;
-      for (var i = 0; i < 20 && snapshot == null; i++) {
+      WidgetState? state;
+      for (var i = 0; i < 20 && state == null; i++) {
         await Future<void>.delayed(Duration.zero);
-        snapshot = container.read(widgetSnapshotProvider);
+        state = container.read(widgetSnapshotProvider);
       }
-      expect(snapshot!.status, WidgetStatus.ready);
-      expect(snapshot.buttons, [
+      expect(state!.status, WidgetStatus.ready);
+      // h2 はメンバーの行があり、h1 は今のおうち（行はまだない）なので後ろ
+      expect([for (final h in state.households) h.id], ['h2', 'h1']);
+      final h1 = state.households.firstWhere((h) => h.id == 'h1').snapshot;
+      expect(h1.buttons, [
         (id: 't1', name: 'ご飯', icon: 'assets/icons/custom_other.png'),
       ]);
-      expect(snapshot.cats, [(id: 'c1', name: 'ミケ')]);
+      expect(h1.cats, [(id: 'c1', name: 'ミケ')]);
+      final h2 = state.households.firstWhere((h) => h.id == 'h2').snapshot;
+      expect([for (final b in h2.buttons) b.id], ['t3']);
+      expect(h2.cats, [(id: 'c2', name: 'よそ')]);
     });
 
     test('ログインしていなければ、アプリを開く内容を渡す', () async {
@@ -219,12 +290,17 @@ void main() {
       final sub = container.listen(widgetSnapshotProvider, (_, _) {});
       addTearDown(sub.close);
 
-      WidgetSnapshot? snapshot;
-      for (var i = 0; i < 20 && snapshot == null; i++) {
+      WidgetState? state;
+      for (var i = 0; i < 20 && state == null; i++) {
         await Future<void>.delayed(Duration.zero);
-        snapshot = container.read(widgetSnapshotProvider);
+        state = container.read(widgetSnapshotProvider);
       }
-      expect(snapshot!.status, WidgetStatus.needsApp);
+      expect(state!.status, WidgetStatus.needsApp);
+      expect(jsonDecode(state.toJson()), {
+        'status': 'needsApp',
+        'message': 'MeowScope を開いてください',
+        'households': [],
+      });
     });
   });
 }

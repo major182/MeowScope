@@ -7,11 +7,11 @@ abstract final class WidgetKeys {
   /// 描く内容（WidgetSnapshot の JSON）
   static const snapshot = 'meowscope.snapshot';
 
-  /// 今の表示（ボタン・猫の選択・記録中・記録の結果）
-  static const ui = 'meowscope.ui';
+  /// 今の表示（ボタン・猫の選択・記録中・記録の結果）。ウィジェットごとに持つ（BR-40）
+  static String ui(int widgetId) => 'meowscope.ui.$widgetId';
 
-  /// 記録待ちの印（押した時刻）。Android の側が付け、保存を終えたらこちらで消す
-  static const pending = 'meowscope.pending';
+  /// 記録待ちの印（押した時刻）。Android の側が付け、保存を終えたらこちらで消す。ウィジェットごとに持つ
+  static String pending(int widgetId) => 'meowscope.pending.$widgetId';
 }
 
 /// 失敗の文を出す時間。過ぎたら元のボタンに戻す（Android の側と同じ）
@@ -27,10 +27,15 @@ abstract class WidgetHost {
   /// ウィジェットを描き直す
   Future<void> refresh();
 
-  /// 表示を切り替える。[until] を過ぎたら、Android の側で元のボタンに戻す
-  Future<void> showUi(String mode, {String? message, DateTime? until}) async {
+  /// [widgetId] のウィジェットの表示を切り替える。[until] を過ぎたら、Android の側で元のボタンに戻す
+  Future<void> showUi(
+    int widgetId,
+    String mode, {
+    String? message,
+    DateTime? until,
+  }) async {
     await save(
-      WidgetKeys.ui,
+      WidgetKeys.ui(widgetId),
       jsonEncode({
         'mode': mode,
         'message': ?message,

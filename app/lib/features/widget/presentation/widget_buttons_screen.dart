@@ -57,7 +57,11 @@ class WidgetButtonsScreen extends ConsumerWidget {
                   onReorderItem: (from, to) {
                     final ids = [for (final b in buttons) b.id];
                     ids.insert(to, ids.removeAt(from));
-                    repo.reorder(userId: session.author.id, orderedIds: ids);
+                    repo.reorder(
+                      userId: session.author.id,
+                      householdId: session.householdId,
+                      orderedIds: ids,
+                    );
                   },
                   children: [
                     for (final (i, b) in buttons.indexed)

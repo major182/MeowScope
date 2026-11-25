@@ -75,8 +75,13 @@ final householdsProvider = StreamProvider<List<HouseholdRow>>((ref) {
 
 /// 自分が入っているおうちの ID（通知の予約に使う）
 final householdIdsProvider = Provider<List<String>?>((ref) {
-  final households = ref.watch(householdsProvider).value;
-  return households == null ? null : [for (final h in households) h.id];
+  final households = ref.watch(householdsProvider);
+  // ログインの状態の読み込み中は、空の一覧が一瞬流れることがある。そのまま使うと通知の予約が
+  // 一瞬消えるので、読み込み中は null（材料がそろっていない）にする
+  if (households.isLoading || !households.hasValue) {
+    return null;
+  }
+  return [for (final h in households.value!) h.id];
 });
 
 final settingsRepositoryProvider = Provider<SettingsRepository>(
