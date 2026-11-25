@@ -44,9 +44,12 @@ Future<void> main(List<String> args) async {
     stderr.writeln('サーバーが動いていません。docker compose up -d で起動してください');
     exit(1);
   }
-  // USB の実機は、動かす間だけ画面を消さないようにする（途中で画面が消えると、画面が止まってテストが進まない）
+  // USB の実機は、動かす間だけ画面を消さないようにする（途中で画面が消えると、画面が止まってテストが進まない）。
+  // 終わったら、始める前の設定に戻す。利用者がいつも「画面を消さない」にしている端末では、オンのまま残す（#316）
   final usb = args.first == 'android' && !target.device.startsWith('emulator-');
+  String? stayOnBefore;
   if (usb) {
+    stayOnBefore = await _stayOnSetting(target.device);
     await _adb(target.device, ['shell', 'svc', 'power', 'stayon', 'usb']);
     await _adb(target.device, ['shell', 'input', 'keyevent', 'KEYCODE_WAKEUP']);
   }
@@ -83,11 +86,35 @@ Future<void> main(List<String> args) async {
       }
     }
   } finally {
-    if (usb) {
-      await _adb(target.device, ['shell', 'svc', 'power', 'stayon', 'false']);
+    // 読めなかったときは変えない（利用者の設定を崩さないため）
+    if (stayOnBefore != null) {
+      await _adb(target.device, [
+        'shell',
+        'settings',
+        'put',
+        'global',
+        'stay_on_while_plugged_in',
+        stayOnBefore,
+      ]);
     }
   }
   exit(failed ? 1 : 0);
+}
+
+/// 端末の「画面を消さない（充電中にスリープしない）」の設定の値。0 はオフ、1〜15 はどの充電のときにオンか。
+/// 読めなければ null
+Future<String?> _stayOnSetting(String device) async {
+  final r = await Process.run('adb', [
+    '-s',
+    device,
+    'shell',
+    'settings',
+    'get',
+    'global',
+    'stay_on_while_plugged_in',
+  ], runInShell: Platform.isWindows);
+  final value = r.stdout.toString().trim();
+  return r.exitCode == 0 && RegExp(r'^d+$').hasMatch(value) ? value : null;
 }
 
 /// adb を、決めた端末に向けて動かす
