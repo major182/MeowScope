@@ -15,6 +15,7 @@ import '../features/household/presentation/join_screen.dart';
 import '../features/records/presentation/record_detail_screen.dart';
 import '../features/records/presentation/record_edit_screen.dart';
 import '../features/records/presentation/record_types_screen.dart';
+import '../features/export/presentation/csv_export_screen.dart';
 import '../features/search/presentation/search_screen.dart';
 import '../features/settings/presentation/contact_screen.dart';
 import '../features/sync/presentation/rejected_changes_screen.dart';
@@ -125,6 +126,11 @@ GoRouter createRouter() => GoRouter(
       // 記録の検索（S-23）。カレンダーの虫めがねから開く
       path: '/search',
       builder: (context, state) => const SearchScreen(),
+    ),
+    GoRoute(
+      // 記録の CSV の出力（S-52）。Windows だけ（設定に入口を出す。BR-41）
+      path: '/export',
+      builder: (context, state) => const CsvExportScreen(),
     ),
     GoRoute(
       path: '/notification-settings',
