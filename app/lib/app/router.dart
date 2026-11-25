@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../features/stats/presentation/detail_stats_screen.dart';
 import '../features/stats/presentation/stats_screen.dart';
 import '../features/auth/presentation/account_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
@@ -131,6 +132,11 @@ GoRouter createRouter() => GoRouter(
       // 記録の CSV の出力（S-52）。Windows だけ（設定に入口を出す。BR-41）
       path: '/export',
       builder: (context, state) => const CsvExportScreen(),
+    ),
+    GoRoute(
+      // くわしい統計（S-31）。Windows だけ（統計の画面に入口を出す。BR-42）
+      path: '/stats-detail',
+      builder: (context, state) => const DetailStatsScreen(),
     ),
     GoRoute(
       path: '/notification-settings',
