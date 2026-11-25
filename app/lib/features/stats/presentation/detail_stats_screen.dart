@@ -231,6 +231,34 @@ class _DetailStatsScreenState extends ConsumerState<DetailStatsScreen> {
                         ),
                     ],
                   ),
+                  const Divider(height: 32),
+                  Text('時間帯の傾向', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(
+                    '選んだ猫の記録を合わせて、項目ごとにどの時間帯に多いかを出します',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  HourTable(
+                    names: [for (final id in typeIds) typeName[id] ?? ''],
+                    counts: hourCounts(
+                      entries: entries,
+                      days: days,
+                      catIds: catIds,
+                      typeIds: typeIds,
+                    ),
+                  ),
+                  const Divider(height: 32),
+                  Text('日ごとの表', style: theme.textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  DailyTable(
+                    headers: [
+                      for (final s in series)
+                        '${catName[s.key.catId]}・${typeName[s.key.typeId]}'
+                            '${s.weight ? '（kg）' : '（回）'}',
+                    ],
+                    rows: dailyTable(days, series),
+                  ),
                 ],
               ],
             ),
@@ -345,4 +373,95 @@ class OverlayChart extends StatelessWidget {
       ),
     );
   }
+}
+
+/// 時間帯の傾向（F-ST-07）。行が項目、列が時間帯で、記録が多いほど濃い色にする（数も出す）
+class HourTable extends StatelessWidget {
+  const HourTable({super.key, required this.names, required this.counts});
+
+  final List<String> names;
+  final List<List<int>> counts;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final most = counts.expand((c) => c).fold(0, math.max);
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Table(
+        defaultColumnWidth: const FixedColumnWidth(64),
+        columnWidths: const {0: FixedColumnWidth(96)},
+        border: TableBorder.all(color: scheme.outlineVariant),
+        children: [
+          TableRow(
+            children: [
+              const SizedBox(),
+              for (var b = 0; b < hourBlocks; b++)
+                _cell(
+                  Text(hourBlockLabel(b), style: const TextStyle(fontSize: 11)),
+                ),
+            ],
+          ),
+          for (final (i, name) in names.indexed)
+            TableRow(
+              children: [
+                _cell(Text(name)),
+                for (final n in counts[i])
+                  Container(
+                    // 一番多いところを一番濃くする。0 は色を付けない
+                    color: n == 0 || most == 0
+                        ? null
+                        : scheme.primary.withValues(
+                            alpha: 0.15 + 0.6 * n / most,
+                          ),
+                    child: _cell(Text('$n')),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _cell(Widget child) => Padding(
+    padding: const EdgeInsets.all(6),
+    child: Center(child: child),
+  );
+}
+
+/// 日ごとの表（F-ST-08）。行が日（新しい順）、列が猫と項目の組
+class DailyTable extends StatelessWidget {
+  const DailyTable({super.key, required this.headers, required this.rows});
+
+  final List<String> headers;
+  final List<TableRowData> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        headingRowHeight: 40,
+        dataRowMinHeight: 32,
+        dataRowMaxHeight: 32,
+        columns: [
+          const DataColumn(label: Text('日付')),
+          for (final h in headers) DataColumn(label: Text(h), numeric: true),
+        ],
+        rows: [
+          for (final r in rows)
+            DataRow(
+              cells: [
+                DataCell(
+                  Text('${r.day.month}/${r.day.day}（${_weekday(r.day)}）'),
+                ),
+                for (final c in r.cells) DataCell(Text(c)),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+
+  static String _weekday(DateTime d) => '月火水木金土日'[d.weekday - 1];
 }

@@ -168,3 +168,63 @@ class WeightScale {
   /// 左の目盛りの位置を kg にする（右の目盛りの文字に使う）
   double toKg(double left) => min + left / countMax * (max - min);
 }
+
+/// 時間帯の区切り（F-ST-07）。1日を3時間ずつ8つに分ける
+const hoursPerBlock = 3;
+const hourBlocks = 24 ~/ hoursPerBlock;
+
+/// 時間帯の名前（0〜3時 など）
+String hourBlockLabel(int block) =>
+    '${block * hoursPerBlock}〜${(block + 1) * hoursPerBlock}時';
+
+/// 項目ごとの、時間帯ごとの記録の数（F-ST-07）。選んだ猫の記録を合わせて数える
+///
+/// 返す値は [typeIds] と同じ順で、それぞれ [hourBlocks] 個の数。時刻は端末の時刻で見る
+List<List<int>> hourCounts({
+  required List<RecordEntry> entries,
+  required List<DateTime> days,
+  required List<String> catIds,
+  required List<String> typeIds,
+}) {
+  final inPeriod = {for (final d in days) d};
+  final cats = catIds.toSet();
+  return [
+    for (final typeId in typeIds)
+      () {
+        final counts = List.filled(hourBlocks, 0);
+        for (final e in entries) {
+          final at = e.recordedAt.toLocal();
+          if (e.recordTypeId == typeId &&
+              cats.contains(e.catId) &&
+              inPeriod.contains(dateOnly(at))) {
+            counts[at.hour ~/ hoursPerBlock]++;
+          }
+        }
+        return counts;
+      }(),
+  ];
+}
+
+/// 日ごとの表の1行（F-ST-08）。[cells] は線と同じ順の値。回数は数、体重は kg（その日になければ空）
+typedef TableRowData = ({DateTime day, List<String> cells});
+
+/// 日ごとの表。行は新しい日から並べる（最近の様子をすぐ見られるように）
+List<TableRowData> dailyTable(List<DateTime> days, List<Series> series) {
+  final values = [
+    for (final s in series) {for (final p in s.points) p.dayIndex: p.value},
+  ];
+  return [
+    for (var i = days.length - 1; i >= 0; i--)
+      (
+        day: days[i],
+        cells: [
+          for (final (j, s) in series.indexed)
+            switch (values[j][i]) {
+              null => '',
+              final v when s.weight => v.toStringAsFixed(1),
+              final v => v.toInt().toString(),
+            },
+        ],
+      ),
+  ];
+}

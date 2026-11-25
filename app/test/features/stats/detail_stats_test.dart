@@ -131,4 +131,61 @@ void main() {
       expect(scale.toLeft(4.2), closeTo(2, 1e-9));
     });
   });
+
+  group('UT-DS-10 時間帯の傾向（F-ST-07）', () {
+    final days = [DateTime(2026, 11, 1), DateTime(2026, 11, 2)];
+
+    test('境界値：2:59 は 0〜3時、3:00 は 3〜6時、23:59 は 21〜24時。項目ごとに、選んだ猫を合わせて数える', () {
+      final c = hourCounts(
+        entries: [
+          entry('1', 'mike', 'food', DateTime(2026, 11, 1, 2, 59)),
+          entry('2', 'mike', 'food', DateTime(2026, 11, 1, 3)),
+          entry('3', 'tama', 'food', DateTime(2026, 11, 2, 23, 59)),
+          entry('4', 'mike', 'water', DateTime(2026, 11, 2, 8)),
+          // 選んでいない猫・期間の外は数えない
+          entry('5', 'kuro', 'food', DateTime(2026, 11, 1, 8)),
+          entry('6', 'mike', 'food', DateTime(2026, 10, 31, 8)),
+        ],
+        days: days,
+        catIds: ['mike', 'tama'],
+        typeIds: ['food', 'water'],
+      );
+      expect(c, [
+        [1, 1, 0, 0, 0, 0, 0, 1],
+        [0, 0, 1, 0, 0, 0, 0, 0],
+      ]);
+      expect(hourBlockLabel(0), '0〜3時');
+      expect(hourBlockLabel(7), '21〜24時');
+    });
+  });
+
+  group('UT-DS-11 日ごとの表（F-ST-08）', () {
+    test('行は新しい日から。回数は数、体重は小数1けたの kg、記録のない日の体重は空', () {
+      final days = [DateTime(2026, 11, 1), DateTime(2026, 11, 2)];
+      final series = buildSeries(
+        entries: [
+          entry('1', 'mike', 'food', DateTime(2026, 11, 1, 8)),
+          entry('2', 'mike', 'food', DateTime(2026, 11, 1, 19)),
+          entry('3', 'mike', 'w', DateTime(2026, 11, 2, 8), kg: 4),
+        ],
+        days: days,
+        catIds: ['mike'],
+        typeIds: ['food', 'w'],
+        weightTypeIds: {'w'},
+      );
+      final rows = dailyTable(days, series);
+      // レコードの中のリストは中身で比べられないので、日と欄を分けて比べる
+      expect(
+        [for (final r in rows) r.day],
+        [DateTime(2026, 11, 2), DateTime(2026, 11, 1)],
+      );
+      expect(
+        [for (final r in rows) r.cells],
+        [
+          ['0', '4.0'],
+          ['2', ''],
+        ],
+      );
+    });
+  });
 }
