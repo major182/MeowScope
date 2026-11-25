@@ -167,4 +167,30 @@ void main() {
     expect(find.text('この期間の記録はありません'), findsOneWidget);
     expect(find.text('ミケ・水（回・左）'), findsOneWidget);
   });
+
+  testWidgets('UT-DS-12 グラフの下に時間帯の傾向と日ごとの表を出す（同じ期間・猫・項目）', (tester) async {
+    await show(tester, const DetailStatsScreen());
+    await tester.tap(find.text('週'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('時間帯の傾向'), findsOneWidget);
+    expect(find.byType(HourTable), findsOneWidget);
+    // 記録は今日の12時（12〜15時）に1件
+    final hours = tester.widget<HourTable>(find.byType(HourTable));
+    expect(hours.names, ['ご飯']);
+    expect(hours.counts.single[4], 1);
+
+    final table = tester.widget<DailyTable>(find.byType(DailyTable));
+    expect(table.headers, ['ミケ・ご飯（回）']);
+    expect(table.rows, hasLength(7));
+    expect(table.rows.first.day, DateTime(2026, 11, 25));
+    expect(table.rows.first.cells, ['1']);
+    // 横にスクロールする表があるので、画面全体の縦のスクロールを動かす
+    await tester.scrollUntilVisible(
+      find.text('11/25（水）'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('11/25（水）'), findsOneWidget);
+  });
 }
