@@ -71,6 +71,23 @@ void main() {
       ]);
     });
 
+    test('メモに改行があっても1件は1件。絞り込んだ記録の数と、CSV の中の記録の数が同じ', () {
+      final records = [
+        entry('r1', memo: '1行目\r\n2行目'),
+        entry('r2', catId: 'c2'),
+      ];
+      const onlyMike = (
+        from: null,
+        to: null,
+        catIds: {'c1'},
+        recordTypeIds: null,
+      );
+      expect(filterCsvRecords(records, onlyMike), hasLength(1));
+      expect(filterCsvRecords(records, all), hasLength(2));
+      final csv = buildRecordCsv(records, onlyMike);
+      expect(csv, contains('"1行目\r\n2行目"'));
+    });
+
     test('体重でない項目の数値・病院でない項目の詳細は出さない。知らない量は空', () {
       final csv = buildRecordCsv([
         entry('r1', weight: 9, detail: '{"hospital": "x"}', level: 'huge'),
@@ -144,6 +161,9 @@ void main() {
       expect(csvCell('+81'), "'+81");
       expect(csvCell('-'), "'-");
       expect(csvCell('@a'), "'@a");
+      expect(csvCell('\tx'), "'\tx");
+      // 改行で始まる欄は、' を付けたうえで引用符で囲む
+      expect(csvCell('\r\nx'), '"\'\r\nx"');
       // 途中にあるだけなら付けない
       expect(csvCell('a=b'), 'a=b');
       // 付けた後も、カンマがあれば囲む

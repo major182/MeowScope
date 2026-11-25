@@ -50,16 +50,26 @@ typedef CsvFilter = ({
   );
 }
 
-/// [records]（古い順）のうち、猫と項目の条件に合うものを CSV にする
-String buildRecordCsv(List<RecordEntry> records, CsvFilter filter) {
+/// [records] のうち、猫と項目の条件に合うもの（CSV に出す記録）
+List<RecordEntry> filterCsvRecords(
+  List<RecordEntry> records,
+  CsvFilter filter,
+) {
   final cats = filter.catIds;
   final types = filter.recordTypeIds;
-  final rows = [
-    csvHeader,
+  return [
     for (final r in records)
       if ((cats == null || cats.contains(r.catId)) &&
           (types == null || types.contains(r.recordTypeId)))
-        _row(r),
+        r,
+  ];
+}
+
+/// [records]（古い順）のうち、猫と項目の条件に合うものを CSV にする
+String buildRecordCsv(List<RecordEntry> records, CsvFilter filter) {
+  final rows = [
+    csvHeader,
+    for (final r in filterCsvRecords(records, filter)) _row(r),
   ];
   return '$csvBom${rows.map((cells) => cells.map(csvCell).join(',')).join('\r\n')}\r\n';
 }

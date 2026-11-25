@@ -198,7 +198,19 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('UT-EX-06 猫と項目を絞ると、選んだものだけを出す。1つも選ばなければ出力できない', (tester) async {
+  testWidgets('UT-EX-10 メモに改行があっても、保存した件数は記録の数で出す', (tester) async {
+    await (db.update(db.records)..where((r) => r.id.equals('r1'))).write(
+      const RecordsCompanion(memo: Value('1行目\r\n2行目')),
+    );
+    await start(tester);
+    await open(tester);
+    await export(tester);
+
+    expect(find.text('CSV を保存しました（3件）'), findsOneWidget);
+    await close(tester);
+  });
+
+  testWidgets('UT-EX-06猫と項目を絞ると、選んだものだけを出す。1つも選ばなければ出力できない', (tester) async {
     await start(tester);
     await open(tester);
 

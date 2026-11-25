@@ -100,8 +100,8 @@ class _CsvExportScreenState extends ConsumerState<CsvExportScreen> {
           .range(session.householdId, from: range.from, to: range.to);
       final csv = buildRecordCsv(records, filter);
       await File(path).writeAsString(csv, flush: true);
-      // 見出しの行を除いた行の数が、出した記録の数
-      final count = '\r\n'.allMatches(csv).length - 1;
+      // 件数は、出した記録の数で数える（メモの中の改行を行と数えないため）
+      final count = filterCsvRecords(records, filter).length;
       messenger.showSnackBar(SnackBar(content: Text('CSV を保存しました（$count件）')));
     } on FileSystemException {
       // 書き込めない場所（読み取り専用・ほかのアプリが開いている）など
