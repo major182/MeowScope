@@ -369,6 +369,33 @@ class SyncIntegrationTest {
     }
 
     @Test
+    @DisplayName("IT-SY-27 ウィジェットのボタンの上限はおうちごと：同じおうちは4つまで、別のおうちなら別に4つまで（BR-40）")
+    void ウィジェットのボタンはおうちごとに4つ() throws Exception {
+        // はるがもう1つのおうちに入る
+        Registered natsu = TestUsers.register(mvc);
+        UUID other = UUID.randomUUID();
+        UUID otherFood = UUID.randomUUID();
+        createHousehold(natsu, other, otherFood).andExpect(status().isCreated());
+        join(haru, other);
+
+        List<Map<String, Object>> changes = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            changes.add(change("widget_buttons", UUID.randomUUID(), button(food, i)));
+        }
+        // 別のおうちの項目なら、最初のおうちが4つでも受け付ける（境界値：4つ目まで）
+        for (int i = 0; i < 4; i++) {
+            changes.add(change("widget_buttons", UUID.randomUUID(), button(otherFood, i)));
+        }
+        // どちらのおうちも5つ目は rejected
+        changes.add(change("widget_buttons", UUID.randomUUID(), button(food, 3)));
+        changes.add(change("widget_buttons", UUID.randomUUID(), button(otherFood, 3)));
+        Map<String, Object> body = syncBody(haru, 0, changes);
+        assertThat(statuses(body)).containsExactly("applied", "applied", "applied", "applied",
+                "applied", "applied", "applied", "applied", "rejected", "rejected");
+        assertThat(changes(body, "widget_buttons")).hasSize(8);
+    }
+
+    @Test
     @DisplayName("IT-SY-11 設定：自分の週の始まりを更新し、自分の分だけを受け取る。おうちの名前を変える")
     void 設定とおうちの名前() throws Exception {
         Map<String, Object> body = syncBody(haru, 0, List.of(
