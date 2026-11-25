@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/core/providers.dart';
@@ -23,13 +24,18 @@ class E2eApp {
   /// 出した通知と予約を記録する版（OS の通知は出さない。通知の許可の画面も出ない）
   final RecordingNotifier notifier;
 
-  Future<void> start(WidgetTester tester) async {
+  /// [overrides] は、テストごとに足す差し替え（CSV の保存の画面の代わりなど）
+  Future<void> start(
+    WidgetTester tester, {
+    List<Override> overrides = const [],
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           databaseProvider.overrideWithValue(db),
           tokenStoreProvider.overrideWithValue(tokens),
           notifierProvider.overrideWithValue(notifier),
+          ...overrides,
         ],
         child: const MeowScopeApp(),
       ),
