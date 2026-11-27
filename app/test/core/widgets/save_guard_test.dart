@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:meowscope/core/db/app_database.dart';
 import 'package:meowscope/core/logging/app_log.dart';

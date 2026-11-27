@@ -4,7 +4,7 @@
 | 項目 | 内容 |
 |---|---|
 | 文書番号 | 02 |
-| 版数 | 0.24 |
+| 版数 | 0.25 |
 | 作成日 | 2026-11-01 |
 | 作成者 | major182 |
 | 前提となる文書 | [01 要件定義書](01_requirements.md) |
@@ -30,14 +30,15 @@ MeowScope で採用する技術、バージョン、選定の理由を記録す�
 
 | 区分 | 技術 | バージョン | 選んだ理由 | 選ばなかった候補と理由 |
 |---|---|---|---|---|
-| アプリ | Flutter | 3.47.9 | 1つのコードで Windows と Android に対応でき、将来の iOS にも使える | React Native：Windows の部品が少ない。Tauri：モバイルのバックグラウンド処理の負担が大きい |
-| アプリの言語 | Dart | 3.13.7 | Flutter に同梱 | |
+| アプリ | Flutter | 3.50.1 | 1つのコードで Windows と Android に対応でき、将来の iOS にも使える | React Native：Windows の部品が少ない。Tauri：モバイルのバックグラウンド処理の負担が大きい |
+| アプリの言語 | Dart | 3.14.0 | Flutter に同梱 | |
 | ウィジェット | Kotlin、home_widget | home_widget 0.10.0 | ウィジェットは Android のネイティブで作る必要がある | |
 | 状態管理 | flutter_riverpod | 3.4.3 | 現在の Flutter で広く使われ、テストで差し替えやすい。コード生成は使わず、手書きで定義する | Bloc：記述量が多い。Provider：新規の採用が減っている |
 | 画面遷移 | go_router | 18.1.2 | Flutter チームの公式パッケージで、ログイン状態による画面の振り分けを書ける | |
 | 通信 | dio | 5.11.1 | トークンの付与と、期限切れ時の更新を共通の処理（インターセプター）で書ける | http：共通の処理を自作する必要がある |
 | 今の版 | package_info_plus | 10.2.2 | Android の versionCode と Windows の exe の版から、pubspec.yaml の版とビルド番号を読める（F-UP-03、BR-34） | `--dart-define` で版を渡す：ビルドのたびに渡し忘れると、版を比べられない |
 | 日付の書式 | intl | 0.20.3 | flutter_localizations が使う日付の書式の部品。日付の選択の週の始まりをアプリの設定に合わせるため、日本語の書式を作るのに使う（F-VW-04）。flutter_localizations と同じ版にそろえる | 端末やロケールの決まり（日本は日曜始まり）のまま：アプリの設定と食い違う |
+| 画面の部品 | material_ui | 1.11.1 | Flutter 3.50 で `package:flutter/material.dart` が非推奨になり、Material の部品と日本語の表示（GlobalMaterialLocalizations）はこちらから読む。Flutter のチームが作り、`dart fix` で自動で移せる | material.dart のまま：非推奨のお知らせでチェックが通らない |
 | 更新のファイルの照合 | crypto | 3.0.8 | Dart のチームが作る。数十 MB のファイルを少しずつ読みながら SHA-256 を計算できる（BR-33） | 自作：誤りやすい |
 | トークンの保管 | flutter_secure_storage | 11.2.0 | Android は Keystore、Windows は資格情報の保管庫を使う（NF-SC-07） | |
 | 端末内の DB | SQLite（drift） | drift 2.35.3、drift_dev 2.35.2（コード生成。版の番号は drift と別に付く） | Windows と Android で共通に使え、型安全 | |
@@ -99,7 +100,7 @@ Windows 版は、家族での利用の間は署名しない（2026-11-05 決定�
 
 | 道具 | 状態 |
 |---|---|
-| Flutter SDK | 3.47.9（`C:devlutter`） |
+| Flutter SDK | 3.50.1（`C:devlutter`） |
 | Android SDK | 36.0.0 |
 | Windows 版のビルド | Visual Studio Community 2026 18.11.3 |
 | Java | `JAVA_HOME` は 21 のまま。25 は Gradle の Toolchain で使う |
@@ -133,3 +134,4 @@ Windows 版は、家族での利用の間は署名しない（2026-11-05 決定�
 | 0.22 | 2026-11-14 | 日付の選択の週の始まりのため intl 0.20.3 を追加（#227） |
 | 0.23 | 2026-11-24 | 独自ドメインのため Cloudflare・GitHub Pages を追加。メール送信を Resend に、Caddy を 2.11.9 と PC での DNS の確かめに改める（#284） |
 | 0.24 | 2026-11-25 | CSV の出力の保存の画面に file_selector 1.1.0 を追加（#314。利用者の決定） |
+| 0.25 | 2026-11-27 | Flutter を 3.50.1（Dart 3.14.0）に上げ、material_ui 1.11.1 を追加。Android のビルドの道具を Flutter の雛形に合わせて AGP 9.3.1・Kotlin 2.4.20・Gradle 9.5.0 にする（#330） |
