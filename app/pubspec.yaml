@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.4.0+11
 
 environment:
-  sdk: ^3.13.7
+  sdk: ^3.14.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -57,6 +57,8 @@ dependencies:
   timezone: 0.11.2
   # 日付の選択の週の始まりを差し替えるため、日本語の日付の書式を作る（F-VW-04）
   intl: 0.20.3
+  # Flutter 3.50 で package:flutter/material.dart が非推奨になり、画面の部品はこちらから読む
+  material_ui: 1.11.1
   # Windows で CSV を保存する場所を選ぶ（F-EX-01）
   file_selector: 1.1.0
 

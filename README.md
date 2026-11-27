@@ -43,7 +43,7 @@ https://github.com/user-attachments/assets/7acddb0e-6e1f-4e3b-93d7-d9336a7e906b
 
 | 区分 | 技術 |
 |---|---|
-| アプリ | Flutter 3.47.9（Dart 3.13.7）、Riverpod、go_router、dio、drift（SQLite）、fl_chart |
+| アプリ | Flutter 3.50.1（Dart 3.14.0）、Riverpod、go_router、dio、drift（SQLite）、fl_chart |
 | Android のウィジェット | Kotlin、home_widget |
 | サーバー | Java 25、Spring Boot 4.1.2（Spring Security、Flyway） |
 | データベース | PostgreSQL 18.6 |

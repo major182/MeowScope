@@ -13,7 +13,7 @@
 
 | 区分 | 採用 |
 |---|---|
-| アプリ | Flutter 3.47.9（Dart 3.13.7）、Android ウィジェットは Kotlin |
+| アプリ | Flutter 3.50.1（Dart 3.14.0）、Android ウィジェットは Kotlin |
 | サーバー | Spring Boot 4.1.2（Java 25） |
 | DB | PostgreSQL 18.6、端末内は SQLite（drift 2.35.3） |
 | 実行環境 | Docker Compose、AWS EC2、PC へ移行予定 |
@@ -114,7 +114,7 @@ gh pr checks <番号>                                        # ④ 実行 ID（r
 
 ### 4.1 開発環境の作り方
 
-前提：Flutter 3.47.9、Android SDK、Visual Studio の C++ 開発環境、Docker。Java 25 は Gradle が用意する
+前提：Flutter 3.50.1、Android SDK、Visual Studio の C++ 開発環境、Docker。Java 25 は Gradle が用意する
 
 ```powershell
 Copy-Item .env.example .env   # 初回だけ。DB_PASSWORD を自分の値に書き換える
